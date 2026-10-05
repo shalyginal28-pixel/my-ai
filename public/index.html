@@ -1596,14 +1596,59 @@ document.addEventListener("keydown", e => {
 </script>
 
 <script>
-/* service worker */
-if("serviceWorker" in navigator){
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js")
-      .then(() => console.log("Aiva Service Worker установлен"))
-      .catch(err => console.error("Service Worker:", err));
-  });
-}
+/* =========================================================
+   AIVA — УДАЛЕНИЕ СТАРОГО SERVICE WORKER
+   Чат и backend-логика НЕ меняются.
+========================================================= */
+
+(async () => {
+
+  if (!("serviceWorker" in navigator)) {
+    return;
+  }
+
+  try {
+
+    const registrations =
+      await navigator.serviceWorker.getRegistrations();
+
+    if (!registrations.length) {
+      return;
+    }
+
+    let removed = false;
+
+    for (const registration of registrations) {
+
+      const ok =
+        await registration.unregister();
+
+      if (ok) {
+        removed = true;
+      }
+
+    }
+
+    if (removed) {
+
+      console.log(
+        "Aiva: старый Service Worker удалён."
+      );
+
+      window.location.reload();
+
+    }
+
+  } catch (error) {
+
+    console.warn(
+      "Aiva Service Worker cleanup:",
+      error
+    );
+
+  }
+
+})();
 </script>
 
 <script src="/reset-password.js"></script>
