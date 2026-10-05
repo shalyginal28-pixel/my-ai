@@ -2,20 +2,12 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 const { execFile, spawn } = require('child_process');
 const multer = require('multer');
-const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-// ===== Supabase =====
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || '';
-
-const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY
-);
 
 // ===== Настройки подключения =====
 const API_KEY = process.env.AI_API_KEY  || '';
@@ -27,6 +19,10 @@ const PROXY   = process.env.AI_PROXY    || '';
 const MAX_FILE_TEXT = 40000;
 const MAX_IMAGES    = 4;
 const HISTORY_KEEP  = 40;
+const WEB_SEARCH_ENABLED = String(process.env.WEB_SEARCH_ENABLED || 'true').toLowerCase() !== 'false';
+
+const GENERATED_DIR = path.join(__dirname, 'data', 'files');
+fs.mkdirSync(GENERATED_DIR, { recursive: true });
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024, files: 5 } });
 
@@ -63,75 +59,88 @@ function save() {
 
 let systemPrompt = 'Ты — умный русскоязычный AI-ассистент. Отвечай развёрнуто, структурированно и по делу. ' +
   'Разбирай вопросы глубоко, приводи примеры, замечай нетривиальные детали. Когда уместно — используй markdown ' +
-  '(заголовки, списки, код). Если пользователь прислал файл — проанализируй его содержимое внимательно.';
+  '(заголовки, списки, код). Если пользователь прислал файл — проанализируй его содержимое внимательно. ' +
+  'У тебя есть доступ к интернет-поиску через инструмент web search. Для актуальных, меняющихся или неизвестных данных используй поиск и опирайся на найденные источники. ' +
+  'Если пользователь просит создать файл, подготовь содержимое без лишних пояснений и используй специальный формат <AIVA_FILE name=\"filename.ext\">содержимое</AIVA_FILE>. ' +
+  'Поддерживай прежде всего текстовые форматы: txt, md, json, csv, html, css, js, ts, py, java, c, cpp, h, sh, xml, yaml, yml. Не помещай AIVA_FILE внутрь markdown-кода и не используй этот формат для обычного текста.';
+
+const FILE_EXTENSIONS = new Set([
+  'txt','md','markdown','json','csv','tsv','html','htm','css','js','mjs','cjs','ts','tsx','jsx',
+  'py','pyw','java','c','h','hpp','cpp','cc','cxx','cs','go','rs','php','rb','swift','kt','kts',
+  'sh','bash','zsh','bat','ps1','sql','xml','yaml','yml','ini','toml','env','log'
+]);
+
+function safeFileName(name) {
+  let n = String(name || 'aiva-file.txt')
+    .replace(/[\\/:*?"<>|\x00-\x1F]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^\.+/, '');
+  if (!n) n = 'aiva-file.txt';
+  if (n.length > 120) {
+    const ext = path.extname(n);
+    n = n.slice(0, Math.max(1, 120 - ext.length)) + ext;
+  }
+  return n;
+}
+
+function fileExtension(name) {
+  return path.extname(name).toLowerCase().replace(/^\./, '');
+}
+
+function makeStoredFile(name, buffer) {
+  const safeName = safeFileName(name);
+  const ext = fileExtension(safeName);
+  const id = crypto.randomBytes(12).toString('hex');
+  const storedName = id + (ext ? '.' + ext : '');
+  const filePath = path.join(GENERATED_DIR, storedName);
+  fs.writeFileSync(filePath, buffer);
+  return {
+    id,
+    name: safeName,
+    size: buffer.length,
+    url: '/api/files/' + encodeURIComponent(id + (ext ? '.' + ext : '')) + '?name=' + encodeURIComponent(safeName),
+    filePath
+  };
+}
+
+function extractGeneratedFiles(reply) {
+  const files = [];
+  const re = /<AIVA_FILE\s+name=(?:\"([^\"]+)\"|'([^']+)')>([\s\S]*?)<\/AIVA_FILE>/gi;
+  let cleaned = String(reply || '');
+  cleaned = cleaned.replace(re, (_, n1, n2, body) => {
+    const originalName = safeFileName(n1 || n2 || 'aiva-file.txt');
+    const ext = fileExtension(originalName);
+    if (!FILE_EXTENSIONS.has(ext)) {
+      return `\n\n⚠️ Файл «${originalName}» не создан: формат не поддерживается для автоматической выдачи.\n\n`;
+    }
+    const normalized = String(body || '').replace(/^\r?\n/, '').replace(/\r?\n$/, '');
+    if (!normalized) return '';
+    try {
+      const stored = makeStoredFile(originalName, Buffer.from(normalized, 'utf8'));
+      files.push(stored);
+      return `\n\n📎 [Скачать ${stored.name}](${stored.url})\n\n`;
+    } catch (e) {
+      return `\n\n⚠️ Не удалось подготовить файл «${originalName}».\n\n`;
+    }
+  });
+  return { reply: cleaned.trim(), files };
+}
 
 app.use(express.json({ limit: '30mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
-// ===== Авторизация Supabase =====
-async function requireAuth(req, res, next) {
-  try {
-    const authHeader = req.headers.authorization || '';
-
-    if (!authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        ok: false,
-        error: 'Требуется авторизация'
-      });
-    }
-
-    const token = authHeader.slice(7).trim();
-
-    if (!token) {
-      return res.status(401).json({
-        ok: false,
-        error: 'Требуется токен'
-      });
-    }
-
-    const {
-      data: { user },
-      error
-    } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      return res.status(401).json({
-        ok: false,
-        error: 'Сессия недействительна'
-      });
-    }
-
-    req.user = user;
-    req.accessToken = token;
-
-    next();
-
-  } catch (e) {
-    console.error('Auth error:', e);
-
-    res.status(401).json({
-      ok: false,
-      error: 'Ошибка авторизации'
-    });
-  }
-}
-app.get('/api/me', requireAuth, (req, res) => {
-  res.json({
-    ok: true,
-    user: {
-      id: req.user.id,
-      email: req.user.email
-    }
-  });
-});
-app.get('/sw.js', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'sw.js'));
-});
-app.get('/.well-known/assetlinks.json', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', '.well-known', 'assetlinks.json'));
-});
 
 app.get('/api/config', (req, res) => {
-  res.json({ model: MODEL, hasKey: !!API_KEY, systemPrompt, temperature: TEMP, history: history.slice(-100) });
+  res.json({ model: MODEL, hasKey: !!API_KEY, systemPrompt, temperature: TEMP, webSearch: WEB_SEARCH_ENABLED, history: history.slice(-100) });
+});
+
+app.get('/api/files/:storedName', (req, res) => {
+  const storedName = path.basename(String(req.params.storedName || ''));
+  if (!storedName || storedName !== req.params.storedName) return res.status(400).send('Некорректное имя файла');
+  const filePath = path.join(GENERATED_DIR, storedName);
+  if (!fs.existsSync(filePath)) return res.status(404).send('Файл не найден');
+  const requestedName = safeFileName(req.query.name || 'aiva-file' + (path.extname(storedName) || ''));
+  res.download(filePath, requestedName);
 });
 
 app.post('/api/prompt', (req, res) => {
@@ -193,8 +202,19 @@ async function extractFile(file) {
 app.post('/api/upload', upload.array('files', 5), async (req, res) => {
   const results = [];
   for (const f of (req.files || [])) {
-    try { results.push(await extractFile(f)); }
-    catch (e) { results.push({ name: f.originalname, type: 'error', error: e.message }); }
+    try {
+      const parsed = await extractFile(f);
+      try {
+        const stored = makeStoredFile(f.originalname, f.buffer);
+        parsed.downloadUrl = stored.url;
+        parsed.fileId = stored.id;
+      } catch (storeError) {
+        parsed.downloadUrl = null;
+      }
+      results.push(parsed);
+    } catch (e) {
+      results.push({ name: f.originalname, type: 'error', error: e.message });
+    }
   }
   res.json({ ok: true, files: results });
 });
@@ -208,9 +228,22 @@ app.use((err, req, res, next) => {
 // ===== Ядро чата =====
 const apiHeaders = () => ({
   'Authorization': 'Bearer ' + API_KEY,
-  'HTTP-Referer': 'http://localhost',
-  'X-Title': 'MyAI'
+  'HTTP-Referer': process.env.APP_URL || 'http://localhost',
+  'X-Title': 'Aiva'
 });
+
+function isOpenRouterUrl() {
+  try { return new URL(API_URL).hostname.endsWith('openrouter.ai'); }
+  catch (e) { return false; }
+}
+
+function aiRequestBody(messages, extra = {}) {
+  const body = { model: MODEL, temperature: TEMP, messages, ...extra };
+  if (WEB_SEARCH_ENABLED && isOpenRouterUrl()) {
+    body.tools = [{ type: 'openrouter:web_search' }];
+  }
+  return body;
+}
 
 function buildUserContent(text, attachments) {
   let fullText = text || 'Посмотри присланные файлы.';
@@ -237,13 +270,13 @@ function chatCore(res, userText, attachments, wantStream, skipUserPush) {
   if (!wantStream) {
     (async () => {
       try {
-        let r = await curlPost(API_URL, apiHeaders(), { model: MODEL, temperature: TEMP, messages: messagesBase });
+        let r = await curlPost(API_URL, apiHeaders(), aiRequestBody(messagesBase));
         let note = '';
         if (r.status < 200 || r.status >= 300) {
           let msg = '';
           try { msg = (JSON.parse(r.body).error || {}).message || r.body; } catch (e) { msg = r.body; }
           if (hasImages && /image|vision|multimodal|format|support/i.test(msg)) {
-            r = await curlPost(API_URL, apiHeaders(), { model: MODEL, temperature: TEMP, messages: messagesBase.map((m, i) => i === messagesBase.length - 1 ? { role: 'user', content: summary } : m) });
+            r = await curlPost(API_URL, apiHeaders(), aiRequestBody(messagesBase.map((m, i) => i === messagesBase.length - 1 ? { role: 'user', content: summary } : m)));
             note = '⚠️ Текущая модель не поддерживает изображения — ответил по тексту файлов.\n\n';
           }
         }
@@ -252,9 +285,11 @@ function chatCore(res, userText, attachments, wantStream, skipUserPush) {
           const msg = (data && data.error && (data.error.message || data.error)) || r.body.slice(0, 300);
           return res.json({ ok: false, error: 'API ' + r.status + ': ' + msg });
         }
-        const reply = note + data.choices[0].message.content;
+        const rawReply = note + data.choices[0].message.content;
+        const processed = extractGeneratedFiles(rawReply);
+        const reply = processed.reply;
         history.push({ role: 'assistant', content: reply, time: Date.now() }); save();
-        res.json({ ok: true, reply, model: data.model || MODEL });
+        res.json({ ok: true, reply, model: data.model || MODEL, files: processed.files.map(f => ({ id: f.id, name: f.name, size: f.size, url: f.url })) });
       } catch (e) {
         if (/curl/.test(e.message) && /not recognized|не является|ENOENT/i.test(e.message))
           return res.json({ ok: false, error: 'curl не найден. Обнови Windows 10+ или поставь curl.' });
@@ -274,8 +309,19 @@ function chatCore(res, userText, attachments, wantStream, skipUserPush) {
 
   function finalize(saveIt) {
     if (dead) return; dead = true;
-    if (saveIt && acc) { history.push({ role: 'assistant', content: acc, time: Date.now() }); save(); }
-    try { w({ done: true, model }); res.end(); } catch (e) {}
+    let finalText = acc;
+    let createdFiles = [];
+    if (acc) {
+      const processed = extractGeneratedFiles(acc);
+      finalText = processed.reply;
+      createdFiles = processed.files.map(f => ({ id: f.id, name: f.name, size: f.size, url: f.url }));
+    }
+    if (saveIt && finalText) { history.push({ role: 'assistant', content: finalText, time: Date.now() }); save(); }
+    try {
+      if (createdFiles.length) w({ files: createdFiles });
+      try { w({ d: '', done: true, model }); } catch (e) {}
+      res.end();
+    } catch (e) {}
   }
   function fail(msg) {
     if (/image|vision|multimodal|format|support/i.test(msg) && hasImages && !retried) {
@@ -293,7 +339,7 @@ function chatCore(res, userText, attachments, wantStream, skipUserPush) {
     tmpFile = path.join(os.tmpdir(), 'myai-stream-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.json');
     const msgs = withImages ? messagesBase
       : messagesBase.map((m, i) => i === messagesBase.length - 1 ? { role: 'user', content: summary } : m);
-    fs.writeFileSync(tmpFile, JSON.stringify({ model: MODEL, temperature: TEMP, stream: true, messages: msgs }));
+    fs.writeFileSync(tmpFile, JSON.stringify(aiRequestBody(msgs, { stream: true })));
     const args = ['-sS', '-N', '--max-time', '300', '-X', 'POST', API_URL];
     if (PROXY) args.push('-x', PROXY);
     args.push('-H', 'Content-Type: application/json');
