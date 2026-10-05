@@ -6,13 +6,18 @@
 (() => {
   "use strict";
 
-  function waitForApp() {
+ function waitForApp() {
   if (!document.body) {
     setTimeout(waitForApp, 100);
     return;
   }
 
-  if (document.getElementById("aiva-reset-modal")) {
+  if (!window.supabaseClient) {
+    setTimeout(waitForApp, 100);
+    return;
+  }
+
+  if (window.__aivaPasswordResetReady) {
     return;
   }
 
