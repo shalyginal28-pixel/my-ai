@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ru">
 <head>
 
@@ -6,6 +7,7 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
 
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0b0b0f">
@@ -13,6 +15,10 @@
 <title>Aiva — AI Assistant</title>
 
 <style>
+
+/* =========================================================
+   ROOT
+========================================================= */
 
 :root{
   --bg:#0b0b0f;
@@ -24,9 +30,12 @@
   --muted:#999ca7;
   --muted2:#696c76;
   --border:rgba(255,255,255,.08);
+  --border2:rgba(255,255,255,.12);
   --accent:#7668ff;
   --accent2:#5c8cff;
   --user:#25272e;
+  --danger:#ff7777;
+  --success:#74e2a2;
 }
 
 *{
@@ -42,9 +51,23 @@ body{
 }
 
 body{
-  background:var(--bg);
+  background:
+    radial-gradient(
+      circle at 50% -15%,
+      rgba(118,104,255,.055),
+      transparent 38%
+    ),
+    var(--bg);
+
   color:var(--text);
-  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
   overflow:hidden;
 }
 
@@ -60,6 +83,13 @@ button{
   cursor:pointer;
 }
 
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible{
+  outline:2px solid rgba(118,104,255,.62);
+  outline-offset:2px;
+}
+
 
 /* =========================================================
    APP
@@ -73,19 +103,32 @@ button{
 
 
 /* =========================================================
-   SIDEBAR
+   LEFT SIDEBAR
 ========================================================= */
 
 #sidebar{
   width:270px;
   height:100%;
-  background:var(--sidebar);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(16,17,22,.98),
+      rgba(13,14,18,.98)
+    );
+
   border-right:1px solid var(--border);
+
   display:flex;
   flex-direction:column;
+
   padding:12px;
+
   flex-shrink:0;
-  transition:transform .25s ease;
+
+  transition:
+    transform .25s ease;
+
   z-index:80;
 }
 
@@ -99,12 +142,23 @@ button{
 .aiva-mark{
   width:34px;
   height:34px;
+
   border-radius:10px;
+
   display:flex;
   align-items:center;
   justify-content:center;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  box-shadow:0 7px 25px rgba(100,90,255,.2);
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      var(--accent2)
+    );
+
+  box-shadow:
+    0 7px 25px rgba(100,90,255,.2);
+
   font-size:17px;
 }
 
@@ -115,11 +169,15 @@ button{
 
 .sidebar-close{
   margin-left:auto;
+
   width:32px;
   height:32px;
+
   border-radius:9px;
+
   background:transparent;
   color:var(--muted);
+
   display:none;
 }
 
@@ -131,47 +189,142 @@ button{
 .new-chat{
   width:100%;
   height:42px;
+
   border-radius:11px;
+
   background:var(--text);
   color:#0b0b0f;
+
   font-weight:650;
+
   display:flex;
   align-items:center;
   justify-content:center;
+
   gap:8px;
-  transition:.15s;
+
+  transition:
+    transform .15s ease,
+    opacity .15s ease;
 }
 
 .new-chat:hover{
   transform:translateY(-1px);
 }
 
+.new-chat:active{
+  transform:scale(.985);
+}
+
+.history-search-wrap{
+  position:relative;
+  margin-top:12px;
+}
+
+.history-search-icon{
+  position:absolute;
+  left:11px;
+  top:50%;
+
+  transform:translateY(-50%);
+
+  color:var(--muted2);
+
+  font-size:13px;
+
+  pointer-events:none;
+}
+
+#history-search{
+  width:100%;
+  height:38px;
+
+  padding:
+    0 11px 0 31px;
+
+  border:
+    1px solid rgba(255,255,255,.06);
+
+  border-radius:10px;
+
+  background:
+    rgba(255,255,255,.025);
+
+  color:var(--text);
+
+  outline:none;
+
+  font-size:12px;
+
+  transition:
+    border-color .15s ease,
+    background .15s ease;
+}
+
+#history-search::placeholder{
+  color:var(--muted2);
+}
+
+#history-search:focus{
+  border-color:rgba(118,104,255,.32);
+  background:rgba(255,255,255,.04);
+}
+
 .history-title{
   color:var(--muted2);
+
   font-size:11px;
+
   text-transform:uppercase;
   letter-spacing:.08em;
-  padding:20px 8px 8px;
+
+  padding:18px 8px 8px;
 }
 
 #history{
   flex:1;
   overflow-y:auto;
+
+  padding-right:2px;
+}
+
+.history-empty{
+  padding:20px 10px;
+
+  text-align:center;
+
+  color:var(--muted2);
+
+  font-size:12px;
+  line-height:1.5;
 }
 
 .history-item{
   width:100%;
+
   display:flex;
   align-items:center;
+
   gap:8px;
+
   padding:10px;
+
   margin-bottom:3px;
+
   border-radius:9px;
+
   background:transparent;
+
   color:var(--muted);
+
   text-align:left;
+
   font-size:13px;
-  transition:.15s;
+
+  transition:
+    background .15s ease,
+    color .15s ease,
+    transform .15s ease;
 }
 
 .history-item:hover{
@@ -184,35 +337,58 @@ button{
   color:var(--text);
 }
 
+.history-item:active{
+  transform:scale(.99);
+}
+
 .history-icon{
   width:20px;
   flex-shrink:0;
+
   color:var(--muted2);
+
+  display:flex;
+  justify-content:center;
 }
 
 .history-name{
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+  flex:1;
 }
 
 .sidebar-bottom{
   border-top:1px solid var(--border);
+
   padding-top:10px;
 }
 
 .sidebar-action{
   width:100%;
+
   min-height:40px;
+
   padding:8px 10px;
+
   border-radius:9px;
+
   background:transparent;
+
   color:var(--muted);
+
   text-align:left;
+
   display:flex;
   align-items:center;
+
   gap:10px;
+
   font-size:13px;
+
+  transition:
+    background .15s ease,
+    color .15s ease;
 }
 
 .sidebar-action:hover{
@@ -229,8 +405,10 @@ button{
   min-width:0;
   flex:1;
   height:100%;
+
   display:flex;
   flex-direction:column;
+
   position:relative;
 }
 
@@ -242,24 +420,36 @@ button{
 header{
   height:62px;
   min-height:62px;
+
   display:flex;
   align-items:center;
+
   gap:10px;
+
   padding:0 18px;
+
   border-bottom:1px solid var(--border);
-  background:rgba(11,11,15,.88);
+
+  background:
+    rgba(11,11,15,.80);
+
   backdrop-filter:blur(18px);
   -webkit-backdrop-filter:blur(18px);
+
   z-index:20;
 }
 
 .menu-btn{
   width:36px;
   height:36px;
+
   border-radius:10px;
+
   background:transparent;
   color:var(--muted);
+
   font-size:19px;
+
   display:none;
 }
 
@@ -272,22 +462,40 @@ header{
   display:flex;
   align-items:center;
   gap:10px;
+
+  min-width:0;
 }
 
 .header-logo{
   width:35px;
   height:35px;
+
+  flex-shrink:0;
+
   border-radius:10px;
+
   display:flex;
   align-items:center;
   justify-content:center;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      var(--accent2)
+    );
+
+  box-shadow:
+    0 7px 22px rgba(100,90,255,.15);
+
   font-size:17px;
 }
 
 .brand{
   display:flex;
   flex-direction:column;
+
+  min-width:0;
 }
 
 .brand h1{
@@ -298,10 +506,12 @@ header{
 .sub{
   font-size:10px;
   color:var(--muted2);
+
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-  max-width:220px;
+
+  max-width:250px;
 }
 
 .spacer{
@@ -311,17 +521,26 @@ header{
 .header-actions{
   display:flex;
   align-items:center;
-  gap:5px;
+  gap:4px;
 }
 
 .ghost{
   height:36px;
+
   padding:0 10px;
+
   background:transparent;
   color:var(--muted);
-  border:1px solid transparent;
+
+  border:
+    1px solid transparent;
+
   border-radius:9px;
-  transition:.15s;
+
+  transition:
+    background .15s ease,
+    color .15s ease,
+    border-color .15s ease;
 }
 
 .ghost:hover{
@@ -337,11 +556,8 @@ header{
 }
 
 
-/* =========================================================
-   СТАРЫЕ КНОПКИ ИНСТРУМЕНТОВ
-   Оставляем в DOM для существующего JS,
-   но визуально скрываем.
-========================================================= */
+/* Старые инструменты скрыты,
+   но остаются в DOM для старой логики */
 
 .legacy-tool-btn{
   display:none !important;
@@ -349,20 +565,21 @@ header{
 
 
 /* =========================================================
-   КНОПКА •••
+   ТРИ ТОЧКИ
 ========================================================= */
 
 #aiva-more-btn{
   width:38px;
   height:38px;
+
   padding:0;
-  margin-left:2px;
-  margin-right:2px;
+  margin:0 1px;
 
   border:0;
   border-radius:10px;
 
   background:transparent;
+
   color:var(--muted);
 
   display:flex;
@@ -372,7 +589,7 @@ header{
   transition:
     background .15s ease,
     color .15s ease,
-    transform .15s ease;
+    transform .12s ease;
 }
 
 #aiva-more-btn:hover{
@@ -386,7 +603,7 @@ header{
 }
 
 #aiva-more-btn:active{
-  transform:scale(.95);
+  transform:scale(.94);
 }
 
 #aiva-more-btn svg{
@@ -397,15 +614,18 @@ header{
 
 
 /* =========================================================
-   МЕНЮ ИНСТРУМЕНТОВ
+   TOOLS OVERLAY
 ========================================================= */
 
 #aiva-tools-overlay{
   position:fixed;
   inset:0;
+
   z-index:290;
 
-  background:rgba(0,0,0,.28);
+  background:
+    rgba(0,0,0,.28);
+
   backdrop-filter:blur(2px);
   -webkit-backdrop-filter:blur(2px);
 
@@ -424,35 +644,43 @@ header{
   pointer-events:auto;
 }
 
+
+/* =========================================================
+   TOOLS PANEL
+========================================================= */
+
 #aiva-tools-panel{
   position:fixed;
+
   top:0;
   right:0;
   bottom:0;
 
-  width:300px;
+  width:310px;
   max-width:88vw;
 
   z-index:300;
 
-  padding:16px 14px;
+  padding:15px;
 
   background:
     linear-gradient(
       180deg,
-      rgba(20,21,27,.99),
-      rgba(14,15,20,.99)
+      rgba(21,22,28,.99),
+      rgba(13,14,19,.99)
     );
 
-  border-left:1px solid var(--border);
+  border-left:
+    1px solid var(--border2);
 
   box-shadow:
-    -20px 0 70px rgba(0,0,0,.42);
+    -25px 0 80px rgba(0,0,0,.44);
 
-  transform:translateX(100%);
+  transform:
+    translateX(100%);
 
   transition:
-    transform .23s cubic-bezier(.22,.61,.36,1);
+    transform .24s cubic-bezier(.22,.61,.36,1);
 
   overflow-y:auto;
 }
@@ -462,26 +690,27 @@ header{
 }
 
 .aiva-tools-head{
-  min-height:44px;
+  min-height:46px;
+
   display:flex;
   align-items:center;
   justify-content:space-between;
 
-  padding:0 4px 14px;
+  padding:0 4px 13px;
 }
 
 .aiva-tools-title{
   font-size:16px;
   font-weight:700;
-  color:var(--text);
 }
 
 #aiva-tools-close{
-  width:34px;
-  height:34px;
+  width:35px;
+  height:35px;
+
   padding:0;
 
-  border-radius:9px;
+  border-radius:10px;
 
   background:transparent;
   color:var(--muted);
@@ -492,7 +721,9 @@ header{
 
   font-size:24px;
 
-  transition:.15s;
+  transition:
+    background .15s ease,
+    color .15s ease;
 }
 
 #aiva-tools-close:hover{
@@ -500,24 +731,47 @@ header{
   color:var(--text);
 }
 
+.aiva-tools-description{
+  margin:
+    0 4px 13px;
+
+  padding:
+    10px 11px;
+
+  border:
+    1px solid rgba(255,255,255,.06);
+
+  border-radius:11px;
+
+  background:
+    rgba(255,255,255,.025);
+
+  color:var(--muted);
+
+  font-size:11px;
+  line-height:1.45;
+}
+
 .aiva-tools-section{
-  margin-top:4px;
+  margin-top:7px;
 }
 
 .aiva-tools-section-title{
-  padding:0 6px 8px;
+  padding:
+    0 6px 8px;
 
   color:var(--muted2);
 
-  font-size:11px;
+  font-size:10px;
   font-weight:700;
 
   text-transform:uppercase;
-  letter-spacing:.08em;
+  letter-spacing:.09em;
 }
 
 .aiva-tools-action{
   width:100%;
+
   min-height:48px;
 
   margin:3px 0;
@@ -526,13 +780,16 @@ header{
   border-radius:11px;
 
   background:transparent;
+
   color:var(--muted);
 
   display:flex;
   align-items:center;
+
   gap:11px;
 
   text-align:left;
+
   font-size:13px;
 
   transition:
@@ -551,8 +808,8 @@ header{
 }
 
 .aiva-tools-icon{
-  width:24px;
-  min-width:24px;
+  width:25px;
+  min-width:25px;
 
   display:flex;
   align-items:center;
@@ -561,11 +818,32 @@ header{
   font-size:17px;
 }
 
+.aiva-tools-text{
+  flex:1;
+}
+
+.aiva-tools-arrow{
+  color:var(--muted2);
+  font-size:17px;
+}
+
 .aiva-tools-divider{
   height:1px;
-  margin:14px 4px;
+
+  margin:13px 4px;
 
   background:var(--border);
+}
+
+.aiva-tools-danger{
+  color:#ff8585;
+}
+
+.aiva-tools-danger:hover{
+  color:#ff9b9b;
+
+  background:
+    rgba(255,80,80,.07);
 }
 
 
@@ -575,29 +853,42 @@ header{
 
 .profile-wrap{
   position:relative;
-  margin-left:5px;
-  z-index:250;
+  margin-left:3px;
+  z-index:350;
 }
 
 .profile-btn{
   width:38px;
   height:38px;
+
   padding:0;
+
   border-radius:50%;
-  background:linear-gradient(
-    135deg,
-    var(--accent),
-    var(--accent2)
-  );
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      var(--accent2)
+    );
+
   color:#fff;
+
   display:flex;
   align-items:center;
   justify-content:center;
+
   font-size:14px;
   font-weight:800;
-  border:2px solid rgba(255,255,255,.10);
+
+  border:
+    2px solid
+    rgba(255,255,255,.10);
+
   box-shadow:
-    0 6px 22px rgba(100,90,255,.25);
+    0 6px 22px
+    rgba(100,90,255,.25);
+
   transition:
     transform .18s ease,
     box-shadow .18s ease,
@@ -606,28 +897,42 @@ header{
 
 .profile-btn:hover{
   transform:scale(1.06);
-  border-color:rgba(255,255,255,.22);
+
+  border-color:
+    rgba(255,255,255,.22);
+
   box-shadow:
-    0 8px 28px rgba(100,90,255,.35);
+    0 8px 28px
+    rgba(100,90,255,.35);
 }
 
 .profile-menu{
   position:absolute;
+
   top:49px;
   right:0;
+
   width:292px;
+
   background:
     linear-gradient(
       180deg,
       rgba(24,25,32,.98),
       rgba(17,18,23,.98)
     );
-  border:1px solid rgba(255,255,255,.11);
+
+  border:
+    1px solid
+    rgba(255,255,255,.11);
+
   border-radius:17px;
+
   padding:9px;
+
   box-shadow:
     0 24px 70px rgba(0,0,0,.55),
     0 8px 25px rgba(0,0,0,.30);
+
   backdrop-filter:blur(24px);
   -webkit-backdrop-filter:blur(24px);
 
@@ -664,7 +969,9 @@ header{
 .profile-avatar-large{
   width:46px;
   height:46px;
+
   flex-shrink:0;
+
   border-radius:14px;
 
   display:flex;
@@ -679,11 +986,13 @@ header{
     );
 
   color:#fff;
+
   font-size:17px;
   font-weight:800;
 
   box-shadow:
-    0 7px 22px rgba(100,90,255,.25);
+    0 7px 22px
+    rgba(100,90,255,.25);
 }
 
 .profile-info{
@@ -693,8 +1002,10 @@ header{
 
 .profile-email{
   color:var(--text);
+
   font-size:13px;
   font-weight:650;
+
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
@@ -702,8 +1013,11 @@ header{
 
 .profile-user-id{
   color:var(--muted2);
+
   font-size:10px;
+
   margin-top:5px;
+
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
@@ -712,6 +1026,7 @@ header{
 .profile-plan{
   width:100%;
   min-height:58px;
+
   padding:9px 10px;
 
   display:flex;
@@ -725,11 +1040,17 @@ header{
       rgba(92,140,255,.07)
     );
 
-  border:1px solid rgba(118,104,255,.16);
+  border:
+    1px solid
+    rgba(118,104,255,.16);
+
   border-radius:12px;
 
   cursor:pointer;
-  transition:.16s;
+
+  transition:
+    background .16s ease,
+    border-color .16s ease;
 }
 
 .profile-plan:hover{
@@ -740,7 +1061,8 @@ header{
       rgba(92,140,255,.11)
     );
 
-  border-color:rgba(118,104,255,.28);
+  border-color:
+    rgba(118,104,255,.28);
 }
 
 .profile-plan-left{
@@ -752,27 +1074,35 @@ header{
 .profile-plan-icon{
   width:32px;
   height:32px;
+
   border-radius:9px;
 
   display:flex;
   align-items:center;
   justify-content:center;
 
-  background:rgba(118,104,255,.17);
+  background:
+    rgba(118,104,255,.17);
+
   color:#aaa1ff;
+
   font-size:15px;
 }
 
 .profile-plan-title{
   color:#aaa1ff;
+
   font-size:11px;
   font-weight:800;
+
   letter-spacing:.04em;
 }
 
 .profile-plan-subtitle{
   color:var(--muted2);
+
   font-size:10px;
+
   margin-top:2px;
 }
 
@@ -793,18 +1123,24 @@ header{
 
   display:flex;
   align-items:center;
+
   gap:10px;
 
   padding:0 10px;
 
   border-radius:10px;
+
   background:transparent;
 
   color:var(--muted);
+
   text-align:left;
+
   font-size:13px;
 
-  transition:.15s;
+  transition:
+    background .15s ease,
+    color .15s ease;
 }
 
 .profile-item:hover{
@@ -843,8 +1179,12 @@ header{
 
 #chat{
   flex:1;
+
   overflow-y:auto;
-  padding:25px 20px 170px;
+
+  padding:
+    28px 20px 180px;
+
   scroll-behavior:smooth;
 }
 
@@ -860,73 +1200,162 @@ header{
 ========================================================= */
 
 #welcome{
-  min-height:calc(100vh - 245px);
+  min-height:
+    calc(100vh - 250px);
+
   display:flex;
   flex-direction:column;
+
   align-items:center;
   justify-content:center;
+
   text-align:center;
-  padding:35px 15px;
+
+  padding:
+    35px 15px;
 }
 
 .welcome-logo{
-  width:74px;
-  height:74px;
-  border-radius:23px;
+  width:76px;
+  height:76px;
+
+  border-radius:24px;
+
   display:flex;
   align-items:center;
   justify-content:center;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  font-size:34px;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      var(--accent2)
+    );
+
+  font-size:35px;
+
   margin-bottom:22px;
-  box-shadow:0 15px 60px rgba(91,105,255,.22);
+
+  box-shadow:
+    0 15px 60px
+    rgba(91,105,255,.22);
+
+  animation:
+    welcomeFloat 4s ease-in-out infinite;
+}
+
+@keyframes welcomeFloat{
+  0%,100%{
+    transform:translateY(0);
+  }
+
+  50%{
+    transform:translateY(-3px);
+  }
 }
 
 #welcome h2{
-  font-size:30px;
+  font-size:31px;
   font-weight:650;
+
   letter-spacing:-.8px;
+
   margin-bottom:8px;
 }
 
 #welcome p{
   color:var(--muted);
+
   font-size:14px;
+
   margin-bottom:28px;
 }
 
 .quick-actions{
   width:100%;
   max-width:680px;
+
   display:grid;
-  grid-template-columns:repeat(2,1fr);
+
+  grid-template-columns:
+    repeat(2,1fr);
+
   gap:9px;
 }
 
 .quick-card{
-  background:rgba(255,255,255,.025);
-  border:1px solid var(--border);
-  border-radius:13px;
-  padding:15px;
+  position:relative;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.028),
+      rgba(255,255,255,.018)
+    );
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius:14px;
+
+  padding:16px;
+
   color:var(--text);
+
   text-align:left;
-  transition:.18s;
+
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    transform .18s ease,
+    box-shadow .18s ease;
 }
 
 .quick-card:hover{
-  background:var(--panel);
-  border-color:rgba(255,255,255,.15);
-  transform:translateY(-1px);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.055),
+      rgba(255,255,255,.028)
+    );
+
+  border-color:
+    rgba(255,255,255,.15);
+
+  transform:translateY(-2px);
+
+  box-shadow:
+    0 10px 35px
+    rgba(0,0,0,.17);
+}
+
+.quick-card:active{
+  transform:translateY(0) scale(.99);
 }
 
 .quick-icon{
-  font-size:18px;
-  margin-bottom:7px;
+  width:34px;
+  height:34px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  border-radius:10px;
+
+  background:
+    rgba(118,104,255,.09);
+
+  font-size:17px;
+
+  margin-bottom:10px;
 }
 
 .quick-title{
   font-size:13px;
   font-weight:650;
+
   margin-bottom:3px;
 }
 
@@ -942,9 +1371,13 @@ header{
 
 .msg{
   display:flex;
+
   gap:11px;
+
   margin-bottom:25px;
-  animation:messageIn .2s ease;
+
+  animation:
+    messageIn .2s ease;
 }
 
 @keyframes messageIn{
@@ -952,6 +1385,7 @@ header{
     opacity:0;
     transform:translateY(5px);
   }
+
   to{
     opacity:1;
     transform:none;
@@ -961,16 +1395,29 @@ header{
 .msg .ava{
   width:30px;
   height:30px;
+
   flex-shrink:0;
+
   border-radius:9px;
+
   display:flex;
   align-items:center;
   justify-content:center;
+
   font-size:13px;
 }
 
 .msg.ai .ava{
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      var(--accent2)
+    );
+
+  box-shadow:
+    0 7px 22px
+    rgba(100,90,255,.13);
 }
 
 .msg.me{
@@ -989,18 +1436,30 @@ header{
 .content{
   background:transparent;
   border:0;
+
   padding:1px 0;
+
   font-size:15px;
+
   line-height:1.65;
+
   white-space:pre-wrap;
+
   word-wrap:break-word;
 }
 
 .msg.me .content{
   background:var(--user);
-  border:1px solid var(--border);
-  padding:10px 14px;
+
+  border:
+    1px solid
+    var(--border);
+
+  padding:
+    10px 14px;
+
   border-radius:17px;
+
   line-height:1.5;
 }
 
@@ -1018,21 +1477,35 @@ header{
 
 .content pre{
   background:#08090c;
-  border:1px solid var(--border);
+
+  border:
+    1px solid
+    var(--border);
+
   border-radius:11px;
+
   padding:13px;
+
   overflow-x:auto;
+
   margin:12px 0;
 }
 
 .content code{
-  font-family:Consolas,monospace;
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+
   font-size:13px;
 }
 
 .content>code{
-  background:rgba(255,255,255,.06);
+  background:
+    rgba(255,255,255,.06);
+
   border-radius:5px;
+
   padding:2px 5px;
 }
 
@@ -1040,12 +1513,126 @@ header{
   color:#ff8d8d;
 }
 
+
+/* =========================================================
+   THINKING STATUS
+========================================================= */
+
+.thinking-box{
+  display:inline-flex;
+
+  align-items:center;
+
+  gap:9px;
+
+  min-height:24px;
+
+  color:var(--muted);
+
+  font-size:13px;
+}
+
+.thinking-orb{
+  width:23px;
+  height:23px;
+
+  border-radius:8px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(118,104,255,.25),
+      rgba(92,140,255,.15)
+    );
+
+  color:#b5afff;
+
+  font-size:12px;
+
+  animation:
+    thinkingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes thinkingPulse{
+  0%,100%{
+    transform:scale(1);
+    opacity:.72;
+  }
+
+  50%{
+    transform:scale(1.08);
+    opacity:1;
+  }
+}
+
+.thinking-text{
+  min-width:120px;
+}
+
+.thinking-dots{
+  display:inline-flex;
+
+  gap:3px;
+
+  margin-left:2px;
+
+  vertical-align:middle;
+}
+
+.thinking-dots span{
+  width:3px;
+  height:3px;
+
+  border-radius:50%;
+
+  background:currentColor;
+
+  opacity:.32;
+
+  animation:
+    thinkingDot 1.2s infinite ease-in-out;
+}
+
+.thinking-dots span:nth-child(2){
+  animation-delay:.15s;
+}
+
+.thinking-dots span:nth-child(3){
+  animation-delay:.3s;
+}
+
+@keyframes thinkingDot{
+  0%,70%,100%{
+    opacity:.25;
+    transform:translateY(0);
+  }
+
+  35%{
+    opacity:1;
+    transform:translateY(-2px);
+  }
+}
+
+
+/* =========================================================
+   MESSAGE TOOLBAR
+========================================================= */
+
 .toolbar{
   display:flex;
-  gap:3px;
-  margin-top:7px;
+
+  gap:2px;
+
+  margin-top:8px;
+
   opacity:0;
-  transition:opacity .15s;
+
+  transition:
+    opacity .15s ease;
 }
 
 .msg.ai:hover .toolbar{
@@ -1053,16 +1640,34 @@ header{
 }
 
 .toolbar button{
+  min-width:30px;
+  height:28px;
+
+  padding:0 8px;
+
   background:transparent;
+
   color:var(--muted2);
-  padding:4px 7px;
-  border-radius:7px;
+
+  border-radius:8px;
+
   font-size:12px;
+
+  transition:
+    background .15s ease,
+    color .15s ease;
 }
 
 .toolbar button:hover{
   background:var(--panel);
   color:var(--text);
+}
+
+.toolbar button.selected{
+  background:
+    rgba(118,104,255,.12);
+
+  color:#b2acff;
 }
 
 
@@ -1072,31 +1677,56 @@ header{
 
 #inputbar{
   position:absolute;
+
   left:0;
   right:0;
   bottom:0;
-  padding:10px max(20px,calc((100vw - 820px)/2)) 18px;
-  background:linear-gradient(to top,var(--bg) 70%,transparent);
+
+  padding:
+    10px
+    max(20px,calc((100vw - 820px)/2))
+    18px;
+
+  background:
+    linear-gradient(
+      to top,
+      var(--bg) 70%,
+      transparent
+    );
+
   z-index:15;
 }
 
 #attachbar{
   display:flex;
+
   flex-wrap:wrap;
+
   gap:7px;
+
   margin-bottom:8px;
 }
 
 .chip{
   display:flex;
   align-items:center;
+
   gap:6px;
+
   background:var(--panel);
-  border:1px solid var(--border);
+
+  border:
+    1px solid
+    var(--border);
+
   border-radius:9px;
-  padding:6px 9px;
+
+  padding:
+    6px 9px;
+
   font-size:12px;
-  max-width:260px;
+
+  max-width:280px;
 }
 
 .chip span{
@@ -1107,38 +1737,85 @@ header{
 
 .chip button{
   background:transparent;
+
   color:var(--muted);
-  padding:0 2px;
+
+  padding:
+    0 2px;
 }
 
 .chip.err{
   color:#ff8d8d;
-  border-color:rgba(255,80,80,.3);
+
+  border-color:
+    rgba(255,80,80,.3);
 }
 
 #inputrow{
   display:flex;
+
   align-items:flex-end;
+
   gap:7px;
+
   max-width:820px;
+
   margin:0 auto;
+
   padding:9px;
-  background:rgba(21,22,27,.94);
-  border:1px solid var(--border);
+
+  background:
+    rgba(21,22,27,.94);
+
+  border:
+    1px solid
+    rgba(255,255,255,.10);
+
   border-radius:18px;
-  box-shadow:0 10px 40px rgba(0,0,0,.3);
+
+  box-shadow:
+    0 10px 40px
+    rgba(0,0,0,.30);
+
   backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+
+  transition:
+    border-color .18s ease,
+    box-shadow .18s ease;
+}
+
+#inputrow:focus-within{
+  border-color:
+    rgba(118,104,255,.22);
+
+  box-shadow:
+    0 10px 50px
+    rgba(0,0,0,.34),
+    0 0 0 1px
+    rgba(118,104,255,.05);
 }
 
 .round{
   width:38px;
   height:38px;
+
   flex-shrink:0;
+
   padding:0;
+
   background:transparent;
+
   color:var(--muted);
+
   border-radius:10px;
+
   font-size:18px;
+
+  transition:
+    background .15s ease,
+    color .15s ease,
+    transform .12s ease;
 }
 
 .round:hover{
@@ -1146,27 +1823,44 @@ header{
   color:var(--text);
 }
 
+.round:active{
+  transform:scale(.94);
+}
+
 .round.on{
   color:#ff5252;
-  animation:pulse 1s infinite;
+
+  animation:
+    pulse 1s infinite;
 }
 
 @keyframes pulse{
-  50%{opacity:.55}
+  50%{
+    opacity:.55;
+  }
 }
 
 #inp{
   flex:1;
+
   min-height:38px;
   max-height:160px;
+
   background:transparent;
+
   border:0;
   outline:0;
+
   resize:none;
+
   color:var(--text);
+
   font-size:15px;
+
   line-height:1.45;
-  padding:9px 3px;
+
+  padding:
+    9px 3px;
 }
 
 #inp::placeholder{
@@ -1176,16 +1870,30 @@ header{
 #send{
   width:38px;
   height:38px;
+
   flex-shrink:0;
+
   border-radius:11px;
+
   background:var(--text);
+
   color:#0b0b0f;
+
   font-size:17px;
-  transition:.15s;
+
+  transition:
+    transform .15s ease,
+    opacity .15s ease,
+    background .15s ease;
 }
 
 #send:hover{
   transform:scale(1.04);
+}
+
+#send.stop{
+  background:#25272e;
+  color:#fff;
 }
 
 #send:disabled{
@@ -1200,14 +1908,23 @@ header{
 
 #dropzone{
   display:none;
+
   position:fixed;
+
   inset:0;
+
   z-index:100;
+
   align-items:center;
   justify-content:center;
-  background:rgba(10,10,15,.82);
+
+  background:
+    rgba(10,10,15,.82);
+
   backdrop-filter:blur(10px);
+
   color:#fff;
+
   font-size:21px;
 }
 
@@ -1222,21 +1939,43 @@ header{
 
 #prompt-panel{
   position:fixed;
+
   top:0;
   right:0;
   bottom:0;
+
   width:370px;
   max-width:92vw;
-  background:#121318;
-  border-left:1px solid var(--border);
+
+  background:
+    linear-gradient(
+      180deg,
+      #15161b,
+      #111218
+    );
+
+  border-left:
+    1px solid
+    var(--border);
+
   padding:22px;
-  transform:translateX(100%);
-  transition:transform .25s ease;
-  z-index:310;
+
+  transform:
+    translateX(100%);
+
+  transition:
+    transform .25s ease;
+
+  z-index:320;
+
   display:flex;
   flex-direction:column;
+
   gap:12px;
-  box-shadow:-20px 0 60px rgba(0,0,0,.25);
+
+  box-shadow:
+    -20px 0 60px
+    rgba(0,0,0,.28);
 }
 
 #prompt-panel.open{
@@ -1249,26 +1988,46 @@ header{
 
 #prompt-text{
   flex:1;
+
   background:#0b0b0f;
-  border:1px solid var(--border);
+
+  border:
+    1px solid
+    var(--border);
+
   border-radius:12px;
+
   color:var(--text);
+
   padding:13px;
+
   font-size:14px;
+
   resize:none;
+
   outline:none;
+}
+
+#prompt-text:focus{
+  border-color:
+    rgba(118,104,255,.4);
 }
 
 .slider-row{
   display:flex;
+
   align-items:center;
+
   gap:10px;
+
   font-size:13px;
+
   color:var(--muted);
 }
 
 .slider-row input{
   flex:1;
+
   accent-color:var(--accent);
 }
 
@@ -1278,10 +2037,78 @@ header{
 
 .save-btn{
   height:40px;
+
   border-radius:10px;
+
   background:var(--text);
+
   color:#0b0b0f;
+
   font-weight:650;
+
+  transition:
+    transform .15s ease;
+}
+
+.save-btn:hover{
+  transform:translateY(-1px);
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+#aiva-toast{
+  position:fixed;
+
+  left:50%;
+  bottom:28px;
+
+  z-index:100000;
+
+  transform:
+    translate(-50%,12px);
+
+  background:
+    rgba(26,27,34,.96);
+
+  border:
+    1px solid
+    rgba(255,255,255,.10);
+
+  color:var(--text);
+
+  padding:
+    10px 14px;
+
+  border-radius:11px;
+
+  box-shadow:
+    0 15px 50px
+    rgba(0,0,0,.4);
+
+  backdrop-filter:blur(18px);
+
+  font-size:12px;
+
+  opacity:0;
+  visibility:hidden;
+
+  pointer-events:none;
+
+  transition:
+    opacity .18s ease,
+    transform .18s ease,
+    visibility .18s ease;
+}
+
+#aiva-toast.show{
+  opacity:1;
+  visibility:visible;
+
+  transform:
+    translate(-50%,0);
 }
 
 
@@ -1291,11 +2118,16 @@ header{
 
 .auth-screen{
   position:fixed;
+
   inset:0;
+
   z-index:99999;
+
   display:flex;
+
   align-items:center;
   justify-content:center;
+
   background:
     radial-gradient(
       circle at 50% 20%,
@@ -1303,6 +2135,7 @@ header{
       transparent 35%
     ),
     #0b0b0f;
+
   padding:20px;
 }
 
@@ -1313,54 +2146,85 @@ header{
 .auth-box{
   width:100%;
   max-width:400px;
+
   text-align:center;
 }
 
 .auth-logo{
   width:68px;
   height:68px;
-  margin:0 auto 20px;
+
+  margin:
+    0 auto 20px;
+
   border-radius:21px;
+
   display:flex;
+
   align-items:center;
   justify-content:center;
-  background:linear-gradient(
-    135deg,
-    var(--accent),
-    var(--accent2)
-  );
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      var(--accent2)
+    );
+
   color:#fff;
+
   font-size:30px;
   font-weight:700;
+
   box-shadow:
-    0 15px 55px rgba(91,105,255,.28);
+    0 15px 55px
+    rgba(91,105,255,.28);
 }
 
 .auth-box h1{
   font-size:31px;
+
   line-height:1.1;
+
   margin-bottom:8px;
+
   letter-spacing:-.6px;
 }
 
 .auth-box > p{
   color:var(--muted);
+
   margin-bottom:26px;
+
   font-size:14px;
 }
 
 .auth-box input{
   width:100%;
   height:50px;
+
   margin-bottom:11px;
-  padding:0 15px;
+
+  padding:
+    0 15px;
+
   border-radius:13px;
-  border:1px solid var(--border);
+
+  border:
+    1px solid
+    var(--border);
+
   background:var(--panel);
+
   color:var(--text);
+
   outline:none;
+
   font-size:14px;
-  transition:.15s;
+
+  transition:
+    border-color .15s ease,
+    box-shadow .15s ease;
 }
 
 .auth-box input::placeholder{
@@ -1368,20 +2232,31 @@ header{
 }
 
 .auth-box input:focus{
-  border-color:rgba(118,104,255,.7);
+  border-color:
+    rgba(118,104,255,.7);
+
   box-shadow:
-    0 0 0 3px rgba(118,104,255,.08);
+    0 0 0 3px
+    rgba(118,104,255,.08);
 }
 
 #authSubmit{
   width:100%;
   height:50px;
+
   border-radius:13px;
+
   background:var(--text);
+
   color:#0b0b0f;
+
   font-weight:650;
+
   font-size:14px;
-  transition:.15s;
+
+  transition:
+    transform .15s ease,
+    opacity .15s ease;
 }
 
 #authSubmit:hover{
@@ -1390,16 +2265,22 @@ header{
 
 #authSubmit:disabled{
   opacity:.6;
+
   cursor:wait;
+
   transform:none;
 }
 
 .auth-secondary{
   width:100%;
   height:42px;
+
   margin-top:8px;
+
   background:transparent;
+
   color:var(--muted);
+
   font-size:14px;
 }
 
@@ -1409,43 +2290,71 @@ header{
 
 .auth-divider{
   display:flex;
+
   align-items:center;
+
   gap:12px;
+
   margin:20px 0;
+
   color:var(--muted2);
+
   font-size:12px;
 }
 
 .auth-divider::before,
 .auth-divider::after{
   content:"";
+
   height:1px;
+
   flex:1;
+
   background:var(--border);
 }
 
 .google-btn{
   width:100%;
   height:50px;
+
   border-radius:13px;
+
   background:var(--panel);
-  border:1px solid var(--border) !important;
+
+  border:
+    1px solid
+    var(--border) !important;
+
   color:var(--text);
+
   font-size:14px;
-  transition:.15s;
+
+  transition:
+    background .15s ease,
+    border-color .15s ease;
 }
 
 .google-btn:hover{
   background:var(--hover);
-  border-color:rgba(255,255,255,.15) !important;
+
+  border-color:
+    rgba(255,255,255,.15) !important;
 }
 
 #authError{
   min-height:20px;
+
   margin-top:15px;
+
   color:#ff7777;
+
   font-size:13px;
+
   line-height:1.4;
+}
+
+#authError.success{
+  color:var(--success);
 }
 
 
@@ -1455,10 +2364,16 @@ header{
 
 #sidebar-overlay{
   display:none;
+
   position:fixed;
+
   inset:0;
-  background:rgba(0,0,0,.55);
+
+  background:
+    rgba(0,0,0,.55);
+
   backdrop-filter:blur(2px);
+
   z-index:70;
 }
 
@@ -1480,11 +2395,17 @@ header{
 
   #sidebar{
     position:fixed;
+
     left:0;
     top:0;
     bottom:0;
-    transform:translateX(-100%);
-    box-shadow:20px 0 60px rgba(0,0,0,.35);
+
+    transform:
+      translateX(-100%);
+
+    box-shadow:
+      20px 0 60px
+      rgba(0,0,0,.35);
   }
 
   #sidebar.open{
@@ -1506,7 +2427,9 @@ header{
   header{
     height:58px;
     min-height:58px;
-    padding:0 10px;
+
+    padding:
+      0 10px;
   }
 
   .header-actions{
@@ -1520,24 +2443,32 @@ header{
 
   .profile-menu{
     position:fixed;
+
     top:62px;
     right:10px;
+
     width:292px;
   }
 
   #chat{
-    padding:22px 13px 150px;
+    padding:
+      22px 13px 150px;
   }
 
   #welcome{
-    min-height:calc(100vh - 220px);
-    padding:25px 5px;
+    min-height:
+      calc(100vh - 220px);
+
+    padding:
+      25px 5px;
   }
 
   .welcome-logo{
     width:64px;
     height:64px;
+
     border-radius:19px;
+
     font-size:29px;
   }
 
@@ -1550,7 +2481,9 @@ header{
   }
 
   .quick-actions{
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:
+      1fr 1fr;
+
     gap:8px;
   }
 
@@ -1580,8 +2513,15 @@ header{
     font-size:14.5px;
   }
 
+  .toolbar{
+    opacity:1;
+  }
+
   #inputbar{
-    padding:7px 10px max(10px,env(safe-area-inset-bottom));
+    padding:
+      7px
+      10px
+      max(10px,env(safe-area-inset-bottom));
   }
 
   #inputrow{
@@ -1599,7 +2539,8 @@ header{
   }
 
   #aiva-tools-panel{
-    width:min(88vw,320px);
+    width:
+      min(88vw,330px);
   }
 
   .auth-box{
@@ -1631,481 +2572,626 @@ header{
 
   .profile-menu{
     right:8px;
-    width:calc(100vw - 16px);
+
+    width:
+      calc(100vw - 16px);
+
     max-width:292px;
   }
 
   #aiva-tools-panel{
-    width:calc(100vw - 24px);
-    max-width:calc(100vw - 24px);
+    width:
+      calc(100vw - 24px);
+
+    max-width:
+      calc(100vw - 24px);
   }
 
 }
 
 </style>
+
 </head>
 
 <body>
 
 <div id="app">
 
+  <!-- =====================================================
+       LEFT SIDEBAR
+  ====================================================== -->
+
   <aside id="sidebar">
 
-    <div class="sidebar-top">
+```
+<div class="sidebar-top">
 
-      <div class="aiva-mark">✦</div>
+  <div class="aiva-mark">
+    ✦
+  </div>
 
-      <div class="aiva-name">Aiva</div>
+  <div class="aiva-name">
+    Aiva
+  </div>
 
-      <button
-        class="sidebar-close"
-        id="sidebar-close"
-      >×</button>
+  <button
+    class="sidebar-close"
+    id="sidebar-close"
+    type="button"
+    aria-label="Закрыть меню"
+  >
+    ×
+  </button>
 
-    </div>
+</div>
 
-    <button
-      class="new-chat"
-      id="new-chat"
-    >
-      <span>＋</span>
-      <span>Новый чат</span>
-    </button>
 
-    <div class="history-title">
-      История
-    </div>
+<button
+  class="new-chat"
+  id="new-chat"
+  type="button"
+>
+  <span>＋</span>
+  <span>Новый чат</span>
+</button>
 
-    <div id="history"></div>
 
-    <div class="sidebar-bottom">
+<div class="history-search-wrap">
 
-      <button
-        class="sidebar-action"
-        id="sidebar-prompt"
-      >
-        <span>🎭</span>
-        <span>Характер Aiva</span>
-      </button>
+  <span class="history-search-icon">
+    ⌕
+  </span>
 
-    </div>
+  <input
+    id="history-search"
+    type="text"
+    placeholder="Поиск по чатам"
+    autocomplete="off"
+  >
+
+</div>
+
+
+<div class="history-title">
+  История
+</div>
+
+<div id="history"></div>
+
+
+<div class="sidebar-bottom">
+
+  <button
+    class="sidebar-action"
+    id="sidebar-prompt"
+    type="button"
+  >
+    <span>🎭</span>
+    <span>Характер Aiva</span>
+  </button>
+
+</div>
+```
 
   </aside>
 
   <div id="sidebar-overlay"></div>
 
+  <!-- =====================================================
+       MAIN
+  ====================================================== -->
+
   <main id="main">
 
-    <header>
+```
+<header>
 
-      <button
-        class="menu-btn"
-        id="menu-btn"
-      >☰</button>
+  <button
+    class="menu-btn"
+    id="menu-btn"
+    type="button"
+    aria-label="Открыть меню"
+  >
+    ☰
+  </button>
 
-      <div class="header-brand">
 
-        <div class="header-logo">
-          ✦
-        </div>
+  <div class="header-brand">
 
-        <div class="brand">
+    <div class="header-logo">
+      ✦
+    </div>
 
-          <h1>Aiva</h1>
+    <div class="brand">
 
-          <div
-            class="sub"
-            id="model-info"
-          >
-            Твой AI-ассистент
-          </div>
+      <h1>
+        Aiva
+      </h1>
 
-        </div>
-
+      <div
+        class="sub"
+        id="model-info"
+      >
+        Твой AI-ассистент
       </div>
 
-      <div class="spacer"></div>
+    </div>
 
-      <div class="header-actions">
-
-        <!-- Старые кнопки оставлены для существующего JS -->
-        <button
-          class="ghost icon-btn legacy-tool-btn"
-          id="regen-btn"
-          title="Перегенерировать"
-          type="button"
-        >↻</button>
-
-        <button
-          class="ghost icon-btn legacy-tool-btn"
-          id="export-btn"
-          title="Экспорт"
-          type="button"
-        >↓</button>
-
-        <button
-          class="ghost legacy-tool-btn"
-          id="prompt-btn"
-          title="Характер Aiva"
-          type="button"
-        >🎭</button>
-
-        <button
-          class="ghost icon-btn legacy-tool-btn"
-          id="clear-btn"
-          title="Очистить"
-          type="button"
-        >⌫</button>
+  </div>
 
 
-        <!-- ОДНА нормальная кнопка с тремя точками -->
-        <button
-          id="aiva-more-btn"
-          type="button"
-          title="Инструменты"
-          aria-label="Инструменты"
-          aria-expanded="false"
-        >
-
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <circle
-              cx="5"
-              cy="12"
-              r="1.8"
-              fill="currentColor"
-            />
-            <circle
-              cx="12"
-              cy="12"
-              r="1.8"
-              fill="currentColor"
-            />
-            <circle
-              cx="19"
-              cy="12"
-              r="1.8"
-              fill="currentColor"
-            />
-          </svg>
-
-        </button>
+  <div class="spacer"></div>
 
 
-        <div
-          class="profile-wrap"
-          id="profile-wrap"
-        >
+  <div class="header-actions">
 
-          <button
-            class="profile-btn"
-            id="profile-btn"
-            title="Профиль"
-            aria-label="Профиль"
-            aria-expanded="false"
-          >
-            A
-          </button>
+
+    <!-- =================================================
+         СТАРЫЕ КНОПКИ
+         ОНИ НУЖНЫ СУЩЕСТВУЮЩЕМУ JS
+    ================================================== -->
+
+    <button
+      class="ghost icon-btn legacy-tool-btn"
+      id="regen-btn"
+      title="Перегенерировать"
+      type="button"
+    >
+      ↻
+    </button>
+
+
+    <button
+      class="ghost icon-btn legacy-tool-btn"
+      id="export-btn"
+      title="Экспорт"
+      type="button"
+    >
+      ↓
+    </button>
+
+
+    <button
+      class="ghost legacy-tool-btn"
+      id="prompt-btn"
+      title="Характер Aiva"
+      type="button"
+    >
+      🎭
+    </button>
+
+
+    <button
+      class="ghost icon-btn legacy-tool-btn"
+      id="clear-btn"
+      title="Очистить"
+      type="button"
+    >
+      ⌫
+    </button>
+
+
+    <!-- =================================================
+         ОДНА КНОПКА •••
+    ================================================== -->
+
+    <button
+      id="aiva-more-btn"
+      type="button"
+      title="Инструменты"
+      aria-label="Инструменты"
+      aria-expanded="false"
+    >
+
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+
+        <circle
+          cx="5"
+          cy="12"
+          r="1.8"
+          fill="currentColor"
+        />
+
+        <circle
+          cx="12"
+          cy="12"
+          r="1.8"
+          fill="currentColor"
+        />
+
+        <circle
+          cx="19"
+          cy="12"
+          r="1.8"
+          fill="currentColor"
+        />
+
+      </svg>
+
+    </button>
+
+
+    <!-- =================================================
+         PROFILE
+    ================================================== -->
+
+    <div
+      class="profile-wrap"
+      id="profile-wrap"
+    >
+
+      <button
+        class="profile-btn"
+        id="profile-btn"
+        title="Профиль"
+        aria-label="Профиль"
+        aria-expanded="false"
+        type="button"
+      >
+        A
+      </button>
+
+
+      <div
+        class="profile-menu"
+        id="profile-menu"
+      >
+
+        <div class="profile-head">
 
           <div
-            class="profile-menu"
-            id="profile-menu"
+            class="profile-avatar-large"
+            id="profile-avatar-large"
           >
+            A
+          </div>
 
-            <div class="profile-head">
+          <div class="profile-info">
 
-              <div
-                class="profile-avatar-large"
-                id="profile-avatar-large"
-              >
-                A
-              </div>
-
-              <div class="profile-info">
-
-                <div
-                  class="profile-email"
-                  id="profile-email"
-                >
-                  Загрузка...
-                </div>
-
-                <div
-                  class="profile-user-id"
-                >
-                  ID:
-                  <span id="profile-user-id">
-                    —
-                  </span>
-                </div>
-
-              </div>
-
+            <div
+              class="profile-email"
+              id="profile-email"
+            >
+              Загрузка...
             </div>
 
             <div
-              class="profile-plan"
-              id="profile-plan-btn"
+              class="profile-user-id"
             >
+              ID:
+              <span id="profile-user-id">
+                —
+              </span>
+            </div>
 
-              <div class="profile-plan-left">
+          </div>
 
-                <div class="profile-plan-icon">
-                  ✦
-                </div>
+        </div>
 
-                <div>
 
-                  <div class="profile-plan-title">
-                    FREE
-                  </div>
+        <div
+          class="profile-plan"
+          id="profile-plan-btn"
+        >
 
-                  <div class="profile-plan-subtitle">
-                    Бесплатный тариф
-                  </div>
+          <div class="profile-plan-left">
 
-                </div>
+            <div class="profile-plan-icon">
+              ✦
+            </div>
 
+            <div>
+
+              <div class="profile-plan-title">
+                FREE
               </div>
 
-              <span class="profile-plan-arrow">
-                ›
-              </span>
+              <div class="profile-plan-subtitle">
+                Бесплатный тариф
+              </div>
 
             </div>
 
-            <div class="profile-divider"></div>
-
-            <button
-              class="profile-item"
-              id="profile-settings"
-              type="button"
-            >
-
-              <span class="profile-item-icon">
-                ⚙️
-              </span>
-
-              <span class="profile-item-text">
-                Настройки
-              </span>
-
-              <span class="profile-item-arrow">
-                ›
-              </span>
-
-            </button>
-
-            <button
-              class="profile-item"
-              id="profile-subscription"
-              type="button"
-            >
-
-              <span class="profile-item-icon">
-                💎
-              </span>
-
-              <span class="profile-item-text">
-                Тариф и подписка
-              </span>
-
-              <span class="profile-item-arrow">
-                ›
-              </span>
-
-            </button>
-
-            <div class="profile-divider"></div>
-
-            <button
-              class="profile-item logout"
-              id="logout-btn"
-              type="button"
-            >
-
-              <span class="profile-item-icon">
-                ↪
-              </span>
-
-              <span class="profile-item-text">
-                Выйти из аккаунта
-              </span>
-
-            </button>
-
           </div>
+
+          <span class="profile-plan-arrow">
+            ›
+          </span>
 
         </div>
 
-      </div>
 
-    </header>
+        <div class="profile-divider"></div>
 
-
-    <div id="chat">
-
-      <div class="chat-inner">
-
-        <div id="welcome">
-
-          <div class="welcome-logo">
-            ✦
-          </div>
-
-          <h2>
-            Чем могу помочь?
-          </h2>
-
-          <p>
-            Я Aiva — твой AI-ассистент.
-          </p>
-
-          <div class="quick-actions">
-
-            <button
-              class="quick-card"
-              data-prompt="Помоги мне написать текст"
-            >
-              <div class="quick-icon">✍️</div>
-
-              <div>
-                <div class="quick-title">
-                  Написать текст
-                </div>
-
-                <div class="quick-description">
-                  Пост, письмо, описание или идея
-                </div>
-              </div>
-
-            </button>
-
-            <button
-              class="quick-card"
-              data-prompt="Придумай мне несколько интересных идей"
-            >
-              <div class="quick-icon">💡</div>
-
-              <div>
-                <div class="quick-title">
-                  Придумать идею
-                </div>
-
-                <div class="quick-description">
-                  Креатив, проект или бизнес
-                </div>
-              </div>
-
-            </button>
-
-            <button
-              class="quick-card"
-              data-prompt="Помоги мне разобраться с кодом"
-            >
-              <div class="quick-icon">💻</div>
-
-              <div>
-                <div class="quick-title">
-                  Помочь с кодом
-                </div>
-
-                <div class="quick-description">
-                  Найди ошибку или напиши код
-                </div>
-              </div>
-
-            </button>
-
-            <button
-              class="quick-card"
-              data-prompt="Объясни мне сложную тему простыми словами"
-            >
-              <div class="quick-icon">🧠</div>
-
-              <div>
-                <div class="quick-title">
-                  Объяснить
-                </div>
-
-                <div class="quick-description">
-                  Разберём любую тему
-                </div>
-              </div>
-
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-
-    <div id="dropzone">
-      Отпусти файлы — прикреплю 📎
-    </div>
-
-
-    <div id="inputbar">
-
-      <div
-        id="attachbar"
-        class="chat-inner"
-      ></div>
-
-      <div id="inputrow">
 
         <button
-          id="attach-btn"
-          class="round"
-          title="Прикрепить файл"
-          type="button"
-        >+</button>
-
-        <button
-          id="mic-btn"
-          class="round"
-          title="Голосовой ввод"
-          style="display:none"
-          type="button"
-        >🎤</button>
-
-        <textarea
-          id="inp"
-          rows="1"
-          placeholder="Сообщение Aiva..."
-        ></textarea>
-
-        <button
-          id="send"
+          class="profile-item"
+          id="profile-settings"
           type="button"
         >
-          ↑
+
+          <span class="profile-item-icon">
+            ⚙️
+          </span>
+
+          <span class="profile-item-text">
+            Настройки
+          </span>
+
+          <span class="profile-item-arrow">
+            ›
+          </span>
+
+        </button>
+
+
+        <button
+          class="profile-item"
+          id="profile-subscription"
+          type="button"
+        >
+
+          <span class="profile-item-icon">
+            💎
+          </span>
+
+          <span class="profile-item-text">
+            Тариф и подписка
+          </span>
+
+          <span class="profile-item-arrow">
+            ›
+          </span>
+
+        </button>
+
+
+        <div class="profile-divider"></div>
+
+
+        <button
+          class="profile-item logout"
+          id="logout-btn"
+          type="button"
+        >
+
+          <span class="profile-item-icon">
+            ↪
+          </span>
+
+          <span class="profile-item-text">
+            Выйти из аккаунта
+          </span>
+
         </button>
 
       </div>
 
     </div>
+
+  </div>
+
+</header>
+
+
+<!-- =====================================================
+     CHAT
+====================================================== -->
+
+<div id="chat">
+
+  <div class="chat-inner">
+
+    <div id="welcome">
+
+      <div class="welcome-logo">
+        ✦
+      </div>
+
+      <h2>
+        Чем могу помочь?
+      </h2>
+
+      <p>
+        Я Aiva — твой AI-ассистент.
+      </p>
+
+
+      <div class="quick-actions">
+
+
+        <button
+          class="quick-card"
+          data-prompt="Помоги мне написать текст"
+          type="button"
+        >
+
+          <div class="quick-icon">
+            ✍️
+          </div>
+
+          <div>
+
+            <div class="quick-title">
+              Написать текст
+            </div>
+
+            <div class="quick-description">
+              Пост, письмо, описание или идея
+            </div>
+
+          </div>
+
+        </button>
+
+
+        <button
+          class="quick-card"
+          data-prompt="Придумай мне несколько интересных идей"
+          type="button"
+        >
+
+          <div class="quick-icon">
+            💡
+          </div>
+
+          <div>
+
+            <div class="quick-title">
+              Придумать идею
+            </div>
+
+            <div class="quick-description">
+              Креатив, проект или бизнес
+            </div>
+
+          </div>
+
+        </button>
+
+
+        <button
+          class="quick-card"
+          data-prompt="Помоги мне разобраться с кодом"
+          type="button"
+        >
+
+          <div class="quick-icon">
+            💻
+          </div>
+
+          <div>
+
+            <div class="quick-title">
+              Помочь с кодом
+            </div>
+
+            <div class="quick-description">
+              Найди ошибку или напиши код
+            </div>
+
+          </div>
+
+        </button>
+
+
+        <button
+          class="quick-card"
+          data-prompt="Объясни мне сложную тему простыми словами"
+          type="button"
+        >
+
+          <div class="quick-icon">
+            🧠
+          </div>
+
+          <div>
+
+            <div class="quick-title">
+              Объяснить
+            </div>
+
+            <div class="quick-description">
+              Разберём любую тему
+            </div>
+
+          </div>
+
+        </button>
+
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     DROPZONE
+====================================================== -->
+
+<div id="dropzone">
+  Отпусти файлы — прикреплю 📎
+</div>
+
+
+<!-- =====================================================
+     INPUT BAR
+====================================================== -->
+
+<div id="inputbar">
+
+  <div
+    id="attachbar"
+    class="chat-inner"
+  ></div>
+
+
+  <div id="inputrow">
+
+    <button
+      id="attach-btn"
+      class="round"
+      title="Прикрепить файл"
+      type="button"
+    >
+      ＋
+    </button>
+
+
+    <button
+      id="mic-btn"
+      class="round"
+      title="Голосовой ввод"
+      style="display:none"
+      type="button"
+    >
+      🎤
+    </button>
+
+
+    <textarea
+      id="inp"
+      rows="1"
+      placeholder="Сообщение Aiva..."
+    ></textarea>
+
+
+    <button
+      id="send"
+      type="button"
+    >
+      ↑
+    </button>
+
+  </div>
+
+</div>
+```
 
   </main>
 
 </div>
 
-
 <!-- =========================================================
-     ВЫЕЗЖАЮЩЕЕ МЕНЮ ИНСТРУМЕНТОВ
+     TOOLS OVERLAY
 ========================================================= -->
 
 <div
   id="aiva-tools-overlay"
   aria-hidden="true"
 ></div>
+
+<!-- =========================================================
+     TOOLS PANEL
+========================================================= -->
 
 <aside
   id="aiva-tools-panel"
@@ -2114,103 +3200,157 @@ header{
 
   <div class="aiva-tools-head">
 
-    <div class="aiva-tools-title">
-      Инструменты
-    </div>
+```
+<div class="aiva-tools-title">
+  Инструменты
+</div>
 
-    <button
-      id="aiva-tools-close"
-      type="button"
-      aria-label="Закрыть"
-    >
-      ×
-    </button>
+<button
+  id="aiva-tools-close"
+  type="button"
+  aria-label="Закрыть"
+>
+  ×
+</button>
+```
 
+  </div>
+
+  <div class="aiva-tools-description">
+    Быстрые действия для текущего диалога Aiva.
   </div>
 
   <div class="aiva-tools-section">
 
-    <div class="aiva-tools-section-title">
-      Чат
-    </div>
+```
+<div class="aiva-tools-section-title">
+  Чат
+</div>
 
-    <button
-      class="aiva-tools-action"
-      id="aiva-tool-regen"
-      type="button"
-    >
-      <span class="aiva-tools-icon">
-        ↻
-      </span>
 
-      <span>
-        Перегенерировать
-      </span>
+<button
+  class="aiva-tools-action"
+  id="aiva-tool-new"
+  type="button"
+>
 
-    </button>
+  <span class="aiva-tools-icon">
+    ＋
+  </span>
 
-    <button
-      class="aiva-tools-action"
-      id="aiva-tool-export"
-      type="button"
-    >
+  <span class="aiva-tools-text">
+    Новый чат
+  </span>
 
-      <span class="aiva-tools-icon">
-        ↓
-      </span>
+  <span class="aiva-tools-arrow">
+    ›
+  </span>
 
-      <span>
-        Экспорт чата
-      </span>
+</button>
 
-    </button>
 
-    <button
-      class="aiva-tools-action"
-      id="aiva-tool-prompt"
-      type="button"
-    >
+<button
+  class="aiva-tools-action"
+  id="aiva-tool-regen"
+  type="button"
+>
 
-      <span class="aiva-tools-icon">
-        🎭
-      </span>
+  <span class="aiva-tools-icon">
+    ↻
+  </span>
 
-      <span>
-        Характер Aiva
-      </span>
+  <span class="aiva-tools-text">
+    Перегенерировать
+  </span>
 
-    </button>
+  <span class="aiva-tools-arrow">
+    ›
+  </span>
 
-    <div class="aiva-tools-divider"></div>
+</button>
 
-    <button
-      class="aiva-tools-action"
-      id="aiva-tool-clear"
-      type="button"
-    >
 
-      <span class="aiva-tools-icon">
-        ⌫
-      </span>
+<button
+  class="aiva-tools-action"
+  id="aiva-tool-export"
+  type="button"
+>
 
-      <span>
-        Очистить чат
-      </span>
+  <span class="aiva-tools-icon">
+    ↓
+  </span>
 
-    </button>
+  <span class="aiva-tools-text">
+    Экспорт чата
+  </span>
+
+  <span class="aiva-tools-arrow">
+    ›
+  </span>
+
+</button>
+
+
+<button
+  class="aiva-tools-action"
+  id="aiva-tool-prompt"
+  type="button"
+>
+
+  <span class="aiva-tools-icon">
+    🎭
+  </span>
+
+  <span class="aiva-tools-text">
+    Характер Aiva
+  </span>
+
+  <span class="aiva-tools-arrow">
+    ›
+  </span>
+
+</button>
+
+
+<div class="aiva-tools-divider"></div>
+
+
+<button
+  class="aiva-tools-action aiva-tools-danger"
+  id="aiva-tool-clear"
+  type="button"
+>
+
+  <span class="aiva-tools-icon">
+    ⌫
+  </span>
+
+  <span class="aiva-tools-text">
+    Очистить чат
+  </span>
+
+</button>
+```
 
   </div>
 
 </aside>
 
+<!-- =========================================================
+     FILE INPUT
+========================================================= -->
 
 <input
-  type="file"
-  id="file-input"
-  multiple
-  hidden
+type="file"
+id="file-input"
+multiple
+hidden
+
 >
 
+<!-- =========================================================
+     PROMPT PANEL
+========================================================= -->
 
 <div id="prompt-panel">
 
@@ -2226,49 +3366,76 @@ header{
     и поведение ассистента.
   </div>
 
-  <textarea id="prompt-text"></textarea>
+  <textarea
+    id="prompt-text"
+    placeholder="Опиши характер и стиль Aiva..."
+  ></textarea>
 
   <div class="slider-row">
 
-    🌡
+```
+🌡
 
-    <span>
-      Креативность
-    </span>
+<span>
+  Креативность
+</span>
 
-    <input
-      type="range"
-      id="temp"
-      min="0"
-      max="1.5"
-      step="0.1"
-      value="0.7"
-    >
+<input
+  type="range"
+  id="temp"
+  min="0"
+  max="1.5"
+  step="0.1"
+  value="0.7"
+>
 
-    <b id="temp-val">
-      0.7
-    </b>
+<b id="temp-val">
+  0.7
+</b>
+```
 
   </div>
 
-  <button
-    id="save-prompt"
-    class="save-btn"
-    type="button"
-  >
-    Сохранить
+<button
+id="save-prompt"
+class="save-btn"
+type="button"
+
+>
+
+```
+Сохранить
+```
+
   </button>
 
-  <button
-    class="ghost"
-    id="close-prompt"
-    type="button"
-  >
-    Закрыть
+<button
+class="ghost"
+id="close-prompt"
+type="button"
+
+>
+
+```
+Закрыть
+```
+
   </button>
 
 </div>
 
+<!-- =========================================================
+     TOAST
+========================================================= -->
+
+<div
+  id="aiva-toast"
+  aria-live="polite"
+></div>
+
+<!-- =========================================================
+     AUTH
+========================================================= -->
 
 <div
   id="authScreen"
@@ -2277,65 +3444,79 @@ header{
 
   <div class="auth-box">
 
-    <div class="auth-logo">
-      A
-    </div>
+```
+<div class="auth-logo">
+  A
+</div>
 
-    <h1>
-      Aiva
-    </h1>
 
-    <p id="authTitle">
-      Войти в Aiva
-    </p>
+<h1>
+  Aiva
+</h1>
 
-    <input
-      id="authEmail"
-      type="email"
-      placeholder="Email"
-      autocomplete="email"
-    >
 
-    <input
-      id="authPassword"
-      type="password"
-      placeholder="Пароль"
-      autocomplete="current-password"
-    >
+<p id="authTitle">
+  Войти в Aiva
+</p>
 
-    <button
-      id="authSubmit"
-      type="button"
-    >
-      Войти
-    </button>
 
-    <button
-      id="authSwitch"
-      class="auth-secondary"
-      type="button"
-    >
-      Создать аккаунт
-    </button>
+<input
+  id="authEmail"
+  type="email"
+  placeholder="Email"
+  autocomplete="email"
+>
 
-    <div class="auth-divider">
-      <span>или</span>
-    </div>
 
-    <button
-      id="googleAuth"
-      class="google-btn"
-      type="button"
-    >
-      Войти через Google
-    </button>
+<input
+  id="authPassword"
+  type="password"
+  placeholder="Пароль"
+  autocomplete="current-password"
+>
 
-    <div id="authError"></div>
+
+<button
+  id="authSubmit"
+  type="button"
+>
+  Войти
+</button>
+
+
+<button
+  id="authSwitch"
+  class="auth-secondary"
+  type="button"
+>
+  Создать аккаунт
+</button>
+
+
+<div class="auth-divider">
+  <span>или</span>
+</div>
+
+
+<button
+  id="googleAuth"
+  class="google-btn"
+  type="button"
+>
+  Войти через Google
+</button>
+
+
+<div id="authError"></div>
+```
 
   </div>
 
 </div>
 
+<!-- =========================================================
+     MAIN JAVASCRIPT
+========================================================= -->
 
 <script>
 
@@ -2355,9 +3536,16 @@ const supabaseClient =
     SUPABASE_KEY
   );
 
+/*
+  Делаем client доступным и через window.
+  Это полезно для reset-password.js.
+*/
+window.supabaseClient =
+  supabaseClient;
+
 
 /* =========================================================
-   PROFILE
+   PROFILE ELEMENTS
 ========================================================= */
 
 const profileBtn =
@@ -2390,6 +3578,81 @@ const profileSubscription =
 const profilePlanBtn =
   document.getElementById("profile-plan-btn");
 
+
+/* =========================================================
+   TOOLS ELEMENTS
+========================================================= */
+
+const aivaMoreBtn =
+  document.getElementById("aiva-more-btn");
+
+const aivaToolsPanel =
+  document.getElementById("aiva-tools-panel");
+
+const aivaToolsOverlay =
+  document.getElementById("aiva-tools-overlay");
+
+const aivaToolsClose =
+  document.getElementById("aiva-tools-close");
+
+const aivaToolNew =
+  document.getElementById("aiva-tool-new");
+
+const aivaToolRegen =
+  document.getElementById("aiva-tool-regen");
+
+const aivaToolExport =
+  document.getElementById("aiva-tool-export");
+
+const aivaToolPrompt =
+  document.getElementById("aiva-tool-prompt");
+
+const aivaToolClear =
+  document.getElementById("aiva-tool-clear");
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+const toastEl =
+  document.getElementById("aiva-toast");
+
+let toastTimer =
+  null;
+
+
+function showToast(message){
+
+  toastEl.textContent =
+    message || "";
+
+  toastEl.classList.add(
+    "show"
+  );
+
+  clearTimeout(
+    toastTimer
+  );
+
+  toastTimer =
+    setTimeout(
+      () => {
+
+        toastEl.classList.remove(
+          "show"
+        );
+
+      },
+      1800
+    );
+
+}
+
+
+/* =========================================================
+   PROFILE HELPERS
+========================================================= */
 
 function getUserInitial(email){
 
@@ -2437,12 +3700,15 @@ function updateProfile(user){
 
   }
 
+
   const email =
     user.email ||
     "Пользователь Aiva";
 
+
   const initial =
     getUserInitial(email);
+
 
   profileEmail.textContent =
     email;
@@ -2461,7 +3727,11 @@ function updateProfile(user){
 
 function openProfileMenu(){
 
-  profileMenu.classList.add("open");
+  closeToolsPanel();
+
+  profileMenu.classList.add(
+    "open"
+  );
 
   profileBtn.setAttribute(
     "aria-expanded",
@@ -2473,7 +3743,9 @@ function openProfileMenu(){
 
 function closeProfileMenu(){
 
-  profileMenu.classList.remove("open");
+  profileMenu.classList.remove(
+    "open"
+  );
 
   profileBtn.setAttribute(
     "aria-expanded",
@@ -2490,7 +3762,9 @@ profileBtn.addEventListener(
     event.stopPropagation();
 
     if(
-      profileMenu.classList.contains("open")
+      profileMenu.classList.contains(
+        "open"
+      )
     ){
 
       closeProfileMenu();
@@ -2541,6 +3815,7 @@ async function logout(){
     } =
       await supabaseClient.auth.signOut();
 
+
     if(error){
 
       console.error(
@@ -2556,11 +3831,13 @@ async function logout(){
 
     }
 
+
     activeChatId =
       null;
 
     chats =
       [];
+
 
     try{
 
@@ -2570,10 +3847,12 @@ async function logout(){
 
     }catch(e){}
 
+
     chatInner.innerHTML =
       "";
 
     showAuthScreen();
+
 
   }catch(error){
 
@@ -2585,6 +3864,7 @@ async function logout(){
     alert(
       "Ошибка выхода из аккаунта."
     );
+
 
   }finally{
 
@@ -2620,6 +3900,7 @@ profileSettings.addEventListener(
     const user =
       data?.user;
 
+
     if(!user){
 
       alert(
@@ -2629,6 +3910,7 @@ profileSettings.addEventListener(
       return;
 
     }
+
 
     alert(
       "Настройки Aiva\n\n" +
@@ -2666,6 +3948,7 @@ profilePlanBtn.addEventListener(
   "click",
   showSubscription
 );
+
 
 profileSubscription.addEventListener(
   "click",
@@ -2730,6 +4013,22 @@ function showAuthError(message){
   authError.textContent =
     message || "";
 
+  authError.classList.remove(
+    "success"
+  );
+
+}
+
+
+function showAuthSuccess(message){
+
+  authError.textContent =
+    message || "";
+
+  authError.classList.add(
+    "success"
+  );
+
 }
 
 
@@ -2746,6 +4045,8 @@ function showAuthScreen(){
 
   closeProfileMenu();
 
+  closeToolsPanel();
+
   authScreen.classList.remove(
     "hidden"
   );
@@ -2760,20 +4061,24 @@ function updateAuthMode(){
       ? "Создать аккаунт Aiva"
       : "Войти в Aiva";
 
+
   authSubmit.textContent =
     isSignup
       ? "Создать аккаунт"
       : "Войти";
+
 
   authSwitch.textContent =
     isSignup
       ? "У меня уже есть аккаунт"
       : "Создать аккаунт";
 
+
   authPassword.autocomplete =
     isSignup
       ? "new-password"
       : "current-password";
+
 
   showAuthError("");
 
@@ -2793,6 +4098,7 @@ async function checkAuth(){
     } =
       await supabaseClient.auth.getSession();
 
+
     if(data.session){
 
       updateProfile(
@@ -2800,6 +4106,7 @@ async function checkAuth(){
       );
 
       hideAuthScreen();
+
 
     }else{
 
@@ -2811,7 +4118,9 @@ async function checkAuth(){
 
     }
 
+
     return data.session || null;
+
 
   }catch(error){
 
@@ -2853,10 +4162,12 @@ async function apiFetch(
   } =
     await supabaseClient.auth.getSession();
 
+
   const headers =
     new Headers(
       options.headers || {}
     );
+
 
   if(session?.access_token){
 
@@ -2866,6 +4177,7 @@ async function apiFetch(
     );
 
   }
+
 
   return fetch(
     url,
@@ -2938,6 +4250,7 @@ authSubmit.addEventListener(
     const password =
       authPassword.value;
 
+
     if(!email){
 
       showAuthError(
@@ -2947,6 +4260,7 @@ authSubmit.addEventListener(
       return;
 
     }
+
 
     if(!password){
 
@@ -2958,6 +4272,7 @@ authSubmit.addEventListener(
 
     }
 
+
     if(password.length < 6){
 
       showAuthError(
@@ -2968,14 +4283,17 @@ authSubmit.addEventListener(
 
     }
 
+
     authSubmit.disabled =
       true;
 
     showAuthError("");
 
+
     try{
 
       let result;
+
 
       if(isSignup){
 
@@ -2987,6 +4305,7 @@ authSubmit.addEventListener(
             password
 
           });
+
 
       }else{
 
@@ -3001,6 +4320,7 @@ authSubmit.addEventListener(
 
       }
 
+
       if(result.error){
 
         showAuthError(
@@ -3011,18 +4331,20 @@ authSubmit.addEventListener(
 
       }
 
+
       if(
         isSignup &&
         !result.data.session
       ){
 
-        showAuthError(
+        showAuthSuccess(
           "Аккаунт создан. Проверьте почту для подтверждения."
         );
 
         return;
 
       }
+
 
       if(result.data.user){
 
@@ -3032,7 +4354,9 @@ authSubmit.addEventListener(
 
       }
 
+
       hideAuthScreen();
+
 
     }catch(error){
 
@@ -3044,6 +4368,7 @@ authSubmit.addEventListener(
       showAuthError(
         "Произошла ошибка. Попробуйте ещё раз."
       );
+
 
     }finally{
 
@@ -3066,6 +4391,7 @@ googleAuth.addEventListener(
 
     showAuthError("");
 
+
     try{
 
       const {
@@ -3085,6 +4411,7 @@ googleAuth.addEventListener(
 
         });
 
+
       if(error){
 
         showAuthError(
@@ -3092,6 +4419,7 @@ googleAuth.addEventListener(
         );
 
       }
+
 
     }catch(error){
 
@@ -3121,7 +4449,7 @@ const chat =
 
 const chatInner =
   document.querySelector(
-    ".chat-inner"
+    "#chat .chat-inner"
   );
 
 const inp =
@@ -3179,6 +4507,11 @@ const historyEl =
     "history"
   );
 
+const historySearch =
+  document.getElementById(
+    "history-search"
+  );
+
 const promptPanel =
   document.getElementById(
     "prompt-panel"
@@ -3193,218 +4526,6 @@ const tempVal =
   document.getElementById(
     "temp-val"
   );
-
-
-/* =========================================================
-   AIVA TOOLS MENU
-========================================================= */
-
-const aivaMoreBtn =
-  document.getElementById(
-    "aiva-more-btn"
-  );
-
-const aivaToolsPanel =
-  document.getElementById(
-    "aiva-tools-panel"
-  );
-
-const aivaToolsOverlay =
-  document.getElementById(
-    "aiva-tools-overlay"
-  );
-
-const aivaToolsClose =
-  document.getElementById(
-    "aiva-tools-close"
-  );
-
-const aivaToolRegen =
-  document.getElementById(
-    "aiva-tool-regen"
-  );
-
-const aivaToolExport =
-  document.getElementById(
-    "aiva-tool-export"
-  );
-
-const aivaToolPrompt =
-  document.getElementById(
-    "aiva-tool-prompt"
-  );
-
-const aivaToolClear =
-  document.getElementById(
-    "aiva-tool-clear"
-  );
-
-
-function openToolsPanel(){
-
-  aivaToolsPanel.classList.add(
-    "open"
-  );
-
-  aivaToolsOverlay.classList.add(
-    "open"
-  );
-
-  aivaMoreBtn.classList.add(
-    "active"
-  );
-
-  aivaMoreBtn.setAttribute(
-    "aria-expanded",
-    "true"
-  );
-
-  aivaToolsPanel.setAttribute(
-    "aria-hidden",
-    "false"
-  );
-
-  aivaToolsOverlay.setAttribute(
-    "aria-hidden",
-    "false"
-  );
-
-}
-
-
-function closeToolsPanel(){
-
-  aivaToolsPanel.classList.remove(
-    "open"
-  );
-
-  aivaToolsOverlay.classList.remove(
-    "open"
-  );
-
-  aivaMoreBtn.classList.remove(
-    "active"
-  );
-
-  aivaMoreBtn.setAttribute(
-    "aria-expanded",
-    "false"
-  );
-
-  aivaToolsPanel.setAttribute(
-    "aria-hidden",
-    "true"
-  );
-
-  aivaToolsOverlay.setAttribute(
-    "aria-hidden",
-    "true"
-  );
-
-}
-
-
-function toggleToolsPanel(){
-
-  if(
-    aivaToolsPanel.classList.contains(
-      "open"
-    )
-  ){
-
-    closeToolsPanel();
-
-  }else{
-
-    openToolsPanel();
-
-  }
-
-}
-
-
-aivaMoreBtn.addEventListener(
-  "click",
-  event => {
-
-    event.stopPropagation();
-
-    closeProfileMenu();
-
-    toggleToolsPanel();
-
-  }
-);
-
-
-aivaToolsClose.addEventListener(
-  "click",
-  closeToolsPanel
-);
-
-
-aivaToolsOverlay.addEventListener(
-  "click",
-  closeToolsPanel
-);
-
-
-/* Старые кнопки — именно они содержат всю существующую логику */
-
-aivaToolRegen.addEventListener(
-  "click",
-  () => {
-
-    document
-      .getElementById("regen-btn")
-      .click();
-
-    closeToolsPanel();
-
-  }
-);
-
-
-aivaToolExport.addEventListener(
-  "click",
-  () => {
-
-    document
-      .getElementById("export-btn")
-      .click();
-
-    closeToolsPanel();
-
-  }
-);
-
-
-aivaToolPrompt.addEventListener(
-  "click",
-  () => {
-
-    document
-      .getElementById("prompt-btn")
-      .click();
-
-    closeToolsPanel();
-
-  }
-);
-
-
-aivaToolClear.addEventListener(
-  "click",
-  () => {
-
-    document
-      .getElementById("clear-btn")
-      .click();
-
-    closeToolsPanel();
-
-  }
-);
 
 
 let attachments = [];
@@ -3436,6 +4557,7 @@ function loadChats(){
           HISTORY_KEY
         ) || "[]"
       );
+
 
     if(!Array.isArray(chats)){
 
@@ -3483,12 +4605,15 @@ function createChat(){
 
   };
 
+
   chats.unshift(
     chatData
   );
 
+
   activeChatId =
     chatData.id;
+
 
   saveChats();
 
@@ -3514,11 +4639,13 @@ function makeTitle(text){
       .replace(/\s+/g," ")
       .trim();
 
+
   if(!clean){
 
     return "Новый чат";
 
   }
+
 
   return clean.length > 38
     ? clean.slice(0,38) + "…"
@@ -3527,10 +4654,29 @@ function makeTitle(text){
 }
 
 
+/* =========================================================
+   HISTORY SEARCH
+========================================================= */
+
+historySearch.addEventListener(
+  "input",
+  () => {
+
+    renderHistory();
+
+  }
+);
+
+
+/* =========================================================
+   SAVE CURRENT MESSAGES
+========================================================= */
+
 function saveCurrentMessages(){
 
   const current =
     getActiveChat();
+
 
   if(!current){
 
@@ -3538,12 +4684,14 @@ function saveCurrentMessages(){
 
   }
 
+
   const messages =
     [
       ...chatInner.querySelectorAll(
         ".msg"
       )
     ];
+
 
   current.messages =
     messages.map(
@@ -3554,8 +4702,10 @@ function saveCurrentMessages(){
             ? "user"
             : "assistant";
 
+
         const content =
           m.querySelector(".content");
+
 
         return {
 
@@ -3571,11 +4721,13 @@ function saveCurrentMessages(){
       }
     );
 
+
   const firstUser =
     current.messages.find(
       m =>
         m.role === "user"
     );
+
 
   if(firstUser){
 
@@ -3586,6 +4738,7 @@ function saveCurrentMessages(){
 
   }
 
+
   saveChats();
 
   renderHistory();
@@ -3593,50 +4746,132 @@ function saveCurrentMessages(){
 }
 
 
+/* =========================================================
+   RENDER HISTORY
+========================================================= */
+
 function renderHistory(){
 
-  historyEl.innerHTML = "";
+  historyEl.innerHTML =
+    "";
 
-  chats
-    .slice(0,30)
-    .forEach(
-      c => {
 
-        const b =
-          document.createElement(
-            "button"
-          );
+  const query =
+    String(
+      historySearch.value || ""
+    )
+      .trim()
+      .toLowerCase();
 
-        b.className =
-          "history-item" +
-          (
-            c.id === activeChatId
-              ? " active"
-              : ""
-          );
 
-        b.innerHTML = `
-          <span class="history-icon">◌</span>
-          <span class="history-name"></span>
-        `;
+  const visibleChats =
+    chats
+      .slice(0,30)
+      .filter(
+        c => {
 
-        b.querySelector(
-          ".history-name"
-        ).textContent =
-          c.title ||
-          "Новый чат";
+          if(!query){
 
-        b.onclick =
-          () =>
-            openChat(c.id);
+            return true;
 
-        historyEl.appendChild(b);
+          }
 
-      }
+
+          return String(
+            c.title ||
+            "Новый чат"
+          )
+            .toLowerCase()
+            .includes(query);
+
+        }
+      );
+
+
+  if(!visibleChats.length){
+
+    const empty =
+      document.createElement(
+        "div"
+      );
+
+    empty.className =
+      "history-empty";
+
+    empty.textContent =
+      query
+        ? "Ничего не найдено."
+        : "История пока пустая.";
+
+    historyEl.appendChild(
+      empty
     );
+
+    return;
+
+  }
+
+
+  visibleChats.forEach(
+    c => {
+
+      const b =
+        document.createElement(
+          "button"
+        );
+
+
+      b.type =
+        "button";
+
+
+      b.className =
+        "history-item" +
+        (
+          c.id === activeChatId
+            ? " active"
+            : ""
+        );
+
+
+      b.innerHTML = `
+
+        <span class="history-icon">
+          ◌
+        </span>
+
+        <span
+          class="history-name"
+        ></span>
+
+      `;
+
+
+      b.querySelector(
+        ".history-name"
+      ).textContent =
+        c.title ||
+        "Новый чат";
+
+
+      b.onclick =
+        () =>
+          openChat(c.id);
+
+
+      historyEl.appendChild(
+        b
+      );
+
+    }
+  );
 
 }
 
+
+/* =========================================================
+   OPEN CHAT
+========================================================= */
 
 function openChat(id){
 
@@ -3653,14 +4888,18 @@ function openChat(id){
 
   }
 
+
   activeChatId =
     id;
+
 
   const current =
     getActiveChat();
 
+
   chatInner.innerHTML =
     "";
+
 
   if(
     !current ||
@@ -3686,9 +4925,12 @@ function openChat(id){
 
   }
 
+
   renderHistory();
 
   closeSidebar();
+
+  closeToolsPanel();
 
   chat.scrollTop =
     chat.scrollHeight;
@@ -3705,13 +4947,16 @@ function showWelcome(){
   chatInner.innerHTML =
     "";
 
+
   const w =
     document.createElement(
       "div"
     );
 
+
   w.id =
     "welcome";
+
 
   w.innerHTML = `
 
@@ -3732,7 +4977,9 @@ function showWelcome(){
       <button
         class="quick-card"
         data-prompt="Помоги мне написать текст"
+        type="button"
       >
+
         <div class="quick-icon">
           ✍️
         </div>
@@ -3755,7 +5002,9 @@ function showWelcome(){
       <button
         class="quick-card"
         data-prompt="Придумай мне несколько интересных идей"
+        type="button"
       >
+
         <div class="quick-icon">
           💡
         </div>
@@ -3778,7 +5027,9 @@ function showWelcome(){
       <button
         class="quick-card"
         data-prompt="Помоги мне разобраться с кодом"
+        type="button"
       >
+
         <div class="quick-icon">
           💻
         </div>
@@ -3801,7 +5052,9 @@ function showWelcome(){
       <button
         class="quick-card"
         data-prompt="Объясни мне сложную тему простыми словами"
+        type="button"
       >
+
         <div class="quick-icon">
           🧠
         </div>
@@ -3821,14 +5074,23 @@ function showWelcome(){
       </button>
 
     </div>
+
   `;
 
-  chatInner.appendChild(w);
+
+  chatInner.appendChild(
+    w
+  );
+
 
   bindQuickActions();
 
 }
 
+
+/* =========================================================
+   NEW CHAT
+========================================================= */
 
 function newChat(){
 
@@ -3845,15 +5107,19 @@ function newChat(){
 
   }
 
+
   if(activeChatId){
 
     saveCurrentMessages();
 
   }
 
+
   createChat();
 
+
   showWelcome();
+
 
   inp.value =
     "";
@@ -3861,22 +5127,34 @@ function newChat(){
   inp.style.height =
     "auto";
 
+
   attachments =
     [];
 
+
   renderAttach();
 
+
   closeSidebar();
+
+  closeToolsPanel();
+
 
   inp.focus();
 
 }
 
 
+/* =========================================================
+   QUICK ACTIONS
+========================================================= */
+
 function bindQuickActions(){
 
   document
-    .querySelectorAll(".quick-card")
+    .querySelectorAll(
+      ".quick-card"
+    )
     .forEach(
       card => {
 
@@ -3886,9 +5164,11 @@ function bindQuickActions(){
             inp.value =
               card.dataset.prompt;
 
+
             inp.dispatchEvent(
               new Event("input")
             );
+
 
             inp.focus();
 
@@ -3931,13 +5211,17 @@ function closeSidebar(){
 
 
 document
-  .getElementById("menu-btn")
+  .getElementById(
+    "menu-btn"
+  )
   .onclick =
     openSidebar;
 
 
 document
-  .getElementById("sidebar-close")
+  .getElementById(
+    "sidebar-close"
+  )
   .onclick =
     closeSidebar;
 
@@ -3947,17 +5231,23 @@ sidebarOverlay.onclick =
 
 
 document
-  .getElementById("new-chat")
+  .getElementById(
+    "new-chat"
+  )
   .onclick =
     newChat;
 
 
 document
-  .getElementById("sidebar-prompt")
+  .getElementById(
+    "sidebar-prompt"
+  )
   .onclick =
   () => {
 
     closeSidebar();
+
+    closeToolsPanel();
 
     promptPanel.classList.add(
       "open"
@@ -3967,24 +5257,189 @@ document
 
 
 /* =========================================================
-   KEYBOARD ESC
+   TOOLS MENU
 ========================================================= */
 
-document.addEventListener(
-  "keydown",
+function openToolsPanel(){
+
+  closeProfileMenu();
+
+  aivaToolsPanel.classList.add(
+    "open"
+  );
+
+  aivaToolsOverlay.classList.add(
+    "open"
+  );
+
+  aivaMoreBtn.classList.add(
+    "active"
+  );
+
+  aivaMoreBtn.setAttribute(
+    "aria-expanded",
+    "true"
+  );
+
+  aivaToolsPanel.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+}
+
+
+function closeToolsPanel(){
+
+  aivaToolsPanel.classList.remove(
+    "open"
+  );
+
+  aivaToolsOverlay.classList.remove(
+    "open"
+  );
+
+  aivaMoreBtn.classList.remove(
+    "active"
+  );
+
+  aivaMoreBtn.setAttribute(
+    "aria-expanded",
+    "false"
+  );
+
+  aivaToolsPanel.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+}
+
+
+function toggleToolsPanel(){
+
+  if(
+    aivaToolsPanel.classList.contains(
+      "open"
+    )
+  ){
+
+    closeToolsPanel();
+
+  }else{
+
+    openToolsPanel();
+
+  }
+
+}
+
+
+aivaMoreBtn.addEventListener(
+  "click",
   event => {
 
-    if(event.key === "Escape"){
+    event.stopPropagation();
 
-      closeProfileMenu();
+    toggleToolsPanel();
 
-      closeToolsPanel();
+  }
+);
 
-      promptPanel.classList.remove(
-        "open"
-      );
 
-    }
+aivaToolsClose.addEventListener(
+  "click",
+  closeToolsPanel
+);
+
+
+aivaToolsOverlay.addEventListener(
+  "click",
+  closeToolsPanel
+);
+
+
+/* NEW CHAT */
+
+aivaToolNew.addEventListener(
+  "click",
+  () => {
+
+    closeToolsPanel();
+
+    newChat();
+
+  }
+);
+
+
+/* REGENERATE */
+
+aivaToolRegen.addEventListener(
+  "click",
+  () => {
+
+    closeToolsPanel();
+
+    document
+      .getElementById(
+        "regen-btn"
+      )
+      .click();
+
+  }
+);
+
+
+/* EXPORT */
+
+aivaToolExport.addEventListener(
+  "click",
+  () => {
+
+    closeToolsPanel();
+
+    document
+      .getElementById(
+        "export-btn"
+      )
+      .click();
+
+  }
+);
+
+
+/* PROMPT */
+
+aivaToolPrompt.addEventListener(
+  "click",
+  () => {
+
+    closeToolsPanel();
+
+    document
+      .getElementById(
+        "prompt-btn"
+      )
+      .click();
+
+  }
+);
+
+
+/* CLEAR */
+
+aivaToolClear.addEventListener(
+  "click",
+  () => {
+
+    closeToolsPanel();
+
+    document
+      .getElementById(
+        "clear-btn"
+      )
+      .click();
 
   }
 );
@@ -4011,6 +5466,7 @@ function md(t){
         "&gt;"
       );
 
+
   h =
     h.replace(
       /```(\w*)\n?([\s\S]*?)```/g,
@@ -4021,1416 +5477,1947 @@ function md(t){
           ""
         ) +
         "</code></pre>"
-    );
 
-  h =
-    h.replace(
-      /`([^`\n]+)`/g,
-      "<code>$1</code>"
-    );
+```
+);
+```
 
-  h =
-    h.replace(
-      /^###+ (.*)$/gm,
-      "<b>$1</b>"
-    );
+h =
+h.replace(
+/`([^`\n]+)`/g,
+"<code>$1</code>"
+);
 
-  h =
-    h.replace(
-      /^## (.*)$/gm,
-      "<b>$1</b>"
-    );
+h =
+h.replace(
+/^###+ (.*)$/gm,
+"<b>$1</b>"
+);
 
-  h =
-    h.replace(
-      /^# (.*)$/gm,
-      "<b>$1</b>"
-    );
+h =
+h.replace(
+/^## (.*)$/gm,
+"<b>$1</b>"
+);
 
-  h =
-    h.replace(
-      /\*\*([^*]+)\*\*/g,
-      "<b>$1</b>"
-    );
+h =
+h.replace(
+/^# (.*)$/gm,
+"<b>$1</b>"
+);
 
-  h =
-    h
-      .split(/\n{2,}/)
-      .map(
-        p =>
-          /^<pre>/.test(
-            p.trim()
-          )
-            ? p
-            : "<p>" +
-              p.replace(
-                /\n/g,
-                "<br>"
-              ) +
-              "</p>"
-      )
-      .join("");
+h =
+h.replace(
+/**([^*]+)**/g,
+"<b>$1</b>"
+);
 
-  return h;
+h =
+h
+.split(/\n{2,}/)
+.map(
+p =>
+/^<pre>/.test(
+p.trim()
+)
+? p
+: "<p>" +
+p.replace(
+/\n/g,
+"<br>"
+) +
+"</p>"
+)
+.join("");
+
+return h;
 
 }
 
-
 /* =========================================================
-   VOICE OUTPUT
+VOICE OUTPUT
 ========================================================= */
 
 function speak(text){
 
-  if(
-    !window.speechSynthesis
-  ){
+if(
+!window.speechSynthesis
+){
 
-    return;
-
-  }
-
-  speechSynthesis.cancel();
-
-  const lines =
-    String(text)
-      .replace(
-        /[#*`>\-]/g,
-        " "
-      )
-      .split("\n")
-      .filter(
-        x =>
-          x.trim()
-      )
-      .slice(0,12);
-
-  const u =
-    new SpeechSynthesisUtterance(
-      lines
-        .join(". ")
-        .slice(0,1200)
-    );
-
-  u.lang =
-    "ru-RU";
-
-  u.rate =
-    1.05;
-
-  speechSynthesis.speak(u);
+```
+return;
+```
 
 }
 
+speechSynthesis.cancel();
+
+const lines =
+String(text)
+.replace(
+/[#*`>-]/g,
+" "
+)
+.split("\n")
+.filter(
+x =>
+x.trim()
+)
+.slice(0,12);
+
+const u =
+new SpeechSynthesisUtterance(
+lines
+.join(". ")
+.slice(0,1200)
+);
+
+u.lang =
+"ru-RU";
+
+u.rate =
+1.05;
+
+speechSynthesis.speak(
+u
+);
+
+}
 
 /* =========================================================
-   MESSAGES
+THINKING UI
+========================================================= */
+
+function setThinkingStatus(
+contentEl,
+text
+){
+
+contentEl.innerHTML = `
+
+```
+<span
+  class="thinking-box"
+  aria-live="polite"
+>
+
+  <span class="thinking-orb">
+    ✦
+  </span>
+
+  <span class="thinking-text">
+    ${text}
+
+    <span
+      class="thinking-dots"
+      aria-hidden="true"
+    >
+
+      <span></span>
+      <span></span>
+      <span></span>
+
+    </span>
+
+  </span>
+
+</span>
+```
+
+`;
+
+}
+
+function startThinking(
+contentEl,
+statuses
+){
+
+let index =
+0;
+
+setThinkingStatus(
+contentEl,
+statuses[index]
+);
+
+const timer =
+setInterval(
+() => {
+
+```
+    index =
+      (
+        index + 1
+      ) %
+      statuses.length;
+
+
+    setThinkingStatus(
+      contentEl,
+      statuses[index]
+    );
+
+  },
+  1350
+);
+```
+
+return timer;
+
+}
+
+/* =========================================================
+MESSAGES
 ========================================================= */
 
 function addMsg(
-  role,
-  text,
-  error=false,
-  silent=false
+role,
+text,
+error=false,
+silent=false
 ){
 
-  const oldWelcome =
-    document.getElementById(
-      "welcome"
+const oldWelcome =
+document.getElementById(
+"welcome"
+);
+
+if(oldWelcome){
+
+```
+oldWelcome.remove();
+```
+
+}
+
+const d =
+document.createElement(
+"div"
+);
+
+d.className =
+"msg " +
+(
+role === "user"
+? "me"
+: "ai"
+) +
+(
+error
+? " error"
+: ""
+);
+
+const ava =
+document.createElement(
+"div"
+);
+
+ava.className =
+"ava";
+
+ava.textContent =
+role === "user"
+? "●"
+: "✦";
+
+const wrap =
+document.createElement(
+"div"
+);
+
+const c =
+document.createElement(
+"div"
+);
+
+c.className =
+"content";
+
+if(error){
+
+```
+c.textContent =
+  text;
+```
+
+}else{
+
+```
+c.innerHTML =
+  md(text);
+```
+
+}
+
+wrap.appendChild(
+c
+);
+
+if(
+!error &&
+role !== "user"
+){
+
+```
+const tb =
+  document.createElement(
+    "div"
+  );
+
+
+tb.className =
+  "toolbar";
+
+
+/* COPY */
+
+const bCopy =
+  document.createElement(
+    "button"
+  );
+
+
+bCopy.textContent =
+  "📋";
+
+bCopy.title =
+  "Скопировать";
+
+
+bCopy.onclick =
+  () => {
+
+    navigator.clipboard
+      .writeText(
+        text
+      )
+      .then(
+        () =>
+          showToast(
+            "Скопировано"
+          )
+      )
+      .catch(
+        () =>
+          showToast(
+            "Не удалось скопировать"
+          )
+      );
+
+  };
+
+
+/* SPEAK */
+
+const bSpeak =
+  document.createElement(
+    "button"
+  );
+
+
+bSpeak.textContent =
+  "🔊";
+
+bSpeak.title =
+  "Озвучить";
+
+
+bSpeak.onclick =
+  () => {
+
+    if(
+      window.speechSynthesis &&
+      speechSynthesis.speaking
+    ){
+
+      speechSynthesis.cancel();
+
+      showToast(
+        "Озвучивание остановлено"
+      );
+
+    }else{
+
+      speak(text);
+
+      showToast(
+        "Озвучивание запущено"
+      );
+
+    }
+
+  };
+
+
+/* LIKE */
+
+const bLike =
+  document.createElement(
+    "button"
+  );
+
+
+bLike.textContent =
+  "👍";
+
+bLike.title =
+  "Хороший ответ";
+
+
+bLike.onclick =
+  () => {
+
+    bLike.classList.toggle(
+      "selected"
     );
 
-  if(oldWelcome){
-
-    oldWelcome.remove();
-
-  }
-
-  const d =
-    document.createElement(
-      "div"
+    bDislike.classList.remove(
+      "selected"
     );
 
-  d.className =
-    "msg " +
-    (
-      role === "user"
-        ? "me"
-        : "ai"
-    ) +
-    (
-      error
-        ? " error"
-        : ""
+
+    showToast(
+      bLike.classList.contains(
+        "selected"
+      )
+        ? "Отзыв сохранён"
+        : "Отзыв отменён"
     );
 
-  const ava =
-    document.createElement(
-      "div"
+  };
+
+
+/* DISLIKE */
+
+const bDislike =
+  document.createElement(
+    "button"
+  );
+
+
+bDislike.textContent =
+  "👎";
+
+bDislike.title =
+  "Плохой ответ";
+
+
+bDislike.onclick =
+  () => {
+
+    bDislike.classList.toggle(
+      "selected"
     );
 
-  ava.className =
-    "ava";
-
-  ava.textContent =
-    role === "user"
-      ? "●"
-      : "✦";
-
-  const wrap =
-    document.createElement(
-      "div"
+    bLike.classList.remove(
+      "selected"
     );
 
+
+    showToast(
+      bDislike.classList.contains(
+        "selected"
+      )
+        ? "Отзыв сохранён"
+        : "Отзыв отменён"
+    );
+
+  };
+
+
+/* REGENERATE */
+
+const bRegen =
+  document.createElement(
+    "button"
+  );
+
+
+bRegen.textContent =
+  "↻";
+
+bRegen.title =
+  "Перегенерировать";
+
+
+bRegen.onclick =
+  () => {
+
+    document
+      .getElementById(
+        "regen-btn"
+      )
+      .click();
+
+  };
+
+
+tb.append(
+  bCopy,
+  bSpeak,
+  bLike,
+  bDislike,
+  bRegen
+);
+
+
+wrap.appendChild(
+  tb
+);
+```
+
+}
+
+d.append(
+ava,
+wrap
+);
+
+chatInner.appendChild(
+d
+);
+
+chat.scrollTop =
+chat.scrollHeight;
+
+if(!silent){
+
+```
+saveCurrentMessages();
+```
+
+}
+
+return c;
+
+}
+
+/* =========================================================
+FILES
+========================================================= */
+
+function renderAttach(){
+
+attachBar.innerHTML =
+"";
+
+attachments.forEach(
+(a,i) => {
+
+```
   const c =
     document.createElement(
       "div"
     );
 
+
   c.className =
-    "content";
-
-  if(error){
-
-    c.textContent =
-      text;
-
-  }else{
-
-    c.innerHTML =
-      md(text);
-
-  }
-
-  wrap.appendChild(c);
-
-  if(
-    !error &&
-    role !== "user"
-  ){
-
-    const tb =
-      document.createElement(
-        "div"
-      );
-
-    tb.className =
-      "toolbar";
-
-    const bCopy =
-      document.createElement(
-        "button"
-      );
-
-    bCopy.textContent =
-      "📋";
-
-    bCopy.title =
-      "Скопировать";
-
-    bCopy.onclick =
-      () => {
-
-        navigator.clipboard
-          .writeText(text)
-          .catch(
-            () => {}
-          );
-
-      };
-
-    const bSpeak =
-      document.createElement(
-        "button"
-      );
-
-    bSpeak.textContent =
-      "🔊";
-
-    bSpeak.title =
-      "Озвучить";
-
-    bSpeak.onclick =
-      () => {
-
-        if(
-          window.speechSynthesis &&
-          speechSynthesis.speaking
-        ){
-
-          speechSynthesis.cancel();
-
-        }else{
-
-          speak(text);
-
-        }
-
-      };
-
-    tb.append(
-      bCopy,
-      bSpeak
+    "chip" +
+    (
+      a.type === "error"
+        ? " err"
+        : ""
     );
 
-    wrap.appendChild(tb);
 
-  }
+  const icon =
+    a.type === "image"
+      ? "🖼️"
+      : a.type === "error"
+        ? "⚠️"
+        : "📄";
 
-  d.append(
-    ava,
-    wrap
+
+  const info =
+    a.type === "error"
+      ? a.error
+      : a.type === "image"
+        ? (
+            (a.size / 1024 | 0)
+          ) + " КБ"
+        : a.size + " симв.";
+
+
+  const span =
+    document.createElement(
+      "span"
+    );
+
+
+  span.textContent =
+    `${a.name} · ${info}`;
+
+
+  span.title =
+    a.name;
+
+
+  c.append(
+    document.createTextNode(
+      icon
+    ),
+    span
   );
 
-  chatInner.appendChild(d);
 
-  chat.scrollTop =
-    chat.scrollHeight;
-
-  if(!silent){
-
-    saveCurrentMessages();
-
-  }
-
-  return c;
-
-}
+  const x =
+    document.createElement(
+      "button"
+    );
 
 
-/* =========================================================
-   FILES
-========================================================= */
+  x.type =
+    "button";
 
-function renderAttach(){
 
-  attachBar.innerHTML =
-    "";
+  x.textContent =
+    "✕";
 
-  attachments.forEach(
-    (a,i) => {
 
-      const c =
-        document.createElement(
-          "div"
-        );
+  x.title =
+    "Удалить";
 
-      c.className =
-        "chip" +
-        (
-          a.type === "error"
-            ? " err"
-            : ""
-        );
 
-      const icon =
-        a.type === "image"
-          ? "🖼️"
-          : a.type === "error"
-            ? "⚠️"
-            : "📄";
+  x.onclick =
+    () => {
 
-      const info =
-        a.type === "error"
-          ? a.error
-          : a.type === "image"
-            ? (
-                (a.size / 1024 | 0)
-              ) + " КБ"
-            : a.size + " симв.";
-
-      const span =
-        document.createElement(
-          "span"
-        );
-
-      span.textContent =
-        `${a.name} · ${info}`;
-
-      span.title =
-        a.name;
-
-      c.append(
-        document.createTextNode(
-          icon
-        ),
-        span
+      attachments.splice(
+        i,
+        1
       );
 
-      const x =
-        document.createElement(
-          "button"
-        );
+      renderAttach();
 
-      x.textContent =
-        "✕";
+    };
 
-      x.onclick =
-        () => {
 
-          attachments.splice(
-            i,
-            1
-          );
+  c.appendChild(
+    x
+  );
 
-          renderAttach();
 
-        };
-
-      c.appendChild(x);
-
-      attachBar.appendChild(c);
-
-    }
+  attachBar.appendChild(
+    c
   );
 
 }
+```
 
+);
+
+}
 
 async function uploadFiles(files){
 
-  if(!files.length){
+if(!files.length){
 
-    return;
+```
+return;
+```
 
-  }
+}
 
-  const fd =
-    new FormData();
+const fd =
+new FormData();
 
-  [
-    ...files
-  ]
-    .slice(0,5)
-    .forEach(
-      f =>
-        fd.append(
-          "files",
-          f
-        )
-    );
+[
+...files
+]
+.slice(0,5)
+.forEach(
+f =>
+fd.append(
+"files",
+f
+)
+);
 
-  attachBtn.disabled =
-    true;
+attachBtn.disabled =
+true;
 
-  try{
+showToast(
+"Загружаю файлы…"
+);
 
-    const r =
-      await apiFetch(
-        "/api/upload",
-        {
-          method:
-            "POST",
-          body:
-            fd
-        }
-      );
+try{
 
-    const d =
-      await r.json();
+```
+const r =
+  await apiFetch(
+    "/api/upload",
+    {
+      method:
+        "POST",
 
-    if(!r.ok){
-
-      throw new Error(
-        d.error ||
-        "Ошибка загрузки"
-      );
+      body:
+        fd
 
     }
+  );
 
-    (d.files || [])
-      .forEach(
-        f => {
 
-          if(
-            attachments.length < 5
-          ){
+const d =
+  await r.json();
 
-            attachments.push(f);
 
-          }
+if(!r.ok){
 
-        }
-      );
-
-    renderAttach();
-
-  }catch(e){
-
-    addMsg(
-      "ai",
-      "Ошибка загрузки: " +
-      e.message,
-      true
-    );
-
-  }
-
-  attachBtn.disabled =
-    false;
-
-  fileInput.value =
-    "";
+  throw new Error(
+    d.error ||
+    "Ошибка загрузки"
+  );
 
 }
 
 
-attachBtn.onclick =
-  () =>
-    fileInput.click();
+(d.files || [])
+  .forEach(
+    f => {
 
+      if(
+        attachments.length < 5
+      ){
+
+        attachments.push(
+          f
+        );
+
+      }
+
+    }
+  );
+
+
+renderAttach();
+
+
+showToast(
+  "Файл готов"
+);
+```
+
+}catch(e){
+
+```
+addMsg(
+  "ai",
+  "Ошибка загрузки: " +
+  e.message,
+  true
+);
+```
+
+}
+
+attachBtn.disabled =
+false;
+
+fileInput.value =
+"";
+
+}
+
+attachBtn.onclick =
+() =>
+fileInput.click();
 
 fileInput.onchange =
-  () =>
-    uploadFiles(
-      fileInput.files
-    );
-
+() =>
+uploadFiles(
+fileInput.files
+);
 
 let dragDepth =
+0;
+
+window.addEventListener(
+"dragenter",
+e => {
+
+```
+e.preventDefault();
+
+dragDepth++;
+
+dropzone.classList.add(
+  "on"
+);
+```
+
+}
+);
+
+window.addEventListener(
+"dragleave",
+e => {
+
+```
+e.preventDefault();
+
+dragDepth--;
+
+
+if(
+  dragDepth <= 0
+){
+
+  dragDepth =
+    0;
+
+  dropzone.classList.remove(
+    "on"
+  );
+
+}
+```
+
+}
+);
+
+window.addEventListener(
+"dragover",
+e =>
+e.preventDefault()
+);
+
+window.addEventListener(
+"drop",
+e => {
+
+```
+e.preventDefault();
+
+
+dragDepth =
   0;
 
 
-window.addEventListener(
-  "dragenter",
-  e => {
-
-    e.preventDefault();
-
-    dragDepth++;
-
-    dropzone.classList.add(
-      "on"
-    );
-
-  }
+dropzone.classList.remove(
+  "on"
 );
 
 
-window.addEventListener(
-  "dragleave",
-  e => {
-
-    e.preventDefault();
-
-    dragDepth--;
-
-    if(
-      dragDepth <= 0
-    ){
-
-      dragDepth =
-        0;
-
-      dropzone.classList.remove(
-        "on"
-      );
-
-    }
-
-  }
+uploadFiles(
+  e.dataTransfer.files
 );
+```
 
-
-window.addEventListener(
-  "dragover",
-  e =>
-    e.preventDefault()
+}
 );
-
-
-window.addEventListener(
-  "drop",
-  e => {
-
-    e.preventDefault();
-
-    dragDepth =
-      0;
-
-    dropzone.classList.remove(
-      "on"
-    );
-
-    uploadFiles(
-      e.dataTransfer.files
-    );
-
-  }
-);
-
 
 /* =========================================================
-   STREAM
+STREAM
 ========================================================= */
 
 async function streamRequest(
-  url,
-  payload,
-  contentEl
+url,
+payload,
+contentEl
 ){
 
-  abortCtrl =
-    new AbortController();
+abortCtrl =
+new AbortController();
 
-  sendBtn.disabled =
-    false;
+sendBtn.disabled =
+false;
 
-  sendBtn.textContent =
-    "■";
+sendBtn.textContent =
+"■";
 
-  let acc =
-    "";
+sendBtn.classList.add(
+"stop"
+);
+
+let acc =
+"";
+
+const statuses =
+payload?.attachments?.length
+? [
+"Размышляет",
+"Анализирует прикреплённый файл",
+"Изучает данные",
+"Формирует ответ"
+]
+: url.includes(
+"/regenerate"
+)
+? [
+"Размышляет",
+"Перепроверяет ответ",
+"Формирует новую версию"
+]
+: [
+"Размышляет",
+"Анализирует запрос",
+"Подбирает ответ",
+"Формирует ответ"
+];
+
+let thinkingTimer =
+startThinking(
+contentEl,
+statuses
+);
+
+let receivedData =
+false;
+
+try{
+
+```
+const r =
+  await apiFetch(
+    url,
+    {
+      method:
+        "POST",
+
+      signal:
+        abortCtrl.signal,
+
+      headers:{
+        "Content-Type":
+          "application/json"
+      },
+
+      body:
+        JSON.stringify(
+          payload
+        )
+
+    }
+  );
+
+
+if(
+  !r.ok ||
+  !r.body
+){
+
+  let message =
+    "HTTP " +
+    r.status;
+
 
   try{
 
-    const r =
-      await apiFetch(
-        url,
-        {
-          method:
-            "POST",
+    const errorData =
+      await r.json();
 
-          signal:
-            abortCtrl.signal,
 
-          headers:{
-            "Content-Type":
-              "application/json"
-          },
+    if(errorData.error){
 
-          body:
-            JSON.stringify(
-              payload
-            )
-        }
-      );
-
-    if(
-      !r.ok ||
-      !r.body
-    ){
-
-      let message =
-        "HTTP " +
-        r.status;
-
-      try{
-
-        const errorData =
-          await r.json();
-
-        if(errorData.error){
-
-          message =
-            errorData.error;
-
-        }
-
-      }catch(e){}
-
-      throw new Error(
-        message
-      );
+      message =
+        errorData.error;
 
     }
 
-    const reader =
-      r.body.getReader();
+  }catch(e){}
 
-    const dec =
-      new TextDecoder();
 
-    let lineBuf =
-      "";
+  throw new Error(
+    message
+  );
 
-    while(true){
+}
 
-      const {
-        done,
-        value
-      } =
-        await reader.read();
 
-      if(done){
+const reader =
+  r.body.getReader();
 
-        break;
 
+const dec =
+  new TextDecoder();
+
+
+let lineBuf =
+  "";
+
+
+while(true){
+
+  const {
+    done,
+    value
+  } =
+    await reader.read();
+
+
+  if(done){
+
+    break;
+
+  }
+
+
+  lineBuf +=
+    dec.decode(
+      value,
+      {
+        stream:true
       }
+    );
 
-      lineBuf +=
-        dec.decode(
-          value,
-          {
-            stream:true
-          }
-        );
 
-      const lines =
-        lineBuf.split(
-          "\n"
-        );
+  const lines =
+    lineBuf.split(
+      "\n"
+    );
 
-      lineBuf =
-        lines.pop();
 
-      for(
-        const line of lines
-      ){
+  lineBuf =
+    lines.pop();
 
-        if(
-          !line.trim()
-        ){
 
-          continue;
+  for(
+    const line of lines
+  ){
 
-        }
+    if(
+      !line.trim()
+    ){
 
-        let j;
-
-        try{
-
-          j =
-            JSON.parse(
-              line
-            );
-
-        }catch(e){
-
-          continue;
-
-        }
-
-        if(j.err){
-
-          contentEl.innerHTML =
-            md(
-              acc || ""
-            );
-
-          addMsg(
-            "ai",
-            "⚠️ " +
-            j.err,
-            true
-          );
-
-          return acc;
-
-        }
-
-        if(j.d){
-
-          acc +=
-            j.d;
-
-          contentEl.textContent =
-            acc;
-
-          chat.scrollTop =
-            chat.scrollHeight;
-
-        }
-
-      }
+      continue;
 
     }
 
-  }catch(e){
 
-    if(
-      e.name !==
-      "AbortError"
-    ){
+    let j;
+
+
+    try{
+
+      j =
+        JSON.parse(
+          line
+        );
+
+    }catch(e){
+
+      continue;
+
+    }
+
+
+    if(j.err){
+
+      clearInterval(
+        thinkingTimer
+      );
+
+
+      contentEl.textContent =
+        "";
+
 
       addMsg(
         "ai",
         "⚠️ " +
-        e.message,
+        j.err,
         true
       );
+
 
       return acc;
 
     }
 
+
+    if(j.d){
+
+      if(
+        !receivedData
+      ){
+
+        receivedData =
+          true;
+
+        clearInterval(
+          thinkingTimer
+        );
+
+      }
+
+
+      acc +=
+        j.d;
+
+
+      contentEl.textContent =
+        acc;
+
+
+      chat.scrollTop =
+        chat.scrollHeight;
+
+    }
+
   }
+
+}
+```
+
+}catch(e){
+
+```
+clearInterval(
+  thinkingTimer
+);
+
+
+if(
+  e.name !==
+  "AbortError"
+){
+
+  contentEl.textContent =
+    "";
+
+
+  addMsg(
+    "ai",
+    "⚠️ " +
+    e.message,
+    true
+  );
+
 
   return acc;
 
 }
-
-
-function endGen(){
-
-  sendBtn.textContent =
-    "↑";
-
-  abortCtrl =
-    null;
-
-  sendBtn.disabled =
-    false;
-
-  inp.focus();
+```
 
 }
 
+clearInterval(
+thinkingTimer
+);
+
+return acc;
+
+}
 
 /* =========================================================
-   SEND
+END GENERATION
+========================================================= */
+
+function endGen(){
+
+sendBtn.textContent =
+"↑";
+
+sendBtn.classList.remove(
+"stop"
+);
+
+abortCtrl =
+null;
+
+sendBtn.disabled =
+false;
+
+inp.focus();
+
+}
+
+/* =========================================================
+SEND
 ========================================================= */
 
 async function send(){
 
-  const text =
-    inp.value.trim();
+const text =
+inp.value.trim();
 
-  if(
-    !text &&
-    !attachments.length
-  ){
+if(
+!text &&
+!attachments.length
+){
+
+```
+return;
+```
+
+}
+
+if(!activeChatId){
+
+```
+createChat();
+```
+
+}
+
+const atts =
+attachments.filter(
+a =>
+a.type !==
+"error"
+);
+
+const attNote =
+atts
+.map(
+a =>
+a.type === "image"
+? `[🖼️ ${a.name}]`
+: `[📄 ${a.name}]`
+)
+.join(" ");
+
+addMsg(
+"user",
+(
+text +
+(
+attNote
+? "\n" +
+attNote
+: ""
+)
+).trim()
+);
+
+inp.value =
+"";
+
+inp.style.height =
+"auto";
+
+attachments =
+[];
+
+renderAttach();
+
+sendBtn.disabled =
+true;
+
+const contentEl =
+addMsg(
+"ai",
+""
+);
+
+const acc =
+await streamRequest(
+"/api/chat",
+{
+text,
+
+```
+    attachments:
+      atts,
+
+    stream:
+      true
+  },
+  contentEl
+);
+```
+
+contentEl.innerHTML =
+acc
+? md(acc)
+: "<i>(пусто)</i>";
+
+chat.scrollTop =
+chat.scrollHeight;
+
+saveCurrentMessages();
+
+endGen();
+
+}
+
+/* =========================================================
+INPUT
+========================================================= */
+
+sendBtn.onclick =
+() =>
+abortCtrl
+? abortCtrl.abort()
+: send();
+
+inp.addEventListener(
+"keydown",
+e => {
+
+```
+if(
+  e.key === "Enter" &&
+  !e.shiftKey
+){
+
+  e.preventDefault();
+
+  send();
+
+}
+```
+
+}
+);
+
+inp.addEventListener(
+"input",
+() => {
+
+```
+inp.style.height =
+  "auto";
+
+
+inp.style.height =
+  Math.min(
+    inp.scrollHeight,
+    160
+  ) + "px";
+```
+
+}
+);
+
+/* =========================================================
+REGENERATE
+========================================================= */
+
+document
+.getElementById(
+"regen-btn"
+)
+.onclick =
+async () => {
+
+```
+if(abortCtrl){
+
+  return;
+
+}
+
+
+const aiMsgs =
+  [
+    ...chatInner
+      .querySelectorAll(
+        ".msg.ai"
+      )
+  ];
+
+
+if(!aiMsgs.length){
+
+  return;
+
+}
+
+
+aiMsgs[
+  aiMsgs.length - 1
+].remove();
+
+
+const contentEl =
+  addMsg(
+    "ai",
+    ""
+  );
+
+
+const acc =
+  await streamRequest(
+    "/api/regenerate",
+    {
+      stream:
+        true
+    },
+    contentEl
+  );
+
+
+contentEl.innerHTML =
+  acc
+    ? md(acc)
+    : "<i>(пусто)</i>";
+
+
+saveCurrentMessages();
+
+
+chat.scrollTop =
+  chat.scrollHeight;
+
+
+endGen();
+```
+
+};
+
+/* =========================================================
+EXPORT
+========================================================= */
+
+document
+.getElementById(
+"export-btn"
+)
+.onclick =
+async () => {
+
+```
+try{
+
+  showToast(
+    "Готовлю экспорт…"
+  );
+
+
+  const r =
+    await apiFetch(
+      "/api/config"
+    );
+
+
+  const d =
+    await r.json();
+
+
+  if(!r.ok){
+
+    throw new Error(
+      d.error ||
+      "Ошибка"
+    );
+
+  }
+
+
+  const mdText =
+    (d.history || [])
+      .map(
+        m =>
+          `**${
+            m.role === "user"
+              ? "Я"
+              : "Aiva"
+          }:**\n\n${m.content}\n`
+      )
+      .join(
+        "\n---\n\n"
+      );
+
+
+  const blob =
+    new Blob(
+      [
+        `# Aiva — экспорт чата\n\n${mdText}`
+      ],
+      {
+        type:
+          "text/markdown"
+      }
+    );
+
+
+  const a =
+    document.createElement(
+      "a"
+    );
+
+
+  a.href =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  a.download =
+    "aiva-chat.md";
+
+
+  a.click();
+
+
+  URL.revokeObjectURL(
+    a.href
+  );
+
+
+  showToast(
+    "Экспорт готов"
+  );
+
+
+}catch(e){
+
+  alert(
+    "Не удалось экспортировать чат."
+  );
+
+}
+```
+
+};
+
+/* =========================================================
+VOICE INPUT
+========================================================= */
+
+const SR =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+if(SR){
+
+micBtn.style.display =
+"";
+
+let rec =
+null;
+
+let recording =
+false;
+
+micBtn.onclick =
+() => {
+
+```
+  if(recording){
+
+    rec.stop();
 
     return;
 
   }
 
-  if(!activeChatId){
 
-    createChat();
+  rec =
+    new SR();
 
-  }
 
-  const atts =
-    attachments.filter(
-      a =>
-        a.type !==
-        "error"
-    );
+  rec.lang =
+    "ru-RU";
 
-  const attNote =
-    atts
-      .map(
-        a =>
-          a.type === "image"
-            ? `[🖼️ ${a.name}]`
-            : `[📄 ${a.name}]`
-      )
-      .join(" ");
 
-  addMsg(
-    "user",
-    (
-      text +
-      (
-        attNote
-          ? "\n" +
-            attNote
-          : ""
-      )
-    ).trim()
-  );
-
-  inp.value =
-    "";
-
-  inp.style.height =
-    "auto";
-
-  attachments =
-    [];
-
-  renderAttach();
-
-  sendBtn.disabled =
-    true;
-
-  const contentEl =
-    addMsg(
-      "ai",
-      "печатает…"
-    );
-
-  const acc =
-    await streamRequest(
-      "/api/chat",
-      {
-        text,
-        attachments:
-          atts,
-        stream:
-          true
-      },
-      contentEl
-    );
-
-  contentEl.innerHTML =
-    acc
-      ? md(acc)
-      : "<i>(пусто)</i>";
-
-  chat.scrollTop =
-    chat.scrollHeight;
-
-  saveCurrentMessages();
-
-  endGen();
-
-}
-
-
-/* =========================================================
-   INPUT
-========================================================= */
-
-sendBtn.onclick =
-  () =>
-    abortCtrl
-      ? abortCtrl.abort()
-      : send();
-
-
-inp.addEventListener(
-  "keydown",
-  e => {
-
-    if(
-      e.key === "Enter" &&
-      !e.shiftKey
-    ){
-
-      e.preventDefault();
-
-      send();
-
-    }
-
-  }
-);
-
-
-inp.addEventListener(
-  "input",
-  () => {
-
-    inp.style.height =
-      "auto";
-
-    inp.style.height =
-      Math.min(
-        inp.scrollHeight,
-        160
-      ) + "px";
-
-  }
-);
-
-
-/* =========================================================
-   REGENERATE
-========================================================= */
-
-document
-  .getElementById("regen-btn")
-  .onclick =
-  async () => {
-
-    if(abortCtrl){
-
-      return;
-
-    }
-
-    const aiMsgs =
-      [
-        ...chatInner
-          .querySelectorAll(
-            ".msg.ai"
-          )
-      ];
-
-    if(!aiMsgs.length){
-
-      return;
-
-    }
-
-    aiMsgs[
-      aiMsgs.length - 1
-    ].remove();
-
-    const contentEl =
-      addMsg(
-        "ai",
-        "печатает…"
-      );
-
-    const acc =
-      await streamRequest(
-        "/api/regenerate",
-        {
-          stream:
-            true
-        },
-        contentEl
-      );
-
-    contentEl.innerHTML =
-      acc
-        ? md(acc)
-        : "<i>(пусто)</i>";
-
-    saveCurrentMessages();
-
-    chat.scrollTop =
-      chat.scrollHeight;
-
-    endGen();
-
-  };
-
-
-/* =========================================================
-   EXPORT
-========================================================= */
-
-document
-  .getElementById("export-btn")
-  .onclick =
-  async () => {
-
-    try{
-
-      const r =
-        await apiFetch(
-          "/api/config"
-        );
-
-      const d =
-        await r.json();
-
-      if(!r.ok){
-
-        throw new Error(
-          d.error ||
-          "Ошибка"
-        );
-
-      }
-
-      const mdText =
-        (d.history || [])
-          .map(
-            m =>
-              `**${
-                m.role === "user"
-                  ? "Я"
-                  : "Aiva"
-              }:**\n\n${m.content}\n`
-          )
-          .join(
-            "\n---\n\n"
-          );
-
-      const blob =
-        new Blob(
-          [
-            `# Aiva — экспорт чата\n\n${mdText}`
-          ],
-          {
-            type:
-              "text/markdown"
-          }
-        );
-
-      const a =
-        document.createElement(
-          "a"
-        );
-
-      a.href =
-        URL.createObjectURL(
-          blob
-        );
-
-      a.download =
-        "aiva-chat.md";
-
-      a.click();
-
-      URL.revokeObjectURL(
-        a.href
-      );
-
-    }catch(e){
-
-      alert(
-        "Не удалось экспортировать чат."
-      );
-
-    }
-
-  };
-
-
-/* =========================================================
-   VOICE INPUT
-========================================================= */
-
-const SR =
-  window.SpeechRecognition ||
-  window.webkitSpeechRecognition;
-
-if(SR){
-
-  micBtn.style.display =
-    "";
-
-  let rec =
-    null;
-
-  let recording =
+  rec.interimResults =
     false;
 
-  micBtn.onclick =
-    () => {
 
-      if(recording){
+  rec.onresult =
+    e => {
 
-        rec.stop();
+      inp.value =
+        (
+          inp.value
+            ? inp.value + " "
+            : ""
+        ) +
+        e.results[0][0]
+          .transcript;
 
-        return;
 
-      }
-
-      rec =
-        new SR();
-
-      rec.lang =
-        "ru-RU";
-
-      rec.interimResults =
-        false;
-
-      rec.onresult =
-        e => {
-
-          inp.value =
-            (
-              inp.value
-                ? inp.value + " "
-                : ""
-            ) +
-            e.results[0][0]
-              .transcript;
-
-          inp.dispatchEvent(
-            new Event(
-              "input"
-            )
-          );
-
-        };
-
-      rec.onend =
-        () => {
-
-          recording =
-            false;
-
-          micBtn.classList.remove(
-            "on"
-          );
-
-        };
-
-      rec.onerror =
-        () => {
-
-          recording =
-            false;
-
-          micBtn.classList.remove(
-            "on"
-          );
-
-        };
-
-      recording =
-        true;
-
-      micBtn.classList.add(
-        "on"
+      inp.dispatchEvent(
+        new Event(
+          "input"
+        )
       );
-
-      rec.start();
 
     };
 
+
+  rec.onend =
+    () => {
+
+      recording =
+        false;
+
+
+      micBtn.classList.remove(
+        "on"
+      );
+
+    };
+
+
+  rec.onerror =
+    () => {
+
+      recording =
+        false;
+
+
+      micBtn.classList.remove(
+        "on"
+      );
+
+    };
+
+
+  recording =
+    true;
+
+
+  micBtn.classList.add(
+    "on"
+  );
+
+
+  rec.start();
+
+};
+```
+
 }
 
-
 /* =========================================================
-   PROMPT
+PROMPT
 ========================================================= */
 
 document
-  .getElementById("prompt-btn")
-  .onclick =
-    () =>
-      promptPanel.classList.add(
-        "open"
-      );
+.getElementById(
+"prompt-btn"
+)
+.onclick =
+() => {
 
+```
+  closeToolsPanel();
+
+  promptPanel.classList.add(
+    "open"
+  );
+
+};
+```
 
 document
-  .getElementById("close-prompt")
-  .onclick =
-    () =>
-      promptPanel.classList.remove(
-        "open"
-      );
-
+.getElementById(
+"close-prompt"
+)
+.onclick =
+() =>
+promptPanel.classList.remove(
+"open"
+);
 
 tempInput.oninput =
-  () =>
-    tempVal.textContent =
-      tempInput.value;
-
+() =>
+tempVal.textContent =
+tempInput.value;
 
 document
-  .getElementById("save-prompt")
-  .onclick =
-  async () => {
+.getElementById(
+"save-prompt"
+)
+.onclick =
+async () => {
 
-    try{
+```
+try{
 
-      const r =
-        await apiFetch(
-          "/api/prompt",
-          {
-            method:
-              "POST",
+  const r =
+    await apiFetch(
+      "/api/prompt",
+      {
+        method:
+          "POST",
 
-            headers:{
-              "Content-Type":
-                "application/json"
-            },
+        headers:{
+          "Content-Type":
+            "application/json"
+        },
 
-            body:
-              JSON.stringify({
+        body:
+          JSON.stringify({
 
-                systemPrompt:
-                  document.getElementById(
-                    "prompt-text"
-                  ).value,
+            systemPrompt:
+              document.getElementById(
+                "prompt-text"
+              ).value,
 
-                temperature:
-                  parseFloat(
-                    tempInput.value
-                  )
+            temperature:
+              parseFloat(
+                tempInput.value
+              )
 
-              })
-          }
-        );
-
-      if(!r.ok){
-
-        const d =
-          await r.json();
-
-        throw new Error(
-          d.error ||
-          "Ошибка"
-        );
+          })
 
       }
-
-      promptPanel.classList.remove(
-        "open"
-      );
-
-    }catch(e){
-
-      alert(
-        "Не удалось сохранить настройки."
-      );
-
-    }
-
-  };
+    );
 
 
-/* =========================================================
-   CLEAR CHAT
-========================================================= */
-
-document
-  .getElementById("clear-btn")
-  .onclick =
-  async () => {
-
-    if(
-      !confirm(
-        "Очистить текущий диалог?"
-      )
-    ){
-
-      return;
-
-    }
-
-    try{
-
-      await apiFetch(
-        "/api/clear",
-        {
-          method:
-            "POST"
-        }
-      );
-
-    }catch(e){}
-
-    const current =
-      getActiveChat();
-
-    if(current){
-
-      current.messages =
-        [];
-
-      current.title =
-        "Новый чат";
-
-      saveChats();
-
-    }
-
-    showWelcome();
-
-    renderHistory();
-
-  };
-
-
-/* =========================================================
-   INIT
-========================================================= */
-
-(async () => {
-
-  await authReady;
-
-  loadChats();
-
-  if(!chats.length){
-
-    createChat();
-
-  }else{
-
-    activeChatId =
-      chats[0].id;
-
-  }
-
-  renderHistory();
-
-  try{
-
-    const r =
-      await apiFetch(
-        "/api/config"
-      );
+  if(!r.ok){
 
     const d =
       await r.json();
 
-    if(!r.ok){
 
-      throw new Error(
-        d.error ||
-        "HTTP " +
-        r.status
-      );
-
-    }
-
-    modelInfo.textContent =
-      "Твой AI-ассистент";
-
-    document.getElementById(
-      "prompt-text"
-    ).value =
-      d.systemPrompt ||
-      "";
-
-    if(
-      d.temperature != null
-    ){
-
-      tempInput.value =
-        d.temperature;
-
-      tempVal.textContent =
-        d.temperature;
-
-    }
-
-    if(!d.hasKey){
-
-      addMsg(
-        "ai",
-        "⚠️ Ключ API не задан.",
-        true
-      );
-
-    }
-
-    const current =
-      getActiveChat();
-
-    if(
-      current &&
-      current.messages.length
-    ){
-
-      openChat(
-        current.id
-      );
-
-    }else{
-
-      showWelcome();
-
-    }
-
-  }catch(e){
-
-    showWelcome();
-
-    const {
-      data
-    } =
-      await supabaseClient.auth.getSession();
-
-    if(data.session){
-
-      addMsg(
-        "ai",
-        "Не удалось загрузить конфигурацию: " +
-        e.message,
-        true
-      );
-
-    }
+    throw new Error(
+      d.error ||
+      "Ошибка"
+    );
 
   }
+
+
+  promptPanel.classList.remove(
+    "open"
+  );
+
+
+  showToast(
+    "Характер Aiva сохранён"
+  );
+
+
+}catch(e){
+
+  alert(
+    "Не удалось сохранить настройки."
+  );
+
+}
+```
+
+};
+
+/* =========================================================
+CLEAR CHAT
+========================================================= */
+
+document
+.getElementById(
+"clear-btn"
+)
+.onclick =
+async () => {
+
+```
+if(
+  !confirm(
+    "Очистить текущий диалог?"
+  )
+){
+
+  return;
+
+}
+
+
+try{
+
+  await apiFetch(
+    "/api/clear",
+    {
+      method:
+        "POST"
+    }
+  );
+
+}catch(e){}
+
+
+const current =
+  getActiveChat();
+
+
+if(current){
+
+  current.messages =
+    [];
+
+  current.title =
+    "Новый чат";
+
+
+  saveChats();
+
+}
+
+
+showWelcome();
+
+renderHistory();
+
+
+showToast(
+  "Чат очищен"
+);
+```
+
+};
+
+/* =========================================================
+ESC
+========================================================= */
+
+document.addEventListener(
+"keydown",
+event => {
+
+```
+if(
+  event.key === "Escape"
+){
+
+  closeProfileMenu();
+
+  closeToolsPanel();
+
+  promptPanel.classList.remove(
+    "open"
+  );
+
+}
+```
+
+}
+);
+
+/* =========================================================
+INIT
+========================================================= */
+
+(async () => {
+
+await authReady;
+
+loadChats();
+
+if(!chats.length){
+
+```
+createChat();
+```
+
+}else{
+
+```
+activeChatId =
+  chats[0].id;
+```
+
+}
+
+renderHistory();
+
+try{
+
+```
+const r =
+  await apiFetch(
+    "/api/config"
+  );
+
+
+const d =
+  await r.json();
+
+
+if(!r.ok){
+
+  throw new Error(
+    d.error ||
+    "HTTP " +
+    r.status
+  );
+
+}
+
+
+modelInfo.textContent =
+  "Твой AI-ассистент";
+
+
+document.getElementById(
+  "prompt-text"
+).value =
+  d.systemPrompt ||
+  "";
+
+
+if(
+  d.temperature != null
+){
+
+  tempInput.value =
+    d.temperature;
+
+
+  tempVal.textContent =
+    d.temperature;
+
+}
+
+
+if(!d.hasKey){
+
+  addMsg(
+    "ai",
+    "⚠️ Ключ API не задан.",
+    true
+  );
+
+}
+
+
+const current =
+  getActiveChat();
+
+
+if(
+  current &&
+  current.messages.length
+){
+
+  openChat(
+    current.id
+  );
+
+}else{
+
+  showWelcome();
+
+}
+```
+
+}catch(e){
+
+```
+showWelcome();
+
+
+const {
+  data
+} =
+  await supabaseClient.auth.getSession();
+
+
+if(data.session){
+
+  addMsg(
+    "ai",
+    "Не удалось загрузить конфигурацию: " +
+    e.message,
+    true
+  );
+
+}
+```
+
+}
 
 })();
 
 </script>
 
+<!-- =========================================================
+     SERVICE WORKER
+========================================================= -->
 
 <script>
 
@@ -5467,9 +7454,11 @@ if(
 
 </script>
 
+<!-- =========================================================
+     PASSWORD RESET
+========================================================= -->
 
 <script src="/reset-password.js"></script>
 
 </body>
 </html>
-````
