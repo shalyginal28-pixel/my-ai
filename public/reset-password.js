@@ -662,3 +662,14 @@
     start();
   }
 })();
+  const style = document.createElement("style");
+
+  style.textContent = `
+    #regen-btn,
+    #export-btn,
+    #clear-btn {
+      display: none !important;
+    }
+  `;
+
+  document.head.appendChild(style);
