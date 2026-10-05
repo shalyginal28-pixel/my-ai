@@ -107,7 +107,20 @@
       if (existingError) {
         existingError.textContent = "";
       }
+const supabase = window.supabaseClient;
 
+if (!supabase || !supabase.auth) {
+  const existingError =
+    document.getElementById("authError");
+
+  if (existingError) {
+    existingError.textContent =
+      "Aiva ещё загружает авторизацию. Нажми ещё раз через секунду.";
+  }
+
+  forgotButton.disabled = false;
+  return;
+}
       try {
         const { error } =
           await supabase.auth.resetPasswordForEmail(
