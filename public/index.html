@@ -1231,63 +1231,148 @@ window.addEventListener("drop", e => {
 
 /* ================= STREAM ================= */
 async function streamRequest(url, payload, contentEl){
+
   abortCtrl = new AbortController();
+
   sendBtn.disabled = false;
   sendBtn.textContent = "■";
   sendBtn.classList.add("stop");
 
   let acc = "";
+
   try{
-    const r = await apiFetch(url, {
-      method: "POST",
-      signal: abortCtrl.signal,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
 
-    if(!r.ok || !r.body){
-      let message = "HTTP " + r.status;
-      try{
-        const errorData = await r.json();
-        if(errorData.error) message = errorData.error;
-      }catch(e){}
-      throw new Error(message);
-    }
+    /*
+      Отправляем обычный JSON-ответ.
+      Backend server.js это поддерживает:
+      { ok:true, reply:"...", model:"..." }
 
-    const reader = r.body.getReader();
-    const dec = new TextDecoder();
-    let lineBuf = "";
+      Это убирает проблему браузерного
+      "Failed to fetch" из-за NDJSON/стриминга.
+    */
 
-    while(true){
-      const { done, value } = await reader.read();
-      if(done) break;
-      lineBuf += dec.decode(value, { stream: true });
-      const lines = lineBuf.split("\n");
-      lineBuf = lines.pop();
-      for(const line of lines){
-        if(!line.trim()) continue;
-        let j;
-        try{ j = JSON.parse(line); }catch(e){ continue; }
-        if(j.err){
-          contentEl.innerHTML = md(acc || "");
-          addMsg("ai", "⚠️ " + j.err, true);
-          return acc;
-        }
-        if(j.d){
-          acc += j.d;
-          contentEl.textContent = acc;
-          chat.scrollTop = chat.scrollHeight;
-        }
-        if(j.done && j.model) modelInfo.textContent = j.model;
+    const r = await apiFetch(
+      url,
+      {
+        method: "POST",
+
+        signal: abortCtrl.signal,
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          ...payload,
+          stream: false
+        })
       }
+    );
+
+
+    let data = null;
+
+    try{
+
+      data = await r.json();
+
+    }catch(e){
+
+      data = null;
+
     }
+
+
+    if(!r.ok){
+
+      throw new Error(
+        data?.error ||
+        "HTTP " + r.status
+      );
+
+    }
+
+
+    if(!data){
+
+      throw new Error(
+        "Сервер вернул пустой ответ"
+      );
+
+    }
+
+
+    if(data.ok === false){
+
+      throw new Error(
+        data.error ||
+        "Сервер не смог обработать запрос"
+      );
+
+    }
+
+
+    acc = String(
+      data.reply ||
+      ""
+    );
+
+
+    if(data.model){
+
+      modelInfo.textContent =
+        data.model;
+
+    }
+
+
+    contentEl.textContent =
+      acc;
+
+
+    chat.scrollTop =
+      chat.scrollHeight;
+
+
+    return acc;
+
+
   }catch(e){
-    if(e.name !== "AbortError"){
-      addMsg("ai", "⚠️ " + e.message, true);
+
+    if(
+      e.name === "AbortError"
+    ){
+
       return acc;
+
     }
+
+
+    console.error(
+      "Aiva chat error:",
+      e
+    );
+
+
+    contentEl.textContent =
+      "";
+
+
+    addMsg(
+      "ai",
+      "⚠️ " +
+      (
+        e.message ||
+        "Не удалось получить ответ от сервера"
+      ),
+      true
+    );
+
+
+    return acc;
+
   }
-  return acc;
+
 }
 
 function endGen(){
