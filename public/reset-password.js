@@ -47,6 +47,13 @@
 
     return supabaseClient;
   }
+  supabaseClient.auth.onAuthStateChange(
+  function (event, session) {
+    if (event === "PASSWORD_RECOVERY") {
+      createResetPage();
+    }
+  }
+);
 
   function findEmailInput() {
     const inputs = Array.from(
@@ -147,9 +154,8 @@
             await supabase.auth.resetPasswordForEmail(
               email,
               {
-                redirectTo:
-  window.location.origin +
-  "/#reset-password"
+ redirectTo:
+  window.location.origin
               }
             );
 
