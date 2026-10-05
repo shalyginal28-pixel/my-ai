@@ -7,17 +7,17 @@
   "use strict";
 
   function waitForApp() {
-    if (
-      !window.supabase ||
-      !window.supabaseClient ||
-      !document.getElementById("authScreen")
-    ) {
-      setTimeout(waitForApp, 100);
-      return;
-    }
-
-    initPasswordReset();
+  if (!document.body) {
+    setTimeout(waitForApp, 100);
+    return;
   }
+
+  if (document.getElementById("aiva-reset-modal")) {
+    return;
+  }
+
+  initPasswordReset();
+}
 
   function initPasswordReset() {
     if (window.__aivaPasswordResetReady) {
