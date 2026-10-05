@@ -1,11 +1,16 @@
-alert("AIVA RESET JS РАБОТАЕТ");
 (function () {
-    const SUPABASE_URL = "https://gzphouchibqjxwudncdz.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_B_NiK_UGRWAjJfLlvOqc-w_4qaRIf0U";
+  const SUPABASE_URL =
+    "https://gzphouchibqjxwudncdz.supabase.co";
+
+  const SUPABASE_ANON_KEY =
+    "sb_publishable_B_NiK_UGRWAjJfLlvOqc-w_4qaRIf0U";
+
   let supabaseClient = null;
 
   async function getSupabase() {
-    if (supabaseClient) return supabaseClient;
+    if (supabaseClient) {
+      return supabaseClient;
+    }
 
     if (
       window.supabaseClient &&
@@ -43,36 +48,35 @@ alert("AIVA RESET JS РАБОТАЕТ");
     return supabaseClient;
   }
 
-  function findPasswordInput() {
+  function findEmailInput() {
     const inputs = Array.from(
       document.querySelectorAll("input")
     );
 
     return inputs.find(function (input) {
-      const type = String(input.type || "").toLowerCase();
-      const placeholder = String(
-        input.placeholder || ""
-      ).toLowerCase();
-      const name = String(
-        input.name || ""
-      ).toLowerCase();
-      const id = String(
-        input.id || ""
-      ).toLowerCase();
+      const type =
+        String(input.type || "").toLowerCase();
+
+      const placeholder =
+        String(input.placeholder || "").toLowerCase();
+
+      const name =
+        String(input.name || "").toLowerCase();
+
+      const id =
+        String(input.id || "").toLowerCase();
 
       return (
-        type === "password" ||
-        placeholder.includes("пароль") ||
-        placeholder.includes("password") ||
-        name.includes("password") ||
-        name.includes("pass") ||
-        id.includes("password") ||
-        id.includes("pass")
+        type === "email" ||
+        placeholder.includes("email") ||
+        placeholder.includes("почт") ||
+        name.includes("email") ||
+        id.includes("email")
       );
     });
   }
 
-  function addForgotButton() {
+  function addForgotPassword() {
     if (
       document.getElementById(
         "aiva-forgot-password"
@@ -81,52 +85,67 @@ alert("AIVA RESET JS РАБОТАЕТ");
       return;
     }
 
-    const passwordInput = findPasswordInput();
+    const emailInput = findEmailInput();
 
-    if (!passwordInput) {
+    if (!emailInput) {
       return;
     }
 
-    const button = document.createElement("button");
+    const button =
+      document.createElement("button");
 
-    button.id = "aiva-forgot-password";
+    button.id =
+      "aiva-forgot-password";
+
     button.type = "button";
-    button.textContent = "Забыли пароль?";
+
+    button.textContent =
+      "Забыли пароль?";
 
     button.style.cssText = `
       display:block;
       width:100%;
-      margin-top:8px;
-      padding:7px 0;
+      margin-top:12px;
+      padding:10px;
       border:0;
       background:transparent;
       color:#8b5cf6;
       font-size:14px;
+      font-weight:600;
       cursor:pointer;
-      text-align:right;
+      text-align:center;
     `;
 
     button.addEventListener(
       "click",
       async function () {
-        const email = prompt(
-          "Введите email вашего аккаунта Aiva:"
-        );
+        let email =
+          emailInput.value.trim();
 
         if (!email) {
-          return;
+          email = prompt(
+            "Введите email вашего аккаунта Aiva:"
+          );
+
+          if (!email) {
+            return;
+          }
+
+          email = email.trim();
         }
 
         try {
           button.disabled = true;
-          button.textContent = "Отправляем...";
+
+          button.textContent =
+            "Отправляем...";
 
           const supabase =
             await getSupabase();
 
           const { error } =
             await supabase.auth.resetPasswordForEmail(
-              email.trim(),
+              email,
               {
                 redirectTo:
                   window.location.origin +
@@ -140,9 +159,10 @@ alert("AIVA RESET JS РАБОТАЕТ");
 
           alert(
             "✅ Письмо отправлено на " +
-              email.trim() +
-              ". Проверь почту и папку «Спам»."
+              email +
+              "\n\nПроверь почту и папку «Спам»."
           );
+
         } catch (error) {
           console.error(
             "Aiva password reset:",
@@ -153,15 +173,18 @@ alert("AIVA RESET JS РАБОТАЕТ");
             "❌ Ошибка:\n\n" +
               error.message
           );
+
         } finally {
           button.disabled = false;
+
           button.textContent =
             "Забыли пароль?";
         }
       }
     );
 
-    const parent = passwordInput.parentElement;
+    const parent =
+      emailInput.parentElement;
 
     if (parent) {
       parent.appendChild(button);
@@ -207,9 +230,9 @@ alert("AIVA RESET JS РАБОТАЕТ");
         box-sizing:border-box;
         border-radius:24px;
         background:#151525;
+        color:white;
         border:1px solid rgba(255,255,255,.1);
         box-shadow:0 25px 80px rgba(0,0,0,.55);
-        color:#fff;
       }
 
       #aiva-reset-card h1 {
@@ -227,19 +250,15 @@ alert("AIVA RESET JS РАБОТАЕТ");
 
       #aiva-reset-card input {
         width:100%;
+        box-sizing:border-box;
         padding:14px 16px;
         margin-bottom:12px;
-        box-sizing:border-box;
         border-radius:12px;
         border:1px solid #333;
-        outline:none;
         background:#0f0f1b;
-        color:#fff;
+        color:white;
         font-size:16px;
-      }
-
-      #aiva-reset-card input:focus {
-        border-color:#8b5cf6;
+        outline:none;
       }
 
       #aiva-reset-card button {
@@ -252,7 +271,7 @@ alert("AIVA RESET JS РАБОТАЕТ");
           #8b5cf6,
           #6366f1
         );
-        color:#fff;
+        color:white;
         font-size:16px;
         font-weight:bold;
         cursor:pointer;
@@ -271,7 +290,8 @@ alert("AIVA RESET JS РАБОТАЕТ");
     const page =
       document.createElement("div");
 
-    page.id = "aiva-reset-page";
+    page.id =
+      "aiva-reset-page";
 
     page.innerHTML = `
       <div id="aiva-reset-card">
@@ -353,6 +373,7 @@ alert("AIVA RESET JS РАБОТАЕТ");
 
         try {
           button.disabled = true;
+
           button.textContent =
             "Сохраняем...";
 
@@ -382,10 +403,11 @@ alert("AIVA RESET JS РАБОТАЕТ");
           console.error(error);
 
           message.textContent =
-            "❌ Ошибка: " +
+            "❌ " +
             error.message;
 
           button.disabled = false;
+
           button.textContent =
             "Сохранить пароль";
         }
@@ -394,14 +416,14 @@ alert("AIVA RESET JS РАБОТАЕТ");
   }
 
   function start() {
-    // Кнопку ищем независимо от Supabase
-    addForgotButton();
+    addForgotPassword();
 
-    setInterval(function () {
-      addForgotButton();
-    }, 500);
+    setInterval(
+      addForgotPassword,
+      500
+    );
 
-    const isResetPage =
+    const isReset =
       window.location.pathname.includes(
         "reset-password"
       ) ||
@@ -409,13 +431,14 @@ alert("AIVA RESET JS РАБОТАЕТ");
         "type=recovery"
       );
 
-    if (isResetPage) {
+    if (isReset) {
       createResetPage();
     }
   }
 
   if (
-    document.readyState === "loading"
+    document.readyState ===
+    "loading"
   ) {
     document.addEventListener(
       "DOMContentLoaded",
