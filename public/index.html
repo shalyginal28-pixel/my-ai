@@ -3298,9 +3298,9 @@ document
   try{
 
     const r =
-      await fetch(
-        '/api/config'
-      );
+  await apiFetch(
+    '/api/config'
+  );
 
     const d =
       await r.json();
