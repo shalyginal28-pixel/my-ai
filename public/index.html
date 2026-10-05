@@ -31,7 +31,8 @@
   box-sizing:border-box;
 }
 
-html,body{
+html,
+body{
   width:100%;
   height:100%;
 }
@@ -43,7 +44,10 @@ body{
   overflow:hidden;
 }
 
-button,input,textarea,select{
+button,
+input,
+textarea,
+select{
   font-family:inherit;
 }
 
@@ -314,18 +318,6 @@ header{
   width:36px;
   padding:0;
   font-size:16px;
-}
-
-#model-select{
-  height:36px;
-  max-width:205px;
-  background:var(--panel);
-  color:var(--muted);
-  border:1px solid var(--border);
-  border-radius:9px;
-  padding:0 9px;
-  outline:none;
-  font-size:11px;
 }
 
 /* ================= CHAT ================= */
@@ -758,7 +750,7 @@ header{
   font-weight:650;
 }
 
-/* ================= MOBILE OVERLAY ================= */
+/* ================= MOBILE ================= */
 
 #sidebar-overlay{
   display:none;
@@ -768,8 +760,6 @@ header{
   backdrop-filter:blur(2px);
   z-index:70;
 }
-
-/* ================= SCROLLBAR ================= */
 
 ::-webkit-scrollbar{
   width:7px;
@@ -783,8 +773,6 @@ header{
 ::-webkit-scrollbar-track{
   background:transparent;
 }
-
-/* ================= MOBILE ================= */
 
 @media(max-width:800px){
 
@@ -817,10 +805,6 @@ header{
     height:58px;
     min-height:58px;
     padding:0 10px;
-  }
-
-  #model-select{
-    display:none;
   }
 
   .header-actions{
@@ -933,7 +917,7 @@ header{
 
 <div id="app">
 
-  <!-- ================= SIDEBAR ================= -->
+  <!-- SIDEBAR -->
 
   <aside id="sidebar">
 
@@ -974,14 +958,6 @@ header{
         <span>Характер Aiva</span>
       </button>
 
-      <button
-        class="sidebar-action"
-        id="sidebar-model"
-      >
-        <span>⚙️</span>
-        <span>Модель</span>
-      </button>
-
     </div>
 
   </aside>
@@ -989,7 +965,7 @@ header{
   <div id="sidebar-overlay"></div>
 
 
-  <!-- ================= MAIN ================= -->
+  <!-- MAIN -->
 
   <main id="main">
 
@@ -1014,7 +990,7 @@ header{
             class="sub"
             id="model-info"
           >
-            загрузка…
+            Твой AI-ассистент
           </div>
 
         </div>
@@ -1024,33 +1000,6 @@ header{
       <div class="spacer"></div>
 
       <div class="header-actions">
-
-        <select
-          id="model-select"
-          title="Модель"
-        >
-
-          <option value="openrouter/free">
-            openrouter/free
-          </option>
-
-          <option value="nvidia/nemotron-3-super-120b-a12b:free">
-            Nemotron 3 Super 120B
-          </option>
-
-          <option value="openai/gpt-oss-120b:free">
-            GPT-OSS 120B
-          </option>
-
-          <option value="google/gemma-4-31b-it:free">
-            Gemma 4 31B
-          </option>
-
-          <option value="custom">
-            Своя модель…
-          </option>
-
-        </select>
 
         <button
           class="ghost icon-btn"
@@ -1081,7 +1030,7 @@ header{
     </header>
 
 
-    <!-- ================= CHAT ================= -->
+    <!-- CHAT -->
 
     <div id="chat">
 
@@ -1183,14 +1132,14 @@ header{
     </div>
 
 
-    <!-- ================= DROPZONE ================= -->
+    <!-- DROPZONE -->
 
     <div id="dropzone">
       Отпусти файлы — прикреплю 📎
     </div>
 
 
-    <!-- ================= INPUT ================= -->
+    <!-- INPUT -->
 
     <div id="inputbar">
 
@@ -1241,7 +1190,7 @@ header{
 >
 
 
-<!-- ================= PROMPT ================= -->
+<!-- PROMPT PANEL -->
 
 <div id="prompt-panel">
 
@@ -1311,9 +1260,6 @@ const chat =
 const chatInner =
   document.querySelector('.chat-inner');
 
-const welcome =
-  document.getElementById('welcome');
-
 const inp =
   document.getElementById('inp');
 
@@ -1322,9 +1268,6 @@ const sendBtn =
 
 const modelInfo =
   document.getElementById('model-info');
-
-const modelSelect =
-  document.getElementById('model-select');
 
 const fileInput =
   document.getElementById('file-input');
@@ -1360,6 +1303,7 @@ const tempVal =
   document.getElementById('temp-val');
 
 let attachments = [];
+
 let abortCtrl = null;
 
 
@@ -1621,7 +1565,17 @@ function openChat(id){
 }
 
 
+/* =========================================================
+   WELCOME
+========================================================= */
+
 function showWelcome(){
+
+  /* Удаляем абсолютно всё старое содержимое.
+     Благодаря этому приветствие никогда
+     не появляется дважды. */
+
+  chatInner.innerHTML = '';
 
   const w =
     document.createElement('div');
@@ -1729,21 +1683,17 @@ function newChat(){
 
   }
 
-  if(
-    activeChatId
-  ){
-
+  if(activeChatId){
     saveCurrentMessages();
-
   }
 
   createChat();
 
-  chatInner.innerHTML = '';
-
   showWelcome();
 
   inp.value = '';
+
+  inp.style.height = 'auto';
 
   attachments = [];
 
@@ -1839,30 +1789,6 @@ document
     };
 
 
-document
-  .getElementById('sidebar-model')
-  .onclick =
-    () => {
-
-      closeSidebar();
-
-      if(
-        window.innerWidth <= 800
-      ){
-
-        alert(
-          'Выбор модели доступен в верхней панели на компьютере.'
-        );
-
-      }else{
-
-        modelSelect.focus();
-
-      }
-
-    };
-
-
 /* =========================================================
    MARKDOWN
 ========================================================= */
@@ -1935,7 +1861,7 @@ function md(t){
 
 
 /* =========================================================
-   VOICE
+   VOICE OUTPUT
 ========================================================= */
 
 function speak(text){
@@ -1982,13 +1908,13 @@ function addMsg(
   silent=false
 ){
 
-  const w =
+  const oldWelcome =
     document.getElementById(
       'welcome'
     );
 
-  if(w){
-    w.style.display = 'none';
+  if(oldWelcome){
+    oldWelcome.remove();
   }
 
   const d =
@@ -2078,11 +2004,22 @@ function addMsg(
       'Озвучить';
 
     bSpeak.onclick =
-      () =>
-        speechSynthesis.speaking
-          ? speechSynthesis.cancel()
-          : speak(text);
+      () => {
 
+        if(
+          window.speechSynthesis &&
+          speechSynthesis.speaking
+        ){
+
+          speechSynthesis.cancel();
+
+        }else{
+
+          speak(text);
+
+        }
+
+      };
 
     tb.append(
       bCopy,
@@ -2152,8 +2089,19 @@ function renderAttach(){
               ) + ' КБ'
             : a.size + ' симв.';
 
-      c.innerHTML =
-        `${icon}<span title="${a.name}">${a.name} · ${info}</span>`;
+      const span =
+        document.createElement('span');
+
+      span.textContent =
+        `${a.name} · ${info}`;
+
+      span.title =
+        a.name;
+
+      c.append(
+        document.createTextNode(icon),
+        span
+      );
 
       const x =
         document.createElement('button');
@@ -2461,16 +2409,6 @@ async function streamRequest(
 
         }
 
-        if(
-          j.done &&
-          j.model
-        ){
-
-          modelInfo.textContent =
-            j.model;
-
-        }
-
       }
 
     }
@@ -2709,105 +2647,6 @@ document
 
 
 /* =========================================================
-   MODEL
-========================================================= */
-
-async function setModel(
-  m,
-  silent
-){
-
-  try{
-
-    await fetch(
-      '/api/model',
-      {
-        method:'POST',
-        headers:{
-          'Content-Type':
-            'application/json'
-        },
-        body:
-          JSON.stringify({
-            model:m
-          })
-      }
-    );
-
-  }catch(e){}
-
-  modelInfo.textContent =
-    silent
-      ? m
-      : m + ' ✓';
-
-}
-
-
-modelSelect.onchange =
-  () => {
-
-    if(
-      modelSelect.value ===
-      'custom'
-    ){
-
-      const m =
-        prompt(
-          'Вставь slug модели с openrouter.ai/models:',
-          localStorage.myai_custom || ''
-        );
-
-      if(!m){
-
-        modelSelect.value =
-          localStorage.myai_model ||
-          'openrouter/free';
-
-        return;
-
-      }
-
-      localStorage.myai_custom =
-        m;
-
-      if(
-        ![
-          ...modelSelect.options
-        ].some(
-          o =>
-            o.value === m
-        )
-      ){
-
-        modelSelect.add(
-          new Option(m,m)
-        );
-
-      }
-
-      modelSelect.value = m;
-
-      localStorage.myai_model =
-        m;
-
-      setModel(m);
-
-    }else{
-
-      localStorage.myai_model =
-        modelSelect.value;
-
-      setModel(
-        modelSelect.value
-      );
-
-    }
-
-  };
-
-
-/* =========================================================
    EXPORT
 ========================================================= */
 
@@ -2877,7 +2716,7 @@ document
 
 
 /* =========================================================
-   VOICE
+   VOICE INPUT
 ========================================================= */
 
 const SR =
@@ -3041,7 +2880,7 @@ document
 
 
 /* =========================================================
-   CLEAR CURRENT SERVER CHAT
+   CLEAR CHAT
 ========================================================= */
 
 document
@@ -3084,8 +2923,6 @@ document
 
     }
 
-    chatInner.innerHTML = '';
-
     showWelcome();
 
     renderHistory();
@@ -3100,11 +2937,6 @@ document
 (async () => {
 
   loadChats();
-
-  /*
-   * Создаём первый локальный чат,
-   * если истории ещё нет.
-   */
 
   if(!chats.length){
 
@@ -3129,8 +2961,14 @@ document
     const d =
       await r.json();
 
+    /*
+      ВАЖНО:
+      модель намеренно не показываем.
+      Пользователь видит только бренд Aiva.
+    */
+
     modelInfo.textContent =
-      d.model;
+      'Твой AI-ассистент';
 
     document.getElementById(
       'prompt-text'
@@ -3158,62 +2996,6 @@ document
       );
 
     }
-
-    const saved =
-      localStorage.myai_model;
-
-    if(
-      saved &&
-      [
-        ...modelSelect.options
-      ].some(
-        o =>
-          o.value === saved
-      )
-    ){
-
-      modelSelect.value =
-        saved;
-
-    }
-
-    if(
-      saved &&
-      saved !== d.model
-    ){
-
-      setModel(
-        saved,
-        true
-      );
-
-    }
-
-    if(
-      localStorage.myai_custom &&
-      ![
-        ...modelSelect.options
-      ].some(
-        o =>
-          o.value ===
-          localStorage.myai_custom
-      )
-    ){
-
-      modelSelect.add(
-        new Option(
-          localStorage.myai_custom,
-          localStorage.myai_custom
-        )
-      );
-
-    }
-
-    /*
-     * Показываем последний локальный чат.
-     * Серверная история при этом остаётся
-     * полностью совместимой со старым API.
-     */
 
     const current =
       getActiveChat();
