@@ -4848,13 +4848,12 @@ if(
 <script src="/reset-password.js"></script>
 </body>```html
 <!-- =========================================================
-     AIVA — ПРАВАЯ ПАНЕЛЬ ИНСТРУМЕНТОВ
+     AIVA — МЕНЮ "⋯" В СТИЛЕ CHATGPT
      Вставить перед </body>
 ========================================================= -->
 
 <style>
-  /* Скрываем старые кнопки сверху,
-     но НЕ удаляем их — их JS продолжит работать */
+  /* Старые кнопки сверху больше не показываем */
   header .header-actions > #regen-btn,
   header .header-actions > #export-btn,
   header .header-actions > #prompt-btn,
@@ -4862,51 +4861,150 @@ if(
     display: none !important;
   }
 
-  /* Правая панель */
-  #right-sidebar {
-    width: 270px;
-    height: 100%;
-    flex: 0 0 270px;
+  /* Кнопка три точки */
+  #aiva-more-btn {
+    width: 38px;
+    height: 38px;
+
+    margin-right: 4px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background: transparent;
+    color: var(--muted, #999ca7);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 24px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+      background .15s ease,
+      color .15s ease;
+  }
+
+  #aiva-more-btn:hover {
+    background: var(--hover, rgba(255,255,255,.06));
+    color: var(--text, #fff);
+  }
+
+  /* Затемнение */
+  #aiva-tools-overlay {
+    position: fixed;
+    inset: 0;
+
+    z-index: 9990;
+
+    background: rgba(0,0,0,.28);
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+      opacity .2s ease,
+      visibility .2s ease;
+  }
+
+  #aiva-tools-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  /* Правая выезжающая панель */
+  #aiva-tools-panel {
+    position: fixed;
+
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 290px;
+
+    z-index: 9991;
+
     box-sizing: border-box;
+
+    padding: 18px 14px;
 
     background: var(--sidebar, #111218);
     border-left: 1px solid var(--border, rgba(255,255,255,.08));
 
-    padding: 18px 14px;
+    box-shadow:
+      -20px 0 60px rgba(0,0,0,.25);
+
+    transform: translateX(100%);
+
+    transition:
+      transform .22s cubic-bezier(.22,.61,.36,1);
+
     overflow-y: auto;
-
-    display: flex;
-    flex-direction: column;
-
-    color: var(--text, #f5f5f7);
   }
 
-  .right-title {
-    padding: 4px 6px 18px;
+  #aiva-tools-panel.open {
+    transform: translateX(0);
+  }
 
+  /* Заголовок панели */
+  .aiva-tools-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 2px 4px 18px;
+  }
+
+  .aiva-tools-title {
     font-size: 16px;
     font-weight: 700;
-
     color: var(--text, #f5f5f7);
   }
 
-  .right-section {
+  /* Закрыть */
+  #aiva-tools-close {
+    width: 34px;
+    height: 34px;
+
+    border: 0;
+    border-radius: 9px;
+
+    background: transparent;
+    color: var(--muted, #999ca7);
+
+    font-size: 23px;
+
+    cursor: pointer;
+  }
+
+  #aiva-tools-close:hover {
+    background: var(--hover, rgba(255,255,255,.06));
+    color: #fff;
+  }
+
+  .aiva-tools-section {
     margin-top: 8px;
   }
 
-  .right-section-title {
+  .aiva-tools-section-title {
     padding: 0 6px 8px;
-
-    color: var(--muted2, #747783);
 
     font-size: 11px;
     font-weight: 700;
 
+    color: var(--muted2, #747783);
+
     text-transform: uppercase;
-    letter-spacing: .09em;
+    letter-spacing: .08em;
   }
 
-  .right-action {
+  /* Кнопки */
+  .aiva-tools-action {
     width: 100%;
     min-height: 46px;
 
@@ -4924,26 +5022,22 @@ if(
     gap: 11px;
 
     text-align: left;
+
     font-size: 13px;
 
     cursor: pointer;
 
     transition:
       background .15s ease,
-      color .15s ease,
-      transform .15s ease;
+      color .15s ease;
   }
 
-  .right-action:hover {
+  .aiva-tools-action:hover {
     background: var(--hover, rgba(255,255,255,.06));
     color: var(--text, #fff);
   }
 
-  .right-action:active {
-    transform: scale(.98);
-  }
-
-  .right-action-icon {
+  .aiva-tools-icon {
     width: 25px;
     min-width: 25px;
 
@@ -4951,30 +5045,21 @@ if(
     align-items: center;
     justify-content: center;
 
-    font-size: 16px;
+    font-size: 17px;
   }
 
-  .right-divider {
+  .aiva-tools-divider {
     height: 1px;
-    margin: 14px 3px;
+
+    margin: 14px 4px;
 
     background: var(--border, rgba(255,255,255,.08));
   }
 
-  /* Чтобы панель нормально уживалась с твоим #app */
-  #app {
-    display: flex !important;
-    min-height: 100vh;
-  }
-
-  #right-sidebar {
-    align-self: stretch;
-  }
-
-  /* На маленьком экране прячем правую панель */
-  @media (max-width: 1100px) {
-    #right-sidebar {
-      display: none !important;
+  /* Мобильный экран */
+  @media (max-width: 600px) {
+    #aiva-tools-panel {
+      width: min(88vw, 320px);
     }
   }
 </style>
@@ -4983,135 +5068,296 @@ if(
 (function () {
   "use strict";
 
-  function initAivaRightSidebar() {
-    /* Не создаём панель дважды */
-    if (document.getElementById("right-sidebar")) {
+  function initAivaTools() {
+
+    /* Не создаём два раза */
+    if (document.getElementById("aiva-more-btn")) {
       return;
     }
 
-    const app = document.getElementById("app");
-    const main = document.getElementById("main");
+    const headerActions =
+      document.querySelector("header .header-actions");
 
-    if (!app || !main) {
+    if (!headerActions) {
       return;
     }
 
-    /* Создаём правую панель */
-    const sidebar = document.createElement("aside");
-    sidebar.id = "right-sidebar";
+    /* ==========================================
+       КНОПКА ⋯
+    ========================================== */
 
-    sidebar.innerHTML = `
-      <div class="right-title">
-        Инструменты
+    const moreButton =
+      document.createElement("button");
+
+    moreButton.id = "aiva-more-btn";
+    moreButton.type = "button";
+    moreButton.title = "Инструменты";
+    moreButton.setAttribute(
+      "aria-label",
+      "Инструменты"
+    );
+
+    moreButton.innerHTML = "⋯";
+
+    /* Ставим перед профилем */
+    const profileWrap =
+      document.getElementById("profile-wrap");
+
+    if (profileWrap) {
+      headerActions.insertBefore(
+        moreButton,
+        profileWrap
+      );
+    } else {
+      headerActions.appendChild(
+        moreButton
+      );
+    }
+
+    /* ==========================================
+       ЗАТЕМНЕНИЕ
+    ========================================== */
+
+    const overlay =
+      document.createElement("div");
+
+    overlay.id = "aiva-tools-overlay";
+
+    document.body.appendChild(
+      overlay
+    );
+
+    /* ==========================================
+       ПАНЕЛЬ
+    ========================================== */
+
+    const panel =
+      document.createElement("aside");
+
+    panel.id = "aiva-tools-panel";
+
+    panel.innerHTML = `
+      <div class="aiva-tools-head">
+
+        <div class="aiva-tools-title">
+          Инструменты
+        </div>
+
+        <button
+          id="aiva-tools-close"
+          type="button"
+          aria-label="Закрыть"
+        >
+          ×
+        </button>
+
       </div>
 
-      <div class="right-section">
+      <div class="aiva-tools-section">
 
-        <div class="right-section-title">
+        <div class="aiva-tools-section-title">
           Чат
         </div>
 
         <button
-          class="right-action"
+          class="aiva-tools-action"
+          data-aiva-tool="regen"
           type="button"
-          data-aiva-action="regen"
         >
-          <span class="right-action-icon">↻</span>
+          <span class="aiva-tools-icon">↻</span>
           <span>Перегенерировать</span>
         </button>
 
         <button
-          class="right-action"
+          class="aiva-tools-action"
+          data-aiva-tool="export"
           type="button"
-          data-aiva-action="export"
         >
-          <span class="right-action-icon">↓</span>
+          <span class="aiva-tools-icon">↓</span>
           <span>Экспорт чата</span>
         </button>
 
         <button
-          class="right-action"
+          class="aiva-tools-action"
+          data-aiva-tool="prompt"
           type="button"
-          data-aiva-action="prompt"
         >
-          <span class="right-action-icon">🎭</span>
+          <span class="aiva-tools-icon">🎭</span>
           <span>Характер Aiva</span>
         </button>
 
-        <div class="right-divider"></div>
+        <div class="aiva-tools-divider"></div>
 
         <button
-          class="right-action"
+          class="aiva-tools-action"
+          data-aiva-tool="clear"
           type="button"
-          data-aiva-action="clear"
         >
-          <span class="right-action-icon">⌫</span>
+          <span class="aiva-tools-icon">⌫</span>
           <span>Очистить чат</span>
         </button>
 
       </div>
     `;
 
-    /*
-      Ставим панель сразу после main:
-      Левая панель | Центр | Правая панель
-    */
-    main.insertAdjacentElement("afterend", sidebar);
+    document.body.appendChild(
+      panel
+    );
 
-    /* Подключаем существующие функции сайта */
-    const regenBtn = document.getElementById("regen-btn");
-    const exportBtn = document.getElementById("export-btn");
-    const promptBtn = document.getElementById("prompt-btn");
-    const clearBtn = document.getElementById("clear-btn");
+    /* ==========================================
+       ОТКРЫТЬ / ЗАКРЫТЬ
+    ========================================== */
 
-    const regenAction =
-      sidebar.querySelector('[data-aiva-action="regen"]');
-
-    const exportAction =
-      sidebar.querySelector('[data-aiva-action="export"]');
-
-    const promptAction =
-      sidebar.querySelector('[data-aiva-action="prompt"]');
-
-    const clearAction =
-      sidebar.querySelector('[data-aiva-action="clear"]');
-
-    if (regenAction && regenBtn) {
-      regenAction.addEventListener("click", function () {
-        regenBtn.click();
-      });
+    function openTools() {
+      panel.classList.add("open");
+      overlay.classList.add("open");
+      moreButton.classList.add("active");
     }
 
-    if (exportAction && exportBtn) {
-      exportAction.addEventListener("click", function () {
-        exportBtn.click();
-      });
+    function closeTools() {
+      panel.classList.remove("open");
+      overlay.classList.remove("open");
+      moreButton.classList.remove("active");
     }
 
-    if (promptAction && promptBtn) {
-      promptAction.addEventListener("click", function () {
-        promptBtn.click();
-      });
+    function toggleTools() {
+      if (
+        panel.classList.contains("open")
+      ) {
+        closeTools();
+      } else {
+        openTools();
+      }
     }
 
-    if (clearAction && clearBtn) {
-      clearAction.addEventListener("click", function () {
-        clearBtn.click();
-      });
+    moreButton.addEventListener(
+      "click",
+      toggleTools
+    );
+
+    overlay.addEventListener(
+      "click",
+      closeTools
+    );
+
+    const closeButton =
+      document.getElementById(
+        "aiva-tools-close"
+      );
+
+    if (closeButton) {
+      closeButton.addEventListener(
+        "click",
+        closeTools
+      );
     }
+
+    /* ==========================================
+       ПОДКЛЮЧАЕМ СТАРЫЕ ФУНКЦИИ
+    ========================================== */
+
+    const oldRegen =
+      document.getElementById("regen-btn");
+
+    const oldExport =
+      document.getElementById("export-btn");
+
+    const oldPrompt =
+      document.getElementById("prompt-btn");
+
+    const oldClear =
+      document.getElementById("clear-btn");
+
+    const actionRegen =
+      panel.querySelector(
+        '[data-aiva-tool="regen"]'
+      );
+
+    const actionExport =
+      panel.querySelector(
+        '[data-aiva-tool="export"]'
+      );
+
+    const actionPrompt =
+      panel.querySelector(
+        '[data-aiva-tool="prompt"]'
+      );
+
+    const actionClear =
+      panel.querySelector(
+        '[data-aiva-tool="clear"]'
+      );
+
+    if (actionRegen && oldRegen) {
+      actionRegen.addEventListener(
+        "click",
+        function () {
+          oldRegen.click();
+          closeTools();
+        }
+      );
+    }
+
+    if (actionExport && oldExport) {
+      actionExport.addEventListener(
+        "click",
+        function () {
+          oldExport.click();
+          closeTools();
+        }
+      );
+    }
+
+    if (actionPrompt && oldPrompt) {
+      actionPrompt.addEventListener(
+        "click",
+        function () {
+          oldPrompt.click();
+          closeTools();
+        }
+      );
+    }
+
+    if (actionClear && oldClear) {
+      actionClear.addEventListener(
+        "click",
+        function () {
+          oldClear.click();
+          closeTools();
+        }
+      );
+    }
+
+    /* ==========================================
+       ESC = ЗАКРЫТЬ
+    ========================================== */
+
+    document.addEventListener(
+      "keydown",
+      function (event) {
+        if (
+          event.key === "Escape"
+        ) {
+          closeTools();
+        }
+      }
+    );
   }
 
-  /*
-    Ждём загрузки страницы.
-    Небольшая задержка нужна, чтобы твой основной JS
-    успел создать интерфейс.
-  */
   function start() {
-    setTimeout(initAivaRightSidebar, 300);
+    setTimeout(
+      initAivaTools,
+      500
+    );
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", start);
+  if (
+    document.readyState === "loading"
+  ) {
+    document.addEventListener(
+      "DOMContentLoaded",
+      start
+    );
   } else {
     start();
   }
@@ -5119,5 +5365,3 @@ if(
 })();
 </script>
 ```
-
-</html>
