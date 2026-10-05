@@ -120,6 +120,50 @@ header{height:62px;min-height:62px;display:flex;align-items:center;gap:10px;padd
 #aiva-tools-overlay{position:fixed;inset:0;z-index:310;background:rgba(0,0,0,.3);opacity:0;visibility:hidden;pointer-events:none;transition:.18s}#aiva-tools-overlay.open{opacity:1;visibility:visible;pointer-events:auto}#aiva-tools-panel{width:310px;max-width:88vw;padding:16px;z-index:320;overflow-y:auto;background:linear-gradient(180deg,rgba(20,21,27,.99),rgba(14,15,20,.99));border-left:1px solid var(--border2);transform:translateX(100%)}#aiva-tools-panel.open{transform:none}.tools-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px}.tools-title{font-size:16px;font-weight:700}.tools-close{width:34px;height:34px;border-radius:9px;background:transparent;color:var(--muted);font-size:24px}.tools-close:hover{background:var(--hover);color:var(--text)}.tools-note{padding:10px 11px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.025);border-radius:11px;color:var(--muted);font-size:11px;line-height:1.45;margin-bottom:12px}.tools-section-title{padding:0 6px 8px;color:var(--muted2);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}.tools-action{width:100%;min-height:48px;margin:3px 0;padding:0 12px;border-radius:11px;background:transparent;color:var(--muted);display:flex;align-items:center;gap:11px;text-align:left;font-size:13px}.tools-action:hover{background:var(--hover);color:var(--text)}.tools-icon{width:24px;min-width:24px;display:flex;align-items:center;justify-content:center;font-size:17px}.tools-divider{height:1px;background:var(--border);margin:14px 4px}.tools-danger{color:#ff8585}.tools-danger:hover{background:rgba(255,80,80,.08);color:#ff9a9a}
 #settings-overlay,#pro-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.48);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px}.modal{width:min(560px,100%);background:linear-gradient(180deg,#17181f,#101117);border:1px solid var(--border2);border-radius:18px;box-shadow:var(--shadow);padding:18px}.modal.open{display:flex}.modal-head{display:flex;align-items:center;justify-content:space-between}.modal-title{font-size:18px;font-weight:700}.modal-close{width:36px;height:36px;border-radius:10px;background:transparent;color:var(--muted);font-size:24px}.modal-close:hover{background:var(--hover);color:var(--text)}.setting-row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:15px 4px;border-bottom:1px solid var(--border)}.setting-row:last-child{border-bottom:0}.setting-name{font-size:13px}.setting-desc{color:var(--muted2);font-size:11px;margin-top:3px;line-height:1.4}.switch{width:46px;height:26px;border-radius:999px;background:var(--panel2);position:relative;transition:.15s}.switch::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;top:3px;left:3px;background:#bbb;transition:.15s}.switch.on{background:rgba(118,104,255,.4)}.switch.on::after{left:23px;background:#fff}.theme-choice{height:36px;padding:0 10px;border-radius:9px;background:var(--panel);border:1px solid var(--border);color:var(--muted);font-size:12px}.theme-choice.active{color:#fff;border-color:rgba(118,104,255,.4)}.pro-card{margin-top:16px;padding:18px;border:1px solid rgba(118,104,255,.24);border-radius:15px;background:linear-gradient(135deg,rgba(118,104,255,.13),rgba(92,140,255,.06))}.pro-price{font-size:32px;font-weight:800;margin:10px 0}.pro-list{color:var(--muted);font-size:13px;line-height:1.7}.pro-btn{height:44px;margin-top:15px;width:100%;border-radius:11px;background:var(--text);color:#0b0b0f;font-weight:700}.modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 #aiva-toast{position:fixed;left:50%;bottom:24px;z-index:100000;transform:translate(-50%,10px);background:rgba(25,26,33,.96);border:1px solid rgba(255,255,255,.1);color:var(--text);padding:9px 13px;border-radius:10px;box-shadow:0 15px 50px rgba(0,0,0,.38);opacity:0;visibility:hidden;pointer-events:none;transition:.18s;font-size:12px}#aiva-toast.show{opacity:1;visibility:visible;transform:translate(-50%,0)}
+/* ===== PASSWORD RESET — встроено в index.html ===== */
+.aiva-forgot-password{
+  width:100%;height:36px;margin-top:2px;border:0;background:transparent;
+  color:var(--muted,#999ca7);font-size:13px;cursor:pointer;transition:color .15s ease;
+}
+.aiva-forgot-password:hover{color:#aaa1ff}
+.aiva-forgot-password:disabled{opacity:.55;cursor:wait}
+#aiva-reset-modal{
+  position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(0,0,0,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s ease,visibility .18s ease;
+}
+#aiva-reset-modal.open{opacity:1;visibility:visible;pointer-events:auto}
+.aiva-reset-card{
+  position:relative;width:min(100%,410px);padding:28px;border:1px solid rgba(255,255,255,.10);
+  border-radius:22px;background:linear-gradient(180deg,rgba(25,26,34,.99),rgba(15,16,21,.99));
+  box-shadow:0 30px 90px rgba(0,0,0,.55),0 8px 30px rgba(0,0,0,.30);transform:translateY(8px) scale(.98);transition:transform .18s ease;
+}
+#aiva-reset-modal.open .aiva-reset-card{transform:none}
+.aiva-reset-close{
+  position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.07);
+  background:transparent;color:var(--muted,#999ca7);font-size:24px;line-height:1;cursor:pointer;
+}
+.aiva-reset-close:hover{background:rgba(255,255,255,.05);color:#fff}
+.aiva-reset-logo{
+  width:54px;height:54px;margin-bottom:18px;display:flex;align-items:center;justify-content:center;border-radius:17px;
+  background:linear-gradient(135deg,var(--accent,#7668ff),var(--accent2,#5c8cff));color:#fff;font-size:23px;font-weight:800;
+  box-shadow:0 12px 35px rgba(100,90,255,.28)
+}
+.aiva-reset-card h2{margin:0;color:var(--text,#f5f5f7);font-size:24px;line-height:1.2}
+.aiva-reset-subtitle{margin:9px 0 20px;color:var(--muted,#999ca7);font-size:13px;line-height:1.5}
+.aiva-reset-card input{
+  width:100%;height:48px;margin-top:9px;padding:0 14px;border:1px solid rgba(255,255,255,.09);border-radius:12px;outline:none;
+  background:rgba(255,255,255,.035);color:var(--text,#f5f5f7);font-size:14px;transition:border-color .15s ease,background .15s ease
+}
+.aiva-reset-card input::placeholder{color:#696c76}
+.aiva-reset-card input:focus{border-color:rgba(118,104,255,.48);background:rgba(255,255,255,.05)}
+.aiva-reset-submit{width:100%;height:48px;margin-top:12px;border-radius:12px;background:var(--text);color:#0b0b0f;font-weight:700;font-size:14px}
+.aiva-reset-submit:disabled{opacity:.55;cursor:wait}
+.aiva-reset-message{min-height:22px;margin-top:12px;color:#ff8585;font-size:12px;line-height:1.45}
+.aiva-reset-message.success{color:#75e0a1}
+.aiva-reset-back{width:100%;height:38px;margin-top:2px;background:transparent;color:var(--muted);font-size:13px}
+.aiva-reset-back:hover{color:var(--text)}
+
 .auth-screen{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 20%,rgba(118,104,255,.12),transparent 35%),#0b0b0f;padding:20px}.auth-screen.hidden{display:none}.auth-box{width:100%;max-width:400px;text-align:center}.auth-logo{width:68px;height:68px;margin:0 auto 20px;border-radius:21px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:700;box-shadow:0 15px 55px rgba(91,105,255,.28)}.auth-box h1{font-size:31px;line-height:1.1;margin-bottom:8px;letter-spacing:-.6px}.auth-box>p{color:var(--muted);margin-bottom:26px;font-size:14px}.auth-box input{width:100%;height:50px;margin-bottom:11px;padding:0 15px;border-radius:13px;border:1px solid var(--border);background:var(--panel);color:var(--text);outline:none;font-size:14px}.auth-box input:focus{border-color:rgba(118,104,255,.7);box-shadow:0 0 0 3px rgba(118,104,255,.08)}#authSubmit{width:100%;height:50px;border-radius:13px;background:var(--text);color:#0b0b0f;font-weight:650;font-size:14px}.auth-secondary{width:100%;height:42px;margin-top:8px;background:transparent;color:var(--muted);font-size:14px}.auth-secondary:hover{color:var(--text)}.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--muted2);font-size:12px}.auth-divider::before,.auth-divider::after{content:"";height:1px;flex:1;background:var(--border)}.google-btn{width:100%;height:50px;border-radius:13px;background:var(--panel);border:1px solid var(--border)!important;color:var(--text);font-size:14px}.google-btn:hover{background:var(--hover)}#authError{min-height:20px;margin-top:15px;color:#ff7777;font-size:13px;line-height:1.4}
 @media(max-width:800px){#sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);box-shadow:20px 0 60px rgba(0,0,0,.35)}#sidebar.open{transform:none}.sidebar-close{display:block}.menu-btn{display:block}#sidebar-overlay.on{display:block}header{height:58px;min-height:58px;padding:0 10px}.model-select{display:none}.profile-menu{position:fixed;top:62px;right:10px}.toolbar{opacity:1}#chat{padding:22px 13px 150px}#welcome{min-height:calc(100vh - 220px);padding:25px 5px}.welcome-logo{width:64px;height:64px;border-radius:19px;font-size:29px}.quick-actions{grid-template-columns:1fr 1fr;gap:8px}.quick-card{padding:13px}.quick-description{display:none}.msg{gap:8px;margin-bottom:22px}.msg .ava{width:28px;height:28px}.msg>div:nth-child(2){max-width:88%}.content{font-size:14.5px}#inputbar{padding:7px 10px max(10px,env(safe-area-inset-bottom))}#inputrow{padding:7px;border-radius:16px}#inp{font-size:14px}#prompt-panel{width:100%;max-width:100%}}
 @media(max-width:420px){.quick-actions{grid-template-columns:1fr}.quick-card{display:flex;align-items:center;gap:10px}.quick-icon{margin:0}.quick-title{margin:0}.profile-menu{right:8px;width:calc(100vw - 16px);max-width:292px}#aiva-tools-panel{width:calc(100vw - 24px);max-width:calc(100vw - 24px)}}
@@ -372,8 +416,110 @@ const savedMode=localStorage.getItem("aiva_model_mode");if(savedMode&&[...modelS
 (async()=>{await authReady;loadChats();if(!chats.length)createChat();else activeChatId=chats[0].id;renderHistory();try{const r=await apiFetch("/api/config");const d=await r.json();if(!r.ok)throw new Error(d.error||"HTTP "+r.status);modelInfo.textContent="Твой AI-ассистент";$("prompt-text").value=d.systemPrompt||"";if(d.temperature!=null){tempInput.value=d.temperature;tempVal.textContent=d.temperature}const current=getActiveChat();if(current&&current.messages.length)openChat(current.id);else showWelcome()}catch(e){showWelcome();const {data}=await supabaseClient.auth.getSession();if(data.session)addMsg("ai","Не удалось загрузить конфигурацию: "+e.message,true)}})();
 </script>
 <script>
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(e=>console.error("Service Worker:",e)))}
+/* ===== CLEAN OLD SERVICE WORKER =====
+   Раньше Aiva регистрировала /sw.js. Если старый SW остался у браузера,
+   он мог ломать POST /api/chat и давать именно "Failed to fetch".
+*/
+(async()=>{
+  if(!('serviceWorker' in navigator)) return;
+  try{
+    const regs=await navigator.serviceWorker.getRegistrations();
+    if(!regs.length) return;
+    await Promise.all(regs.map(r=>r.unregister()));
+    if(window.caches){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+    if(!sessionStorage.getItem('aiva_sw_cleaned_once')){
+      sessionStorage.setItem('aiva_sw_cleaned_once','1');
+      window.location.reload();
+    }
+  }catch(e){ console.warn('Aiva SW cleanup:',e); }
+})();
 </script>
-<script src="/reset-password.js"></script>
+<script>
+/* ===== PASSWORD RESET — полностью встроено, отдельный reset-password.js не нужен ===== */
+(function(){
+  const forgot=document.getElementById('aiva-forgot-password');
+  if(!forgot || !window.supabaseClient) return;
+
+  function buildModal(){
+    let modal=document.getElementById('aiva-reset-modal');
+    if(modal) return modal;
+    modal=document.createElement('div');
+    modal.id='aiva-reset-modal';
+    modal.innerHTML=`
+      <div class="aiva-reset-card">
+        <button id="aiva-reset-close" class="aiva-reset-close" type="button" aria-label="Закрыть">×</button>
+        <div class="aiva-reset-logo">A</div>
+        <h2>Сброс пароля</h2>
+        <p class="aiva-reset-subtitle">На email придёт ссылка для создания нового пароля.</p>
+        <input id="aiva-new-password" type="password" placeholder="Новый пароль" autocomplete="new-password" minlength="6">
+        <input id="aiva-confirm-password" type="password" placeholder="Повтори новый пароль" autocomplete="new-password" minlength="6">
+        <button id="aiva-reset-submit" class="aiva-reset-submit" type="button">Сохранить новый пароль</button>
+        <div id="aiva-reset-message" class="aiva-reset-message"></div>
+        <button id="aiva-reset-back" class="aiva-reset-back" type="button">Вернуться ко входу</button>
+      </div>`;
+    document.body.appendChild(modal);
+
+    const close=()=>{modal.classList.remove('open');document.body.classList.remove('aiva-reset-open')};
+    const message=(t,ok=false)=>{const el=document.getElementById('aiva-reset-message');el.textContent=t||'';el.classList.toggle('success',!!ok)};
+    document.getElementById('aiva-reset-close').onclick=close;
+    document.getElementById('aiva-reset-back').onclick=close;
+    modal.addEventListener('click',e=>{if(e.target===modal)close()});
+
+    document.getElementById('aiva-reset-submit').onclick=async()=>{
+      const np=document.getElementById('aiva-new-password');
+      const cp=document.getElementById('aiva-confirm-password');
+      const btn=document.getElementById('aiva-reset-submit');
+      const a=np.value,b=cp.value;
+      message('');
+      if(a.length<6)return message('Пароль должен содержать минимум 6 символов.');
+      if(a!==b)return message('Пароли не совпадают.');
+      btn.disabled=true;
+      try{
+        const {error}=await window.supabaseClient.auth.updateUser({password:a});
+        if(error) throw error;
+        np.value='';cp.value='';message('Пароль успешно изменён.',true);
+        setTimeout(()=>{close();window.history.replaceState({},document.title,window.location.pathname);window.location.reload()},900);
+      }catch(e){message(e?.message||'Не удалось изменить пароль. Попробуй ещё раз.')}finally{btn.disabled=false}
+    };
+
+    return modal;
+  }
+
+  async function sendResetEmail(){
+    const email=String(document.getElementById('authEmail')?.value||'').trim();
+    const err=document.getElementById('authError');
+    if(!email){
+      if(err){err.classList.remove('success');err.textContent='Сначала введи email.'}
+      document.getElementById('authEmail')?.focus();
+      return;
+    }
+    forgot.disabled=true;
+    if(err){err.classList.remove('success');err.textContent=''}
+    try{
+      const {error}=await window.supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:`${window.location.origin}/?reset=1`});
+      if(error)throw error;
+      if(err){err.classList.add('success');err.textContent='Письмо для сброса пароля отправлено. Проверь почту.'}
+    }catch(e){
+      if(err){err.classList.remove('success');err.textContent=`Не удалось отправить письмо: ${e?.message||'ошибка'}`}
+    }finally{forgot.disabled=false}
+  }
+
+  forgot.onclick=sendResetEmail;
+  const modal=buildModal();
+  const openReset=()=>{
+    const m=buildModal();
+    m.classList.add('open');
+    document.body.classList.add('aiva-reset-open');
+    const msg=document.getElementById('aiva-reset-message');if(msg){msg.textContent='';msg.classList.remove('success')}
+    setTimeout(()=>document.getElementById('aiva-new-password')?.focus(),50);
+  };
+  window.supabaseClient.auth.onAuthStateChange(event=>{if(event==='PASSWORD_RECOVERY')openReset()});
+  if(new URLSearchParams(window.location.search).get('reset')==='1')setTimeout(openReset,500);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('aiva-reset-modal')?.classList.remove('open')});
+})();
+</script>
 </body>
 </html>
