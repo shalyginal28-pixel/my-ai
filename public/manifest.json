@@ -1,0 +1,23 @@
+{
+
+  "name": "Aiva",
+
+  "short_name": "Aiva",
+
+  "description": "Your AI Assistant",
+
+  "start_url": "/",
+
+  "display": "standalone",
+
+  "background_color": "#0b0b12",
+
+  "theme_color": "#0b0b12",
+
+  "orientation": "portrait",
+
+  "scope": "/",
+
+  "lag": "en"
+
+}
