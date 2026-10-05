@@ -1,7 +1,6 @@
-const SUPABASE_URL = "https://gzphouchibqjxwudncdz.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_B_NiK_UGRWAjJfLlvOqc-w_4qaRIf0U";
-
 (function () {
+    const SUPABASE_URL = "https://gzphouchibqjxwudncdz.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_B_NiK_UGRWAjJfLlvOqc-w_4qaRIf0U";
   let supabaseClient = null;
 
   async function getSupabase() {
