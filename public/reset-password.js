@@ -29,19 +29,162 @@
     return client;
   }
 
-  function addButton() {
-    if (
-      document.getElementById("aiva-forgot-password")
-    ) {
-      return;
+ function addButton() {
+  const oldButton = document.getElementById(
+    "aiva-forgot-password"
+  );
+
+  const inputs = Array.from(
+    document.querySelectorAll("input")
+  );
+
+  const emailInput = inputs.find(function (input) {
+    const type = String(input.type || "").toLowerCase();
+    const placeholder = String(
+      input.placeholder || ""
+    ).toLowerCase();
+
+    return (
+      type === "email" ||
+      placeholder.includes("email") ||
+      placeholder.includes("почт")
+    );
+  });
+
+  const passwordInput = inputs.find(function (input) {
+    const type = String(input.type || "").toLowerCase();
+    const placeholder = String(
+      input.placeholder || ""
+    ).toLowerCase();
+
+    return (
+      type === "password" ||
+      placeholder.includes("пароль") ||
+      placeholder.includes("password")
+    );
+  });
+
+  function isVisible(element) {
+    if (!element) return false;
+
+    const rect = element.getBoundingClientRect();
+
+    return (
+      rect.width > 0 &&
+      rect.height > 0 &&
+      getComputedStyle(element).display !== "none" &&
+      getComputedStyle(element).visibility !== "hidden"
+    );
+  }
+
+  // Если экран входа закрыт — убираем кнопку
+  if (
+    !isVisible(emailInput) &&
+    !isVisible(passwordInput)
+  ) {
+    if (oldButton) {
+      oldButton.remove();
     }
 
-    const text = document.body.innerText || "";
+    return;
+  }
 
-    // Показываем кнопку только когда открыт экран входа
-    if (!text.includes("Войти в Aiva")) {
-      return;
+  // Уже есть — ничего не делаем
+  if (oldButton) {
+    return;
+  }
+
+  const button =
+    document.createElement("button");
+
+  button.id =
+    "aiva-forgot-password";
+
+  button.type = "button";
+
+  button.textContent =
+    "Забыли пароль?";
+
+  button.style.cssText = `
+    display:block;
+    width:100%;
+    margin-top:8px;
+    padding:8px 0;
+    border:0;
+    background:transparent;
+    color:#8b5cf6;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    text-align:center;
+  `;
+
+  button.onclick = async function () {
+    let email =
+      emailInput && emailInput.value
+        ? emailInput.value.trim()
+        : "";
+
+    if (!email) {
+      email = prompt(
+        "Введите email вашего аккаунта Aiva:"
+      );
+
+      if (!email) return;
+
+      email = email.trim();
     }
+
+    try {
+      button.disabled = true;
+      button.textContent =
+        "Отправляем...";
+
+      const supabase =
+        await getClient();
+
+      const result =
+        await supabase.auth.resetPasswordForEmail(
+          email,
+          {
+            redirectTo:
+              window.location.origin
+          }
+        );
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      alert(
+        "✅ Письмо отправлено на:\n\n" +
+        email
+      );
+    } catch (error) {
+      alert(
+        "❌ Ошибка:\n\n" +
+        error.message
+      );
+    } finally {
+      button.disabled = false;
+      button.textContent =
+        "Забыли пароль?";
+    }
+  };
+
+  const target =
+    passwordInput ||
+    emailInput;
+
+  if (
+    target &&
+    target.parentElement
+  ) {
+    target.parentElement.appendChild(
+      button
+    );
+  }
+}
 
     const wrap = document.createElement("div");
 
