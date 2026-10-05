@@ -34,63 +34,65 @@
     "aiva-forgot-password"
   );
 
-  const inputs = Array.from(
-    document.querySelectorAll("input")
-  );
-
-  const emailInput = inputs.find(function (input) {
-    const type = String(input.type || "").toLowerCase();
-    const placeholder = String(
-      input.placeholder || ""
-    ).toLowerCase();
-
+  // Ищем именно заголовок окна входа
+  const heading = Array.from(
+    document.querySelectorAll("*")
+  ).find(function (el) {
     return (
-      type === "email" ||
-      placeholder.includes("email") ||
-      placeholder.includes("почт")
+      el.textContent.trim() === "Войти в Aiva" &&
+      el.getBoundingClientRect().width > 0 &&
+      el.getBoundingClientRect().height > 0
     );
   });
 
-  const passwordInput = inputs.find(function (input) {
-    const type = String(input.type || "").toLowerCase();
-    const placeholder = String(
-      input.placeholder || ""
-    ).toLowerCase();
-
-    return (
-      type === "password" ||
-      placeholder.includes("пароль") ||
-      placeholder.includes("password")
-    );
-  });
-
-  function isVisible(element) {
-    if (!element) return false;
-
-    const rect = element.getBoundingClientRect();
-
-    return (
-      rect.width > 0 &&
-      rect.height > 0 &&
-      getComputedStyle(element).display !== "none" &&
-      getComputedStyle(element).visibility !== "hidden"
-    );
-  }
-
-  // Если экран входа закрыт — убираем кнопку
-  if (
-    !isVisible(emailInput) &&
-    !isVisible(passwordInput)
-  ) {
+  // Если окно входа закрыто — убираем кнопку
+  if (!heading) {
     if (oldButton) {
       oldButton.remove();
     }
-
     return;
   }
 
-  // Уже есть — ничего не делаем
   if (oldButton) {
+    return;
+  }
+
+  // Ищем контейнер окна входа
+  let container = heading;
+
+  for (let i = 0; i < 8; i++) {
+    if (!container.parentElement) break;
+
+    container = container.parentElement;
+
+    const inputs =
+      container.querySelectorAll("input");
+
+    const buttons =
+      container.querySelectorAll("button");
+
+    if (
+      inputs.length >= 2 &&
+      buttons.length >= 2
+    ) {
+      break;
+    }
+  }
+
+  // Ищем пароль
+  const passwordInput =
+    Array.from(
+      container.querySelectorAll("input")
+    ).find(function (input) {
+      return (
+        input.type === "password" ||
+        String(input.placeholder || "")
+          .toLowerCase()
+          .includes("пароль")
+      );
+    });
+
+  if (!passwordInput) {
     return;
   }
 
@@ -116,14 +118,26 @@
     font-size:14px;
     font-weight:600;
     cursor:pointer;
-    text-align:center;
   `;
 
   button.onclick = async function () {
-    let email =
-      emailInput && emailInput.value
-        ? emailInput.value.trim()
-        : "";
+    let email = "";
+
+    const emailInput =
+      Array.from(
+        container.querySelectorAll("input")
+      ).find(function (input) {
+        return (
+          input.type === "email" ||
+          String(input.placeholder || "")
+            .toLowerCase()
+            .includes("email")
+        );
+      });
+
+    if (emailInput) {
+      email = emailInput.value.trim();
+    }
 
     if (!email) {
       email = prompt(
@@ -137,13 +151,12 @@
 
     try {
       button.disabled = true;
-      button.textContent =
-        "Отправляем...";
+      button.textContent = "Отправляем...";
 
       const supabase =
         await getClient();
 
-      const result =
+      const { error } =
         await supabase.auth.resetPasswordForEmail(
           email,
           {
@@ -152,19 +165,24 @@
           }
         );
 
-      if (result.error) {
-        throw result.error;
+      if (error) {
+        throw error;
       }
 
       alert(
         "✅ Письмо отправлено на:\n\n" +
-        email
+        email +
+        "\n\nПроверь почту и папку «Спам»."
       );
+
     } catch (error) {
+      console.error(error);
+
       alert(
         "❌ Ошибка:\n\n" +
         error.message
       );
+
     } finally {
       button.disabled = false;
       button.textContent =
@@ -172,18 +190,10 @@
     }
   };
 
-  const target =
-    passwordInput ||
-    emailInput;
-
-  if (
-    target &&
-    target.parentElement
-  ) {
-    target.parentElement.appendChild(
-      button
-    );
-  }
+  passwordInput.parentElement.appendChild(
+    button
+  );
+}
 }
 
     const wrap = document.createElement("div");
