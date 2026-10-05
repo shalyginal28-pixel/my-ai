@@ -395,3 +395,253 @@
     start();
   }
 })();
+(function () {
+  function setupAivaTopMenu() {
+    const buttons = Array.from(
+      document.querySelectorAll("button")
+    );
+
+    const refreshBtn = buttons.find(
+      (b) => b.textContent.trim() === "↻"
+    );
+
+    const downloadBtn = buttons.find(
+      (b) => b.textContent.trim() === "↓"
+    );
+
+    const characterBtn = buttons.find(
+      (b) => b.textContent.trim() === "🎭"
+    );
+
+    const clearBtn = buttons.find(
+      (b) => b.textContent.trim() === "⌫"
+    );
+
+    if (!characterBtn) return;
+
+    if (
+      document.getElementById(
+        "aiva-top-menu-button"
+      )
+    ) {
+      return;
+    }
+
+    // Прячем старые технические кнопки
+    [refreshBtn, downloadBtn, clearBtn].forEach(
+      (btn) => {
+        if (btn) {
+          btn.style.display = "none";
+        }
+      }
+    );
+
+    // Контейнер
+    const wrapper = document.createElement("div");
+
+    wrapper.id = "aiva-top-menu-wrapper";
+
+    wrapper.style.cssText = `
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      margin-left:8px;
+    `;
+
+    characterBtn.parentNode.insertBefore(
+      wrapper,
+      characterBtn
+    );
+
+    wrapper.appendChild(characterBtn);
+
+    // Кнопка меню
+    const menuButton =
+      document.createElement("button");
+
+    menuButton.id =
+      "aiva-top-menu-button";
+
+    menuButton.type = "button";
+
+    menuButton.textContent = "⋮";
+
+    menuButton.style.cssText = `
+      width:40px;
+      height:40px;
+      margin-left:6px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+      background:rgba(255,255,255,.04);
+      color:#fff;
+      font-size:24px;
+      line-height:1;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:.2s;
+    `;
+
+    menuButton.onmouseenter = function () {
+      menuButton.style.background =
+        "rgba(139,92,246,.18)";
+    };
+
+    menuButton.onmouseleave = function () {
+      menuButton.style.background =
+        "rgba(255,255,255,.04)";
+    };
+
+    wrapper.appendChild(menuButton);
+
+    // Меню
+    const menu = document.createElement("div");
+
+    menu.id = "aiva-top-menu";
+
+    menu.style.cssText = `
+      position:absolute;
+      top:48px;
+      right:0;
+      min-width:190px;
+      padding:8px;
+      border-radius:16px;
+      background:#151525;
+      border:1px solid rgba(255,255,255,.1);
+      box-shadow:0 20px 50px rgba(0,0,0,.45);
+      display:none;
+      z-index:999999;
+    `;
+
+    function addMenuItem(
+      title,
+      icon,
+      action
+    ) {
+      const item =
+        document.createElement("button");
+
+      item.type = "button";
+
+      item.innerHTML =
+        `<span style="margin-right:10px">${icon}</span>${title}`;
+
+      item.style.cssText = `
+        width:100%;
+        padding:12px 14px;
+        border:0;
+        border-radius:10px;
+        background:transparent;
+        color:#fff;
+        text-align:left;
+        font-size:14px;
+        cursor:pointer;
+      `;
+
+      item.onmouseenter = function () {
+        item.style.background =
+          "rgba(139,92,246,.15)";
+      };
+
+      item.onmouseleave = function () {
+        item.style.background =
+          "transparent";
+      };
+
+      item.onclick = function (event) {
+        event.stopPropagation();
+
+        menu.style.display = "none";
+
+        action();
+      };
+
+      menu.appendChild(item);
+    }
+
+    if (refreshBtn) {
+      addMenuItem(
+        "Обновить",
+        "↻",
+        function () {
+          refreshBtn.click();
+        }
+      );
+    }
+
+    if (downloadBtn) {
+      addMenuItem(
+        "Экспорт",
+        "↓",
+        function () {
+          downloadBtn.click();
+        }
+      );
+    }
+
+    if (clearBtn) {
+      addMenuItem(
+        "Очистить чат",
+        "⌫",
+        function () {
+          clearBtn.click();
+        }
+      );
+    }
+
+    addMenuItem(
+      "Характер Aiva",
+      "🎭",
+      function () {
+        characterBtn.click();
+      }
+    );
+
+    wrapper.appendChild(menu);
+
+    menuButton.onclick = function (event) {
+      event.stopPropagation();
+
+      menu.style.display =
+        menu.style.display === "none"
+          ? "block"
+          : "none";
+    };
+
+    document.addEventListener(
+      "click",
+      function () {
+        menu.style.display = "none";
+      }
+    );
+  }
+
+  function startAivaMenu() {
+    setupAivaTopMenu();
+
+    const observer =
+      new MutationObserver(function () {
+        setupAivaTopMenu();
+      });
+
+    observer.observe(
+      document.body,
+      {
+        childList: true,
+        subtree: true
+      }
+    );
+  }
+
+  if (
+    document.readyState === "loading"
+  ) {
+    document.addEventListener(
+      "DOMContentLoaded",
+      startAivaMenu
+    );
+  } else {
+    startAivaMenu();
+  }
+})();
