@@ -114,6 +114,15 @@ async function requireAuth(req, res, next) {
     });
   }
 }
+app.get('/api/me', requireAuth, (req, res) => {
+  res.json({
+    ok: true,
+    user: {
+      id: req.user.id,
+      email: req.user.email
+    }
+  });
+});
 app.get('/sw.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sw.js'));
 });
