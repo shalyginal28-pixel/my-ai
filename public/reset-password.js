@@ -107,20 +107,20 @@
       if (existingError) {
         existingError.textContent = "";
       }
-const supabase = window.supabaseClient;
+const supabase = await new Promise((resolve) => {
+  const check = () => {
+    if (
+      window.supabaseClient &&
+      window.supabaseClient.auth
+    ) {
+      resolve(window.supabaseClient);
+    } else {
+      setTimeout(check, 100);
+    }
+  };
 
-if (!supabase || !supabase.auth) {
-  const existingError =
-    document.getElementById("authError");
-
-  if (existingError) {
-    existingError.textContent =
-      "Aiva ещё загружает авторизацию. Нажми ещё раз через секунду.";
-  }
-
-  forgotButton.disabled = false;
-  return;
-}
+  check();
+});
       try {
         const { error } =
           await supabase.auth.resetPasswordForEmail(
