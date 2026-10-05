@@ -67,6 +67,53 @@ let systemPrompt = 'Ты — умный русскоязычный AI-ассис
 
 app.use(express.json({ limit: '30mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+// ===== Авторизация Supabase =====
+async function requireAuth(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization || '';
+
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        ok: false,
+        error: 'Требуется авторизация'
+      });
+    }
+
+    const token = authHeader.slice(7).trim();
+
+    if (!token) {
+      return res.status(401).json({
+        ok: false,
+        error: 'Требуется токен'
+      });
+    }
+
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({
+        ok: false,
+        error: 'Сессия недействительна'
+      });
+    }
+
+    req.user = user;
+    req.accessToken = token;
+
+    next();
+
+  } catch (e) {
+    console.error('Auth error:', e);
+
+    res.status(401).json({
+      ok: false,
+      error: 'Ошибка авторизации'
+    });
+  }
+}
 app.get('/sw.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sw.js'));
 });
