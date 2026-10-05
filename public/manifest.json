@@ -18,3 +18,8 @@
     }
   ]
 }
+{
+  "id": "/",
+  "name": "Aiva",
+  "short_name": "Aiva",
+  "description": "Your AI Assistant",
