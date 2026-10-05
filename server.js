@@ -58,6 +58,9 @@ let systemPrompt = 'Ты — умный русскоязычный AI-ассис
 
 app.use(express.json({ limit: '30mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.get('/sw.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'sw.js'));
+});
 
 app.get('/api/config', (req, res) => {
   res.json({ model: MODEL, hasKey: !!API_KEY, systemPrompt, temperature: TEMP, history: history.slice(-100) });
