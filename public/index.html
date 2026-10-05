@@ -327,6 +327,14 @@ document.getElementById('clear-btn').onclick = async () => {
     modelSelect.add(new Option(localStorage.myai_custom, localStorage.myai_custom));
   (d.history || []).forEach(m => addMsg(m.role, m.content));
 })();
+</script><script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js")
+      .then(() => console.log("Aiva Service Worker установлен"))
+      .catch(error => console.error("Service Worker:", error));
+  });
+}
 </script>
 </body>
 </html>
