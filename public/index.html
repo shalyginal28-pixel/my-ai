@@ -3424,32 +3424,22 @@ const SUPABASE_KEY =
   "sb_publishable_B_NiK_UGRWAjJfLlvOqc-w_4qaRIf0U";
 
 
-const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
-  // ===== Запросы с авторизацией =====
 async function apiFetch(url, options = {}) {
   const {
     data: { session }
   } = await supabaseClient.auth.getSession();
 
-  const headers = new Headers(options.headers || {});
+  options.headers = {
+    ...(options.headers || {})
+  };
 
   if (session?.access_token) {
-    headers.set(
-      'Authorization',
-      `Bearer ${session.access_token}`
-    );
+    options.headers.Authorization =
+      `Bearer ${session.access_token}`;
   }
 
-  return fetch(url, {
-    ...options,
-    headers
-  });
+  return fetch(url, options);
 }
-
 
 const authScreen =
   document.getElementById(
