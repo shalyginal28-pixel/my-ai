@@ -2,15 +2,15 @@
 <html lang="ru">
 <head>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0b0b0f">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0b0b0f">
 
-  <title>Aiva — AI Assistant</title>
+<title>Aiva — AI Assistant</title>
 
 <style>
 
@@ -343,7 +343,8 @@ header{
 
 .profile-wrap{
   position:relative;
-  margin-left:4px;
+  margin-left:5px;
+  z-index:250;
 }
 
 .profile-btn{
@@ -351,140 +352,232 @@ header{
   height:38px;
   padding:0;
   border-radius:50%;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  background:linear-gradient(
+    135deg,
+    var(--accent),
+    var(--accent2)
+  );
   color:#fff;
   display:flex;
   align-items:center;
   justify-content:center;
   font-size:14px;
-  font-weight:750;
-  box-shadow:0 5px 20px rgba(100,90,255,.22);
-  border:2px solid rgba(255,255,255,.08);
-  transition:.18s;
+  font-weight:800;
+  border:2px solid rgba(255,255,255,.10);
+  box-shadow:
+    0 6px 22px rgba(100,90,255,.25);
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease;
 }
 
 .profile-btn:hover{
-  transform:scale(1.04);
-  border-color:rgba(255,255,255,.18);
+  transform:scale(1.06);
+  border-color:rgba(255,255,255,.22);
+  box-shadow:
+    0 8px 28px rgba(100,90,255,.35);
 }
 
 .profile-menu{
   position:absolute;
-  top:48px;
+  top:49px;
   right:0;
-  width:270px;
-  background:#15161b;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:15px;
-  padding:8px;
+  width:292px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(24,25,32,.98),
+      rgba(17,18,23,.98)
+    );
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:17px;
+  padding:9px;
   box-shadow:
-    0 18px 55px rgba(0,0,0,.45),
-    0 5px 20px rgba(0,0,0,.25);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
+    0 24px 70px rgba(0,0,0,.55),
+    0 8px 25px rgba(0,0,0,.30);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+
   opacity:0;
   visibility:hidden;
-  transform:translateY(-6px) scale(.98);
+  pointer-events:none;
+
+  transform:
+    translateY(-7px)
+    scale(.97);
+
   transform-origin:top right;
-  transition:.16s ease;
-  z-index:200;
+
+  transition:
+    opacity .16s ease,
+    transform .16s ease,
+    visibility .16s ease;
 }
 
 .profile-menu.open{
   opacity:1;
   visibility:visible;
+  pointer-events:auto;
   transform:none;
 }
 
 .profile-head{
   display:flex;
   align-items:center;
-  gap:11px;
-  padding:10px;
-  margin-bottom:5px;
+  gap:12px;
+  padding:11px;
 }
 
 .profile-avatar-large{
-  width:42px;
-  height:42px;
+  width:46px;
+  height:46px;
   flex-shrink:0;
-  border-radius:13px;
+  border-radius:14px;
+
   display:flex;
   align-items:center;
   justify-content:center;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      var(--accent2)
+    );
+
   color:#fff;
-  font-size:16px;
-  font-weight:750;
+  font-size:17px;
+  font-weight:800;
+
+  box-shadow:
+    0 7px 22px rgba(100,90,255,.25);
 }
 
 .profile-info{
   min-width:0;
+  flex:1;
 }
 
 .profile-email{
   color:var(--text);
   font-size:13px;
-  font-weight:600;
+  font-weight:650;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
 }
 
-.profile-status{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  margin-top:4px;
+.profile-user-id{
   color:var(--muted2);
-  font-size:11px;
+  font-size:10px;
+  margin-top:5px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 
-.free-badge{
-  display:inline-flex;
+.profile-plan{
+  width:100%;
+  min-height:58px;
+  padding:9px 10px;
+
+  display:flex;
   align-items:center;
-  height:20px;
-  padding:0 7px;
-  border-radius:6px;
-  background:rgba(118,104,255,.13);
+  justify-content:space-between;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(118,104,255,.13),
+      rgba(92,140,255,.07)
+    );
+
+  border:1px solid rgba(118,104,255,.16);
+  border-radius:12px;
+
+  cursor:pointer;
+  transition:.16s;
+}
+
+.profile-plan:hover{
+  background:
+    linear-gradient(
+      135deg,
+      rgba(118,104,255,.18),
+      rgba(92,140,255,.11)
+    );
+
+  border-color:rgba(118,104,255,.28);
+}
+
+.profile-plan-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.profile-plan-icon{
+  width:32px;
+  height:32px;
+  border-radius:9px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:rgba(118,104,255,.17);
   color:#aaa1ff;
+  font-size:15px;
+}
+
+.profile-plan-title{
+  color:#aaa1ff;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+
+.profile-plan-subtitle{
+  color:var(--muted2);
   font-size:10px;
-  font-weight:700;
+  margin-top:2px;
+}
+
+.profile-plan-arrow{
+  color:var(--muted2);
+  font-size:20px;
 }
 
 .profile-divider{
   height:1px;
   background:var(--border);
-  margin:5px 4px;
+  margin:7px 4px;
 }
 
 .profile-item{
   width:100%;
-  height:42px;
+  height:43px;
+
   display:flex;
   align-items:center;
   gap:10px;
+
   padding:0 10px;
-  border-radius:9px;
+
+  border-radius:10px;
   background:transparent;
+
   color:var(--muted);
   text-align:left;
   font-size:13px;
+
   transition:.15s;
 }
 
 .profile-item:hover{
   background:var(--hover);
   color:var(--text);
-}
-
-.profile-item.logout{
-  color:#ff7f7f;
-}
-
-.profile-item.logout:hover{
-  background:rgba(255,80,80,.09);
-  color:#ff9999;
 }
 
 .profile-item-icon{
@@ -495,6 +588,20 @@ header{
 
 .profile-item-text{
   flex:1;
+}
+
+.profile-item-arrow{
+  color:var(--muted2);
+  font-size:17px;
+}
+
+.profile-item.logout{
+  color:#ff7777;
+}
+
+.profile-item.logout:hover{
+  background:rgba(255,75,75,.09);
+  color:#ff9696;
 }
 
 
@@ -1183,7 +1290,7 @@ header{
     position:fixed;
     top:62px;
     right:10px;
-    width:270px;
+    width:292px;
   }
 
   #chat{
@@ -1286,18 +1393,18 @@ header{
     margin:0;
   }
 
+  .profile-menu{
+    right:8px;
+    width:calc(100vw - 16px);
+    max-width:292px;
+  }
+
 }
 
 </style>
-
 </head>
 
 <body>
-
-
-<!-- =======================================================
-     APP
-======================================================= -->
 
 <div id="app">
 
@@ -1404,15 +1511,17 @@ header{
           title="Очистить"
         >⌫</button>
 
-        <!-- PROFILE -->
-
-        <div class="profile-wrap" id="profile-wrap">
+        <div
+          class="profile-wrap"
+          id="profile-wrap"
+        >
 
           <button
             class="profile-btn"
             id="profile-btn"
             title="Профиль"
             aria-label="Профиль"
+            aria-expanded="false"
           >
             A
           </button>
@@ -1440,19 +1549,47 @@ header{
                   Загрузка...
                 </div>
 
-                <div class="profile-status">
+                <div
+                  class="profile-user-id"
+                >
+                  ID:
+                  <span id="profile-user-id">
+                    —
+                  </span>
+                </div>
 
-                  <span class="free-badge">
+              </div>
+
+            </div>
+
+            <div
+              class="profile-plan"
+              id="profile-plan-btn"
+            >
+
+              <div class="profile-plan-left">
+
+                <div class="profile-plan-icon">
+                  ✦
+                </div>
+
+                <div>
+
+                  <div class="profile-plan-title">
                     FREE
-                  </span>
+                  </div>
 
-                  <span>
-                    Аккаунт Aiva
-                  </span>
+                  <div class="profile-plan-subtitle">
+                    Бесплатный тариф
+                  </div>
 
                 </div>
 
               </div>
+
+              <span class="profile-plan-arrow">
+                ›
+              </span>
 
             </div>
 
@@ -1472,7 +1609,33 @@ header{
                 Настройки
               </span>
 
+              <span class="profile-item-arrow">
+                ›
+              </span>
+
             </button>
+
+            <button
+              class="profile-item"
+              id="profile-subscription"
+              type="button"
+            >
+
+              <span class="profile-item-icon">
+                💎
+              </span>
+
+              <span class="profile-item-text">
+                Тариф и подписка
+              </span>
+
+              <span class="profile-item-arrow">
+                ›
+              </span>
+
+            </button>
+
+            <div class="profile-divider"></div>
 
             <button
               class="profile-item logout"
@@ -1537,7 +1700,6 @@ header{
 
             </button>
 
-
             <button
               class="quick-card"
               data-prompt="Придумай мне несколько интересных идей"
@@ -1556,7 +1718,6 @@ header{
 
             </button>
 
-
             <button
               class="quick-card"
               data-prompt="Помоги мне разобраться с кодом"
@@ -1574,7 +1735,6 @@ header{
               </div>
 
             </button>
-
 
             <button
               class="quick-card"
@@ -1775,10 +1935,6 @@ header{
 </div>
 
 
-<!-- =========================================================
-     ALL JAVASCRIPT
-========================================================= -->
-
 <script>
 
 /* =========================================================
@@ -1814,6 +1970,9 @@ const profileWrap =
 const profileEmail =
   document.getElementById("profile-email");
 
+const profileUserId =
+  document.getElementById("profile-user-id");
+
 const profileAvatarLarge =
   document.getElementById("profile-avatar-large");
 
@@ -1823,17 +1982,35 @@ const logoutBtn =
 const profileSettings =
   document.getElementById("profile-settings");
 
+const profileSubscription =
+  document.getElementById("profile-subscription");
+
+const profilePlanBtn =
+  document.getElementById("profile-plan-btn");
+
 
 function getUserInitial(email){
 
   const value =
-    String(email || "A")
-      .trim();
+    String(email || "A").trim();
 
   return (
-    value.charAt(0) ||
-    "A"
+    value.charAt(0) || "A"
   ).toUpperCase();
+
+}
+
+
+function shortUserId(id){
+
+  if(!id){
+    return "—";
+  }
+
+  return (
+    String(id).slice(0,8) +
+    "..."
+  );
 
 }
 
@@ -1844,6 +2021,9 @@ function updateProfile(user){
 
     profileEmail.textContent =
       "Не авторизован";
+
+    profileUserId.textContent =
+      "—";
 
     profileBtn.textContent =
       "A";
@@ -1865,6 +2045,9 @@ function updateProfile(user){
   profileEmail.textContent =
     email;
 
+  profileUserId.textContent =
+    shortUserId(user.id);
+
   profileBtn.textContent =
     initial;
 
@@ -1876,8 +2059,11 @@ function updateProfile(user){
 
 function openProfileMenu(){
 
-  profileMenu.classList.add(
-    "open"
+  profileMenu.classList.add("open");
+
+  profileBtn.setAttribute(
+    "aria-expanded",
+    "true"
   );
 
 }
@@ -1885,8 +2071,11 @@ function openProfileMenu(){
 
 function closeProfileMenu(){
 
-  profileMenu.classList.remove(
-    "open"
+  profileMenu.classList.remove("open");
+
+  profileBtn.setAttribute(
+    "aria-expanded",
+    "false"
   );
 
 }
@@ -1898,9 +2087,17 @@ profileBtn.addEventListener(
 
     event.stopPropagation();
 
-    profileMenu.classList.toggle(
-      "open"
-    );
+    if(
+      profileMenu.classList.contains("open")
+    ){
+
+      closeProfileMenu();
+
+    }else{
+
+      openProfileMenu();
+
+    }
 
   }
 );
@@ -1917,6 +2114,24 @@ document.addEventListener(
     ){
 
       closeProfileMenu();
+
+    }
+
+  }
+);
+
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if(event.key === "Escape"){
+
+      closeProfileMenu();
+
+      promptPanel.classList.remove(
+        "open"
+      );
 
     }
 
@@ -1957,11 +2172,6 @@ async function logout(){
 
     }
 
-    /*
-      Чистим только локальную
-      сессию приложения.
-    */
-
     activeChatId =
       null;
 
@@ -1975,6 +2185,9 @@ async function logout(){
       );
 
     }catch(e){}
+
+    chatInner.innerHTML =
+      "";
 
     showAuthScreen();
 
@@ -2011,15 +2224,68 @@ logoutBtn.addEventListener(
 
 profileSettings.addEventListener(
   "click",
-  () => {
+  async () => {
 
     closeProfileMenu();
 
+    const {
+      data
+    } =
+      await supabaseClient.auth.getUser();
+
+    const user =
+      data?.user;
+
+    if(!user){
+
+      alert(
+        "Пользователь не авторизован."
+      );
+
+      return;
+
+    }
+
     alert(
-      "Настройки профиля Aiva появятся здесь."
+      "Настройки Aiva\n\n" +
+      "Email: " +
+      (user.email || "—") +
+      "\n\n" +
+      "ID: " +
+      (user.id || "—") +
+      "\n\n" +
+      "Тариф: FREE"
     );
 
   }
+);
+
+
+/* =========================================================
+   SUBSCRIPTION
+========================================================= */
+
+function showSubscription(){
+
+  closeProfileMenu();
+
+  alert(
+    "💎 Aiva PRO\n\n" +
+    "Платная подписка пока находится в разработке.\n\n" +
+    "Здесь позже появятся тарифы, оплата и управление подпиской."
+  );
+
+}
+
+
+profilePlanBtn.addEventListener(
+  "click",
+  showSubscription
+);
+
+profileSubscription.addEventListener(
+  "click",
+  showSubscription
 );
 
 
@@ -2870,7 +3136,6 @@ function showWelcome(){
         class="quick-card"
         data-prompt="Помоги мне написать текст"
       >
-
         <div class="quick-icon">
           ✍️
         </div>
@@ -2894,7 +3159,6 @@ function showWelcome(){
         class="quick-card"
         data-prompt="Придумай мне несколько интересных идей"
       >
-
         <div class="quick-icon">
           💡
         </div>
@@ -2918,7 +3182,6 @@ function showWelcome(){
         class="quick-card"
         data-prompt="Помоги мне разобраться с кодом"
       >
-
         <div class="quick-icon">
           💻
         </div>
@@ -2942,7 +3205,6 @@ function showWelcome(){
         class="quick-card"
         data-prompt="Объясни мне сложную тему простыми словами"
       >
-
         <div class="quick-icon">
           🧠
         </div>
@@ -4549,10 +4811,6 @@ document
 </script>
 
 
-<!-- =======================================================
-     SERVICE WORKER
-======================================================= -->
-
 <script>
 
 if(
@@ -4587,7 +4845,6 @@ if(
 }
 
 </script>
-
 
 </body>
 </html>
