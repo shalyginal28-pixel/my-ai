@@ -1,3 +1,4 @@
+````html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -334,6 +335,238 @@ header{
   width:36px;
   padding:0;
   font-size:16px;
+}
+
+
+/* =========================================================
+   СТАРЫЕ КНОПКИ ИНСТРУМЕНТОВ
+   Оставляем в DOM для существующего JS,
+   но визуально скрываем.
+========================================================= */
+
+.legacy-tool-btn{
+  display:none !important;
+}
+
+
+/* =========================================================
+   КНОПКА •••
+========================================================= */
+
+#aiva-more-btn{
+  width:38px;
+  height:38px;
+  padding:0;
+  margin-left:2px;
+  margin-right:2px;
+
+  border:0;
+  border-radius:10px;
+
+  background:transparent;
+  color:var(--muted);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  transition:
+    background .15s ease,
+    color .15s ease,
+    transform .15s ease;
+}
+
+#aiva-more-btn:hover{
+  background:var(--panel);
+  color:var(--text);
+}
+
+#aiva-more-btn.active{
+  background:var(--panel);
+  color:var(--text);
+}
+
+#aiva-more-btn:active{
+  transform:scale(.95);
+}
+
+#aiva-more-btn svg{
+  width:21px;
+  height:21px;
+  display:block;
+}
+
+
+/* =========================================================
+   МЕНЮ ИНСТРУМЕНТОВ
+========================================================= */
+
+#aiva-tools-overlay{
+  position:fixed;
+  inset:0;
+  z-index:290;
+
+  background:rgba(0,0,0,.28);
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+
+  transition:
+    opacity .18s ease,
+    visibility .18s ease;
+}
+
+#aiva-tools-overlay.open{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+
+#aiva-tools-panel{
+  position:fixed;
+  top:0;
+  right:0;
+  bottom:0;
+
+  width:300px;
+  max-width:88vw;
+
+  z-index:300;
+
+  padding:16px 14px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(20,21,27,.99),
+      rgba(14,15,20,.99)
+    );
+
+  border-left:1px solid var(--border);
+
+  box-shadow:
+    -20px 0 70px rgba(0,0,0,.42);
+
+  transform:translateX(100%);
+
+  transition:
+    transform .23s cubic-bezier(.22,.61,.36,1);
+
+  overflow-y:auto;
+}
+
+#aiva-tools-panel.open{
+  transform:translateX(0);
+}
+
+.aiva-tools-head{
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  padding:0 4px 14px;
+}
+
+.aiva-tools-title{
+  font-size:16px;
+  font-weight:700;
+  color:var(--text);
+}
+
+#aiva-tools-close{
+  width:34px;
+  height:34px;
+  padding:0;
+
+  border-radius:9px;
+
+  background:transparent;
+  color:var(--muted);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:24px;
+
+  transition:.15s;
+}
+
+#aiva-tools-close:hover{
+  background:var(--hover);
+  color:var(--text);
+}
+
+.aiva-tools-section{
+  margin-top:4px;
+}
+
+.aiva-tools-section-title{
+  padding:0 6px 8px;
+
+  color:var(--muted2);
+
+  font-size:11px;
+  font-weight:700;
+
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+.aiva-tools-action{
+  width:100%;
+  min-height:48px;
+
+  margin:3px 0;
+  padding:0 12px;
+
+  border-radius:11px;
+
+  background:transparent;
+  color:var(--muted);
+
+  display:flex;
+  align-items:center;
+  gap:11px;
+
+  text-align:left;
+  font-size:13px;
+
+  transition:
+    background .15s ease,
+    color .15s ease,
+    transform .12s ease;
+}
+
+.aiva-tools-action:hover{
+  background:var(--hover);
+  color:var(--text);
+}
+
+.aiva-tools-action:active{
+  transform:scale(.985);
+}
+
+.aiva-tools-icon{
+  width:24px;
+  min-width:24px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:17px;
+}
+
+.aiva-tools-divider{
+  height:1px;
+  margin:14px 4px;
+
+  background:var(--border);
 }
 
 
@@ -1000,7 +1233,7 @@ header{
   padding:22px;
   transform:translateX(100%);
   transition:transform .25s ease;
-  z-index:90;
+  z-index:310;
   display:flex;
   flex-direction:column;
   gap:12px;
@@ -1281,9 +1514,9 @@ header{
     gap:2px;
   }
 
-  .header-actions .ghost{
+  #aiva-more-btn{
     width:34px;
-    padding:0;
+    height:34px;
   }
 
   .profile-menu{
@@ -1366,6 +1599,10 @@ header{
     max-width:100%;
   }
 
+  #aiva-tools-panel{
+    width:min(88vw,320px);
+  }
+
   .auth-box{
     max-width:370px;
   }
@@ -1397,6 +1634,11 @@ header{
     right:8px;
     width:calc(100vw - 16px);
     max-width:292px;
+  }
+
+  #aiva-tools-panel{
+    width:calc(100vw - 24px);
+    max-width:calc(100vw - 24px);
   }
 
 }
@@ -1487,29 +1729,72 @@ header{
 
       <div class="header-actions">
 
+        <!-- Старые кнопки оставлены для существующего JS -->
         <button
-          class="ghost icon-btn"
+          class="ghost icon-btn legacy-tool-btn"
           id="regen-btn"
           title="Перегенерировать"
+          type="button"
         >↻</button>
 
         <button
-          class="ghost icon-btn"
+          class="ghost icon-btn legacy-tool-btn"
           id="export-btn"
           title="Экспорт"
+          type="button"
         >↓</button>
 
         <button
-          class="ghost"
+          class="ghost legacy-tool-btn"
           id="prompt-btn"
           title="Характер Aiva"
+          type="button"
         >🎭</button>
 
         <button
-          class="ghost icon-btn"
+          class="ghost icon-btn legacy-tool-btn"
           id="clear-btn"
           title="Очистить"
+          type="button"
         >⌫</button>
+
+
+        <!-- ОДНА нормальная кнопка с тремя точками -->
+        <button
+          id="aiva-more-btn"
+          type="button"
+          title="Инструменты"
+          aria-label="Инструменты"
+          aria-expanded="false"
+        >
+
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <circle
+              cx="5"
+              cy="12"
+              r="1.8"
+              fill="currentColor"
+            />
+            <circle
+              cx="12"
+              cy="12"
+              r="1.8"
+              fill="currentColor"
+            />
+            <circle
+              cx="19"
+              cy="12"
+              r="1.8"
+              fill="currentColor"
+            />
+          </svg>
+
+        </button>
+
 
         <div
           class="profile-wrap"
@@ -1781,6 +2066,7 @@ header{
           id="attach-btn"
           class="round"
           title="Прикрепить файл"
+          type="button"
         >+</button>
 
         <button
@@ -1788,6 +2074,7 @@ header{
           class="round"
           title="Голосовой ввод"
           style="display:none"
+          type="button"
         >🎤</button>
 
         <textarea
@@ -1796,7 +2083,10 @@ header{
           placeholder="Сообщение Aiva..."
         ></textarea>
 
-        <button id="send">
+        <button
+          id="send"
+          type="button"
+        >
           ↑
         </button>
 
@@ -1807,6 +2097,112 @@ header{
   </main>
 
 </div>
+
+
+<!-- =========================================================
+     ВЫЕЗЖАЮЩЕЕ МЕНЮ ИНСТРУМЕНТОВ
+========================================================= -->
+
+<div
+  id="aiva-tools-overlay"
+  aria-hidden="true"
+></div>
+
+<aside
+  id="aiva-tools-panel"
+  aria-hidden="true"
+>
+
+  <div class="aiva-tools-head">
+
+    <div class="aiva-tools-title">
+      Инструменты
+    </div>
+
+    <button
+      id="aiva-tools-close"
+      type="button"
+      aria-label="Закрыть"
+    >
+      ×
+    </button>
+
+  </div>
+
+  <div class="aiva-tools-section">
+
+    <div class="aiva-tools-section-title">
+      Чат
+    </div>
+
+    <button
+      class="aiva-tools-action"
+      id="aiva-tool-regen"
+      type="button"
+    >
+      <span class="aiva-tools-icon">
+        ↻
+      </span>
+
+      <span>
+        Перегенерировать
+      </span>
+
+    </button>
+
+    <button
+      class="aiva-tools-action"
+      id="aiva-tool-export"
+      type="button"
+    >
+
+      <span class="aiva-tools-icon">
+        ↓
+      </span>
+
+      <span>
+        Экспорт чата
+      </span>
+
+    </button>
+
+    <button
+      class="aiva-tools-action"
+      id="aiva-tool-prompt"
+      type="button"
+    >
+
+      <span class="aiva-tools-icon">
+        🎭
+      </span>
+
+      <span>
+        Характер Aiva
+      </span>
+
+    </button>
+
+    <div class="aiva-tools-divider"></div>
+
+    <button
+      class="aiva-tools-action"
+      id="aiva-tool-clear"
+      type="button"
+    >
+
+      <span class="aiva-tools-icon">
+        ⌫
+      </span>
+
+      <span>
+        Очистить чат
+      </span>
+
+    </button>
+
+  </div>
+
+</aside>
 
 
 <input
@@ -1859,6 +2255,7 @@ header{
   <button
     id="save-prompt"
     class="save-btn"
+    type="button"
   >
     Сохранить
   </button>
@@ -1866,6 +2263,7 @@ header{
   <button
     class="ghost"
     id="close-prompt"
+    type="button"
   >
     Закрыть
   </button>
@@ -1906,13 +2304,17 @@ header{
       autocomplete="current-password"
     >
 
-    <button id="authSubmit">
+    <button
+      id="authSubmit"
+      type="button"
+    >
       Войти
     </button>
 
     <button
       id="authSwitch"
       class="auth-secondary"
+      type="button"
     >
       Создать аккаунт
     </button>
@@ -1924,6 +2326,7 @@ header{
     <button
       id="googleAuth"
       class="google-btn"
+      type="button"
     >
       Войти через Google
     </button>
@@ -2114,24 +2517,6 @@ document.addEventListener(
     ){
 
       closeProfileMenu();
-
-    }
-
-  }
-);
-
-
-document.addEventListener(
-  "keydown",
-  event => {
-
-    if(event.key === "Escape"){
-
-      closeProfileMenu();
-
-      promptPanel.classList.remove(
-        "open"
-      );
 
     }
 
@@ -2810,6 +3195,219 @@ const tempVal =
     "temp-val"
   );
 
+
+/* =========================================================
+   AIVA TOOLS MENU
+========================================================= */
+
+const aivaMoreBtn =
+  document.getElementById(
+    "aiva-more-btn"
+  );
+
+const aivaToolsPanel =
+  document.getElementById(
+    "aiva-tools-panel"
+  );
+
+const aivaToolsOverlay =
+  document.getElementById(
+    "aiva-tools-overlay"
+  );
+
+const aivaToolsClose =
+  document.getElementById(
+    "aiva-tools-close"
+  );
+
+const aivaToolRegen =
+  document.getElementById(
+    "aiva-tool-regen"
+  );
+
+const aivaToolExport =
+  document.getElementById(
+    "aiva-tool-export"
+  );
+
+const aivaToolPrompt =
+  document.getElementById(
+    "aiva-tool-prompt"
+  );
+
+const aivaToolClear =
+  document.getElementById(
+    "aiva-tool-clear"
+  );
+
+
+function openToolsPanel(){
+
+  aivaToolsPanel.classList.add(
+    "open"
+  );
+
+  aivaToolsOverlay.classList.add(
+    "open"
+  );
+
+  aivaMoreBtn.classList.add(
+    "active"
+  );
+
+  aivaMoreBtn.setAttribute(
+    "aria-expanded",
+    "true"
+  );
+
+  aivaToolsPanel.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+  aivaToolsOverlay.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+}
+
+
+function closeToolsPanel(){
+
+  aivaToolsPanel.classList.remove(
+    "open"
+  );
+
+  aivaToolsOverlay.classList.remove(
+    "open"
+  );
+
+  aivaMoreBtn.classList.remove(
+    "active"
+  );
+
+  aivaMoreBtn.setAttribute(
+    "aria-expanded",
+    "false"
+  );
+
+  aivaToolsPanel.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+  aivaToolsOverlay.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+}
+
+
+function toggleToolsPanel(){
+
+  if(
+    aivaToolsPanel.classList.contains(
+      "open"
+    )
+  ){
+
+    closeToolsPanel();
+
+  }else{
+
+    openToolsPanel();
+
+  }
+
+}
+
+
+aivaMoreBtn.addEventListener(
+  "click",
+  event => {
+
+    event.stopPropagation();
+
+    closeProfileMenu();
+
+    toggleToolsPanel();
+
+  }
+);
+
+
+aivaToolsClose.addEventListener(
+  "click",
+  closeToolsPanel
+);
+
+
+aivaToolsOverlay.addEventListener(
+  "click",
+  closeToolsPanel
+);
+
+
+/* Старые кнопки — именно они содержат всю существующую логику */
+
+aivaToolRegen.addEventListener(
+  "click",
+  () => {
+
+    document
+      .getElementById("regen-btn")
+      .click();
+
+    closeToolsPanel();
+
+  }
+);
+
+
+aivaToolExport.addEventListener(
+  "click",
+  () => {
+
+    document
+      .getElementById("export-btn")
+      .click();
+
+    closeToolsPanel();
+
+  }
+);
+
+
+aivaToolPrompt.addEventListener(
+  "click",
+  () => {
+
+    document
+      .getElementById("prompt-btn")
+      .click();
+
+    closeToolsPanel();
+
+  }
+);
+
+
+aivaToolClear.addEventListener(
+  "click",
+  () => {
+
+    document
+      .getElementById("clear-btn")
+      .click();
+
+    closeToolsPanel();
+
+  }
+);
+
+
 let attachments = [];
 
 let abortCtrl =
@@ -3367,6 +3965,30 @@ document
     );
 
   };
+
+
+/* =========================================================
+   KEYBOARD ESC
+========================================================= */
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if(event.key === "Escape"){
+
+      closeProfileMenu();
+
+      closeToolsPanel();
+
+      promptPanel.classList.remove(
+        "open"
+      );
+
+    }
+
+  }
+);
 
 
 /* =========================================================
@@ -4845,523 +5467,10 @@ if(
 }
 
 </script>
+
+
 <script src="/reset-password.js"></script>
-</body>```html
-<!-- =========================================================
-     AIVA — МЕНЮ "⋯" В СТИЛЕ CHATGPT
-     Вставить перед </body>
-========================================================= -->
 
-<style>
-  /* Старые кнопки сверху больше не показываем */
-  header .header-actions > #regen-btn,
-  header .header-actions > #export-btn,
-  header .header-actions > #prompt-btn,
-  header .header-actions > #clear-btn {
-    display: none !important;
-  }
-
-  /* Кнопка три точки */
-  #aiva-more-btn {
-    width: 38px;
-    height: 38px;
-
-    margin-right: 4px;
-
-    border: 0;
-    border-radius: 10px;
-
-    background: transparent;
-    color: var(--muted, #999ca7);
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 24px;
-    line-height: 1;
-
-    cursor: pointer;
-
-    transition:
-      background .15s ease,
-      color .15s ease;
-  }
-
-  #aiva-more-btn:hover {
-    background: var(--hover, rgba(255,255,255,.06));
-    color: var(--text, #fff);
-  }
-
-  /* Затемнение */
-  #aiva-tools-overlay {
-    position: fixed;
-    inset: 0;
-
-    z-index: 9990;
-
-    background: rgba(0,0,0,.28);
-
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-
-    transition:
-      opacity .2s ease,
-      visibility .2s ease;
-  }
-
-  #aiva-tools-overlay.open {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
-
-  /* Правая выезжающая панель */
-  #aiva-tools-panel {
-    position: fixed;
-
-    top: 0;
-    right: 0;
-    bottom: 0;
-
-    width: 290px;
-
-    z-index: 9991;
-
-    box-sizing: border-box;
-
-    padding: 18px 14px;
-
-    background: var(--sidebar, #111218);
-    border-left: 1px solid var(--border, rgba(255,255,255,.08));
-
-    box-shadow:
-      -20px 0 60px rgba(0,0,0,.25);
-
-    transform: translateX(100%);
-
-    transition:
-      transform .22s cubic-bezier(.22,.61,.36,1);
-
-    overflow-y: auto;
-  }
-
-  #aiva-tools-panel.open {
-    transform: translateX(0);
-  }
-
-  /* Заголовок панели */
-  .aiva-tools-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 2px 4px 18px;
-  }
-
-  .aiva-tools-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text, #f5f5f7);
-  }
-
-  /* Закрыть */
-  #aiva-tools-close {
-    width: 34px;
-    height: 34px;
-
-    border: 0;
-    border-radius: 9px;
-
-    background: transparent;
-    color: var(--muted, #999ca7);
-
-    font-size: 23px;
-
-    cursor: pointer;
-  }
-
-  #aiva-tools-close:hover {
-    background: var(--hover, rgba(255,255,255,.06));
-    color: #fff;
-  }
-
-  .aiva-tools-section {
-    margin-top: 8px;
-  }
-
-  .aiva-tools-section-title {
-    padding: 0 6px 8px;
-
-    font-size: 11px;
-    font-weight: 700;
-
-    color: var(--muted2, #747783);
-
-    text-transform: uppercase;
-    letter-spacing: .08em;
-  }
-
-  /* Кнопки */
-  .aiva-tools-action {
-    width: 100%;
-    min-height: 46px;
-
-    margin: 3px 0;
-    padding: 0 12px;
-
-    border: 0;
-    border-radius: 11px;
-
-    background: transparent;
-    color: var(--muted, #999ca7);
-
-    display: flex;
-    align-items: center;
-    gap: 11px;
-
-    text-align: left;
-
-    font-size: 13px;
-
-    cursor: pointer;
-
-    transition:
-      background .15s ease,
-      color .15s ease;
-  }
-
-  .aiva-tools-action:hover {
-    background: var(--hover, rgba(255,255,255,.06));
-    color: var(--text, #fff);
-  }
-
-  .aiva-tools-icon {
-    width: 25px;
-    min-width: 25px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 17px;
-  }
-
-  .aiva-tools-divider {
-    height: 1px;
-
-    margin: 14px 4px;
-
-    background: var(--border, rgba(255,255,255,.08));
-  }
-
-  /* Мобильный экран */
-  @media (max-width: 600px) {
-    #aiva-tools-panel {
-      width: min(88vw, 320px);
-    }
-  }
-</style>
-
-<script>
-(function () {
-  "use strict";
-
-  function initAivaTools() {
-
-    /* Не создаём два раза */
-    if (document.getElementById("aiva-more-btn")) {
-      return;
-    }
-
-    const headerActions =
-      document.querySelector("header .header-actions");
-
-    if (!headerActions) {
-      return;
-    }
-
-    /* ==========================================
-       КНОПКА ⋯
-    ========================================== */
-
-    const moreButton =
-      document.createElement("button");
-
-    moreButton.id = "aiva-more-btn";
-    moreButton.type = "button";
-    moreButton.title = "Инструменты";
-    moreButton.setAttribute(
-      "aria-label",
-      "Инструменты"
-    );
-
-    moreButton.innerHTML = "⋯";
-
-    /* Ставим перед профилем */
-    const profileWrap =
-      document.getElementById("profile-wrap");
-
-    if (profileWrap) {
-      headerActions.insertBefore(
-        moreButton,
-        profileWrap
-      );
-    } else {
-      headerActions.appendChild(
-        moreButton
-      );
-    }
-
-    /* ==========================================
-       ЗАТЕМНЕНИЕ
-    ========================================== */
-
-    const overlay =
-      document.createElement("div");
-
-    overlay.id = "aiva-tools-overlay";
-
-    document.body.appendChild(
-      overlay
-    );
-
-    /* ==========================================
-       ПАНЕЛЬ
-    ========================================== */
-
-    const panel =
-      document.createElement("aside");
-
-    panel.id = "aiva-tools-panel";
-
-    panel.innerHTML = `
-      <div class="aiva-tools-head">
-
-        <div class="aiva-tools-title">
-          Инструменты
-        </div>
-
-        <button
-          id="aiva-tools-close"
-          type="button"
-          aria-label="Закрыть"
-        >
-          ×
-        </button>
-
-      </div>
-
-      <div class="aiva-tools-section">
-
-        <div class="aiva-tools-section-title">
-          Чат
-        </div>
-
-        <button
-          class="aiva-tools-action"
-          data-aiva-tool="regen"
-          type="button"
-        >
-          <span class="aiva-tools-icon">↻</span>
-          <span>Перегенерировать</span>
-        </button>
-
-        <button
-          class="aiva-tools-action"
-          data-aiva-tool="export"
-          type="button"
-        >
-          <span class="aiva-tools-icon">↓</span>
-          <span>Экспорт чата</span>
-        </button>
-
-        <button
-          class="aiva-tools-action"
-          data-aiva-tool="prompt"
-          type="button"
-        >
-          <span class="aiva-tools-icon">🎭</span>
-          <span>Характер Aiva</span>
-        </button>
-
-        <div class="aiva-tools-divider"></div>
-
-        <button
-          class="aiva-tools-action"
-          data-aiva-tool="clear"
-          type="button"
-        >
-          <span class="aiva-tools-icon">⌫</span>
-          <span>Очистить чат</span>
-        </button>
-
-      </div>
-    `;
-
-    document.body.appendChild(
-      panel
-    );
-
-    /* ==========================================
-       ОТКРЫТЬ / ЗАКРЫТЬ
-    ========================================== */
-
-    function openTools() {
-      panel.classList.add("open");
-      overlay.classList.add("open");
-      moreButton.classList.add("active");
-    }
-
-    function closeTools() {
-      panel.classList.remove("open");
-      overlay.classList.remove("open");
-      moreButton.classList.remove("active");
-    }
-
-    function toggleTools() {
-      if (
-        panel.classList.contains("open")
-      ) {
-        closeTools();
-      } else {
-        openTools();
-      }
-    }
-
-    moreButton.addEventListener(
-      "click",
-      toggleTools
-    );
-
-    overlay.addEventListener(
-      "click",
-      closeTools
-    );
-
-    const closeButton =
-      document.getElementById(
-        "aiva-tools-close"
-      );
-
-    if (closeButton) {
-      closeButton.addEventListener(
-        "click",
-        closeTools
-      );
-    }
-
-    /* ==========================================
-       ПОДКЛЮЧАЕМ СТАРЫЕ ФУНКЦИИ
-    ========================================== */
-
-    const oldRegen =
-      document.getElementById("regen-btn");
-
-    const oldExport =
-      document.getElementById("export-btn");
-
-    const oldPrompt =
-      document.getElementById("prompt-btn");
-
-    const oldClear =
-      document.getElementById("clear-btn");
-
-    const actionRegen =
-      panel.querySelector(
-        '[data-aiva-tool="regen"]'
-      );
-
-    const actionExport =
-      panel.querySelector(
-        '[data-aiva-tool="export"]'
-      );
-
-    const actionPrompt =
-      panel.querySelector(
-        '[data-aiva-tool="prompt"]'
-      );
-
-    const actionClear =
-      panel.querySelector(
-        '[data-aiva-tool="clear"]'
-      );
-
-    if (actionRegen && oldRegen) {
-      actionRegen.addEventListener(
-        "click",
-        function () {
-          oldRegen.click();
-          closeTools();
-        }
-      );
-    }
-
-    if (actionExport && oldExport) {
-      actionExport.addEventListener(
-        "click",
-        function () {
-          oldExport.click();
-          closeTools();
-        }
-      );
-    }
-
-    if (actionPrompt && oldPrompt) {
-      actionPrompt.addEventListener(
-        "click",
-        function () {
-          oldPrompt.click();
-          closeTools();
-        }
-      );
-    }
-
-    if (actionClear && oldClear) {
-      actionClear.addEventListener(
-        "click",
-        function () {
-          oldClear.click();
-          closeTools();
-        }
-      );
-    }
-
-    /* ==========================================
-       ESC = ЗАКРЫТЬ
-    ========================================== */
-
-    document.addEventListener(
-      "keydown",
-      function (event) {
-        if (
-          event.key === "Escape"
-        ) {
-          closeTools();
-        }
-      }
-    );
-  }
-
-  function start() {
-    setTimeout(
-      initAivaTools,
-      500
-    );
-  }
-
-  if (
-    document.readyState === "loading"
-  ) {
-    document.addEventListener(
-      "DOMContentLoaded",
-      start
-    );
-  } else {
-    start();
-  }
-
-})();
-</script>
-```
+</body>
+</html>
+````
