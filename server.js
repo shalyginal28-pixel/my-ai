@@ -4,6 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const { execFile, spawn } = require('child_process');
 const multer = require('multer');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
