@@ -12,18 +12,12 @@
     return;
   }
 
-  if (!window.supabaseClient) {
-    setTimeout(waitForApp, 100);
-    return;
-  }
-
-  if (window.__aivaPasswordResetReady) {
+  if (document.getElementById("aiva-reset-modal")) {
     return;
   }
 
   initPasswordReset();
 }
-
   function initPasswordReset() {
     if (window.__aivaPasswordResetReady) {
       return;
