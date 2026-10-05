@@ -1540,6 +1540,23 @@ const supabaseClient =
     SUPABASE_URL,
     SUPABASE_KEY
   );
+  async function logout() {
+  try {
+    const { error } = await supabaseClient.auth.signOut();
+
+    if (error) {
+      console.error('Ошибка выхода:', error);
+      alert('Не удалось выйти из аккаунта');
+      return;
+    }
+
+    location.reload();
+
+  } catch (error) {
+    console.error('Logout error:', error);
+    alert('Ошибка выхода из аккаунта');
+  }
+}
 
 
 /* =========================================================
