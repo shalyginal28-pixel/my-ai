@@ -3423,7 +3423,13 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
   "sb_publishable_B_NiK_UGRWAjJfLlvOqc-w_4qaRIf0U";
 
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
+// ===== Запросы с авторизацией =====
 async function apiFetch(url, options = {}) {
   const {
     data: { session }
