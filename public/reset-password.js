@@ -148,8 +148,8 @@
               email,
               {
                 redirectTo:
-                  window.location.origin +
-                  "/reset-password"
+  window.location.origin +
+  "/#reset-password"
               }
             );
 
