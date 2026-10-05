@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#0b0b0f">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<title>Aiva — AI Assistant</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0b0b0f">
+
+  <title>Aiva — AI Assistant</title>
 
 <style>
+
 :root{
   --bg:#0b0b0f;
   --sidebar:#101116;
@@ -56,7 +60,10 @@ button{
   cursor:pointer;
 }
 
-/* ================= APP ================= */
+
+/* =========================================================
+   APP
+========================================================= */
 
 #app{
   width:100%;
@@ -64,7 +71,10 @@ button{
   display:flex;
 }
 
-/* ================= SIDEBAR ================= */
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
 
 #sidebar{
   width:270px;
@@ -210,7 +220,10 @@ button{
   color:var(--text);
 }
 
-/* ================= MAIN ================= */
+
+/* =========================================================
+   MAIN
+========================================================= */
 
 #main{
   min-width:0;
@@ -221,7 +234,10 @@ button{
   position:relative;
 }
 
-/* ================= HEADER ================= */
+
+/* =========================================================
+   HEADER
+========================================================= */
 
 header{
   height:62px;
@@ -320,7 +336,10 @@ header{
   font-size:16px;
 }
 
-/* ================= CHAT ================= */
+
+/* =========================================================
+   CHAT
+========================================================= */
 
 #chat{
   flex:1;
@@ -335,7 +354,10 @@ header{
   margin:0 auto;
 }
 
-/* ================= WELCOME ================= */
+
+/* =========================================================
+   WELCOME
+========================================================= */
 
 #welcome{
   min-height:calc(100vh - 245px);
@@ -413,7 +435,10 @@ header{
   font-size:11px;
 }
 
-/* ================= MESSAGES ================= */
+
+/* =========================================================
+   MESSAGES
+========================================================= */
 
 .msg{
   display:flex;
@@ -540,7 +565,10 @@ header{
   color:var(--text);
 }
 
-/* ================= INPUT ================= */
+
+/* =========================================================
+   INPUT
+========================================================= */
 
 #inputbar{
   position:absolute;
@@ -665,7 +693,10 @@ header{
   cursor:wait;
 }
 
-/* ================= DROPZONE ================= */
+
+/* =========================================================
+   DROPZONE
+========================================================= */
 
 #dropzone{
   display:none;
@@ -684,7 +715,10 @@ header{
   display:flex;
 }
 
-/* ================= PROMPT PANEL ================= */
+
+/* =========================================================
+   PROMPT PANEL
+========================================================= */
 
 #prompt-panel{
   position:fixed;
@@ -750,7 +784,174 @@ header{
   font-weight:650;
 }
 
-/* ================= MOBILE ================= */
+
+/* =========================================================
+   AUTH
+========================================================= */
+
+.auth-screen{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(118,104,255,.12),
+      transparent 35%
+    ),
+    #0b0b0f;
+  padding:20px;
+}
+
+.auth-screen.hidden{
+  display:none;
+}
+
+.auth-box{
+  width:100%;
+  max-width:400px;
+  text-align:center;
+}
+
+.auth-logo{
+  width:68px;
+  height:68px;
+  margin:0 auto 20px;
+  border-radius:21px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(
+    135deg,
+    var(--accent),
+    var(--accent2)
+  );
+  color:#fff;
+  font-size:30px;
+  font-weight:700;
+  box-shadow:
+    0 15px 55px rgba(91,105,255,.28);
+}
+
+.auth-box h1{
+  font-size:31px;
+  line-height:1.1;
+  margin-bottom:8px;
+  letter-spacing:-.6px;
+}
+
+.auth-box > p{
+  color:var(--muted);
+  margin-bottom:26px;
+  font-size:14px;
+}
+
+.auth-box input{
+  width:100%;
+  height:50px;
+  margin-bottom:11px;
+  padding:0 15px;
+  border-radius:13px;
+  border:1px solid var(--border);
+  background:var(--panel);
+  color:var(--text);
+  outline:none;
+  font-size:14px;
+  transition:.15s;
+}
+
+.auth-box input::placeholder{
+  color:var(--muted2);
+}
+
+.auth-box input:focus{
+  border-color:rgba(118,104,255,.7);
+  box-shadow:
+    0 0 0 3px rgba(118,104,255,.08);
+}
+
+#authSubmit{
+  width:100%;
+  height:50px;
+  border-radius:13px;
+  background:var(--text);
+  color:#0b0b0f;
+  font-weight:650;
+  font-size:14px;
+  transition:.15s;
+}
+
+#authSubmit:hover{
+  transform:translateY(-1px);
+}
+
+#authSubmit:disabled{
+  opacity:.6;
+  cursor:wait;
+  transform:none;
+}
+
+.auth-secondary{
+  width:100%;
+  height:42px;
+  margin-top:8px;
+  background:transparent;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.auth-secondary:hover{
+  color:var(--text);
+}
+
+.auth-divider{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:20px 0;
+  color:var(--muted2);
+  font-size:12px;
+}
+
+.auth-divider::before,
+.auth-divider::after{
+  content:"";
+  height:1px;
+  flex:1;
+  background:var(--border);
+}
+
+.google-btn{
+  width:100%;
+  height:50px;
+  border-radius:13px;
+  background:var(--panel);
+  border:1px solid var(--border) !important;
+  color:var(--text);
+  font-size:14px;
+  transition:.15s;
+}
+
+.google-btn:hover{
+  background:var(--hover);
+  border-color:rgba(255,255,255,.15) !important;
+}
+
+#authError{
+  min-height:20px;
+  margin-top:15px;
+  color:#ff7777;
+  font-size:13px;
+  line-height:1.4;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
 
 #sidebar-overlay{
   display:none;
@@ -773,6 +974,7 @@ header{
 ::-webkit-scrollbar-track{
   background:transparent;
 }
+
 
 @media(max-width:800px){
 
@@ -888,7 +1090,13 @@ header{
     width:100%;
     max-width:100%;
   }
+
+  .auth-box{
+    max-width:370px;
+  }
+
 }
+
 
 @media(max-width:420px){
 
@@ -909,11 +1117,19 @@ header{
   .quick-title{
     margin:0;
   }
+
 }
+
 </style>
+
 </head>
 
 <body>
+
+
+<!-- =======================================================
+     APP
+======================================================= -->
 
 <div id="app">
 
@@ -934,6 +1150,7 @@ header{
 
     </div>
 
+
     <button
       class="new-chat"
       id="new-chat"
@@ -942,11 +1159,14 @@ header{
       <span>Новый чат</span>
     </button>
 
+
     <div class="history-title">
       История
     </div>
 
+
     <div id="history"></div>
+
 
     <div class="sidebar-bottom">
 
@@ -962,6 +1182,7 @@ header{
 
   </aside>
 
+
   <div id="sidebar-overlay"></div>
 
 
@@ -976,11 +1197,13 @@ header{
         id="menu-btn"
       >☰</button>
 
+
       <div class="header-brand">
 
         <div class="header-logo">
           ✦
         </div>
+
 
         <div class="brand">
 
@@ -997,7 +1220,9 @@ header{
 
       </div>
 
+
       <div class="spacer"></div>
+
 
       <div class="header-actions">
 
@@ -1007,17 +1232,20 @@ header{
           title="Перегенерировать"
         >↻</button>
 
+
         <button
           class="ghost icon-btn"
           id="export-btn"
           title="Экспорт"
         >↓</button>
 
+
         <button
           class="ghost"
           id="prompt-btn"
           title="Характер Aiva"
         >🎭</button>
+
 
         <button
           class="ghost icon-btn"
@@ -1042,13 +1270,16 @@ header{
             ✦
           </div>
 
+
           <h2>
             Чем могу помочь?
           </h2>
 
+
           <p>
             Я Aiva — твой AI-ассистент.
           </p>
+
 
           <div class="quick-actions">
 
@@ -1056,9 +1287,13 @@ header{
               class="quick-card"
               data-prompt="Помоги мне написать текст"
             >
-              <div class="quick-icon">✍️</div>
+
+              <div class="quick-icon">
+                ✍️
+              </div>
 
               <div>
+
                 <div class="quick-title">
                   Написать текст
                 </div>
@@ -1066,7 +1301,9 @@ header{
                 <div class="quick-description">
                   Пост, письмо, описание или идея
                 </div>
+
               </div>
+
             </button>
 
 
@@ -1074,9 +1311,13 @@ header{
               class="quick-card"
               data-prompt="Придумай мне несколько интересных идей"
             >
-              <div class="quick-icon">💡</div>
+
+              <div class="quick-icon">
+                💡
+              </div>
 
               <div>
+
                 <div class="quick-title">
                   Придумать идею
                 </div>
@@ -1084,7 +1325,9 @@ header{
                 <div class="quick-description">
                   Креатив, проект или бизнес
                 </div>
+
               </div>
+
             </button>
 
 
@@ -1092,9 +1335,13 @@ header{
               class="quick-card"
               data-prompt="Помоги мне разобраться с кодом"
             >
-              <div class="quick-icon">💻</div>
+
+              <div class="quick-icon">
+                💻
+              </div>
 
               <div>
+
                 <div class="quick-title">
                   Помочь с кодом
                 </div>
@@ -1102,7 +1349,9 @@ header{
                 <div class="quick-description">
                   Найди ошибку или напиши код
                 </div>
+
               </div>
+
             </button>
 
 
@@ -1110,9 +1359,13 @@ header{
               class="quick-card"
               data-prompt="Объясни мне сложную тему простыми словами"
             >
-              <div class="quick-icon">🧠</div>
+
+              <div class="quick-icon">
+                🧠
+              </div>
 
               <div>
+
                 <div class="quick-title">
                   Объяснить
                 </div>
@@ -1120,7 +1373,9 @@ header{
                 <div class="quick-description">
                   Разберём любую тему
                 </div>
+
               </div>
+
             </button>
 
           </div>
@@ -1148,6 +1403,7 @@ header{
         class="chat-inner"
       ></div>
 
+
       <div id="inputrow">
 
         <button
@@ -1156,6 +1412,7 @@ header{
           title="Прикрепить файл"
         >+</button>
 
+
         <button
           id="mic-btn"
           class="round"
@@ -1163,11 +1420,13 @@ header{
           style="display:none"
         >🎤</button>
 
+
         <textarea
           id="inp"
           rows="1"
           placeholder="Сообщение Aiva..."
         ></textarea>
+
 
         <button id="send">
           ↑
@@ -1190,13 +1449,16 @@ header{
 >
 
 
-<!-- PROMPT PANEL -->
+<!-- =======================================================
+     PROMPT PANEL
+======================================================= -->
 
 <div id="prompt-panel">
 
   <h3>
     🎭 Характер Aiva
   </h3>
+
 
   <div
     class="sub"
@@ -1206,7 +1468,9 @@ header{
     и поведение ассистента.
   </div>
 
+
   <textarea id="prompt-text"></textarea>
+
 
   <div class="slider-row">
 
@@ -1215,6 +1479,7 @@ header{
     <span>
       Креативность
     </span>
+
 
     <input
       type="range"
@@ -1225,11 +1490,13 @@ header{
       value="0.7"
     >
 
+
     <b id="temp-val">
       0.7
     </b>
 
   </div>
+
 
   <button
     id="save-prompt"
@@ -1237,6 +1504,7 @@ header{
   >
     Сохранить
   </button>
+
 
   <button
     class="ghost"
@@ -1247,6 +1515,85 @@ header{
 
 </div>
 
+
+<!-- =======================================================
+     AUTH SCREEN
+======================================================= -->
+
+<div
+  id="authScreen"
+  class="auth-screen"
+>
+
+  <div class="auth-box">
+
+    <div class="auth-logo">
+      A
+    </div>
+
+
+    <h1>
+      Aiva
+    </h1>
+
+
+    <p id="authTitle">
+      Войти в Aiva
+    </p>
+
+
+    <input
+      id="authEmail"
+      type="email"
+      placeholder="Email"
+      autocomplete="email"
+    >
+
+
+    <input
+      id="authPassword"
+      type="password"
+      placeholder="Пароль"
+      autocomplete="current-password"
+    >
+
+
+    <button id="authSubmit">
+      Войти
+    </button>
+
+
+    <button
+      id="authSwitch"
+      class="auth-secondary"
+    >
+      Создать аккаунт
+    </button>
+
+
+    <div class="auth-divider">
+      <span>или</span>
+    </div>
+
+
+    <button
+      id="googleAuth"
+      class="google-btn"
+    >
+      Войти через Google
+    </button>
+
+
+    <div id="authError"></div>
+
+  </div>
+
+</div>
+
+
+<!-- =======================================================
+     MAIN APP JAVASCRIPT
+======================================================= -->
 
 <script>
 
@@ -1570,10 +1917,6 @@ function openChat(id){
 ========================================================= */
 
 function showWelcome(){
-
-  /* Удаляем абсолютно всё старое содержимое.
-     Благодаря этому приветствие никогда
-     не появляется дважды. */
 
   chatInner.innerHTML = '';
 
@@ -1976,6 +2319,7 @@ function addMsg(
 
     tb.className =
       'toolbar';
+
 
     const bCopy =
       document.createElement('button');
@@ -2961,12 +3305,6 @@ document
     const d =
       await r.json();
 
-    /*
-      ВАЖНО:
-      модель намеренно не показываем.
-      Пользователь видит только бренд Aiva.
-    */
-
     modelInfo.textContent =
       'Твой AI-ассистент';
 
@@ -3033,11 +3371,11 @@ document
 </script>
 
 
-<script>
+<!-- =======================================================
+     SERVICE WORKER
+======================================================= -->
 
-/* =========================================================
-   SERVICE WORKER
-========================================================= */
+<script>
 
 if(
   "serviceWorker" in navigator
@@ -3071,6 +3409,386 @@ if(
 }
 
 </script>
+
+
+<!-- =======================================================
+     SUPABASE AUTH
+======================================================= -->
+
+<script>
+
+const SUPABASE_URL =
+  "https://gzphouchibqjxwudncdz.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_B_NiK_UGRWAjJfLlvOqc-w_4qaRIf0U";
+
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+const authScreen =
+  document.getElementById(
+    "authScreen"
+  );
+
+const authEmail =
+  document.getElementById(
+    "authEmail"
+  );
+
+const authPassword =
+  document.getElementById(
+    "authPassword"
+  );
+
+const authSubmit =
+  document.getElementById(
+    "authSubmit"
+  );
+
+const authSwitch =
+  document.getElementById(
+    "authSwitch"
+  );
+
+const googleAuth =
+  document.getElementById(
+    "googleAuth"
+  );
+
+const authTitle =
+  document.getElementById(
+    "authTitle"
+  );
+
+const authError =
+  document.getElementById(
+    "authError"
+  );
+
+
+let isSignup = false;
+
+
+/* =========================================================
+   AUTH HELPERS
+========================================================= */
+
+function showAuthError(message){
+
+  authError.textContent =
+    message || '';
+
+}
+
+
+function updateAuthMode(){
+
+  authTitle.textContent =
+    isSignup
+      ? "Создать аккаунт Aiva"
+      : "Войти в Aiva";
+
+
+  authSubmit.textContent =
+    isSignup
+      ? "Создать аккаунт"
+      : "Войти";
+
+
+  authSwitch.textContent =
+    isSignup
+      ? "У меня уже есть аккаунт"
+      : "Создать аккаунт";
+
+
+  authPassword.autocomplete =
+    isSignup
+      ? "new-password"
+      : "current-password";
+
+
+  showAuthError('');
+
+}
+
+
+/* =========================================================
+   SWITCH LOGIN / SIGNUP
+========================================================= */
+
+authSwitch.addEventListener(
+  "click",
+  () => {
+
+    isSignup =
+      !isSignup;
+
+    updateAuthMode();
+
+  }
+);
+
+
+/* =========================================================
+   EMAIL AUTH
+========================================================= */
+
+authSubmit.addEventListener(
+  "click",
+  async () => {
+
+    const email =
+      authEmail.value.trim();
+
+    const password =
+      authPassword.value;
+
+
+    if(!email){
+
+      showAuthError(
+        "Введите email"
+      );
+
+      return;
+
+    }
+
+
+    if(!password){
+
+      showAuthError(
+        "Введите пароль"
+      );
+
+      return;
+
+    }
+
+
+    if(password.length < 6){
+
+      showAuthError(
+        "Пароль должен содержать минимум 6 символов"
+      );
+
+      return;
+
+    }
+
+
+    authSubmit.disabled = true;
+
+    showAuthError("");
+
+
+    try{
+
+      let result;
+
+
+      if(isSignup){
+
+        result =
+          await supabaseClient.auth.signUp({
+
+            email,
+
+            password
+
+          });
+
+      }else{
+
+        result =
+          await supabaseClient.auth.signInWithPassword({
+
+            email,
+
+            password
+
+          });
+
+      }
+
+
+      if(result.error){
+
+        showAuthError(
+          result.error.message
+        );
+
+        return;
+
+      }
+
+
+      if(
+        isSignup &&
+        !result.data.session
+      ){
+
+        showAuthError(
+          "Аккаунт создан. Проверьте почту для подтверждения."
+        );
+
+        return;
+
+      }
+
+
+      hideAuthScreen();
+
+
+    }catch(error){
+
+      showAuthError(
+        "Произошла ошибка. Попробуйте ещё раз."
+      );
+
+    }finally{
+
+      authSubmit.disabled = false;
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   GOOGLE AUTH
+========================================================= */
+
+googleAuth.addEventListener(
+  "click",
+  async () => {
+
+    showAuthError("");
+
+
+    try{
+
+      const {
+        error
+      } =
+        await supabaseClient.auth.signInWithOAuth({
+
+          provider:
+            "google",
+
+          options:{
+
+            redirectTo:
+              window.location.origin
+
+          }
+
+        });
+
+
+      if(error){
+
+        showAuthError(
+          error.message
+        );
+
+      }
+
+    }catch(error){
+
+      showAuthError(
+        "Не удалось открыть Google. Попробуйте ещё раз."
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   AUTH SCREEN
+========================================================= */
+
+function hideAuthScreen(){
+
+  authScreen.classList.add(
+    "hidden"
+  );
+
+}
+
+
+function showAuthScreen(){
+
+  authScreen.classList.remove(
+    "hidden"
+  );
+
+}
+
+
+/* =========================================================
+   CHECK SESSION
+========================================================= */
+
+async function checkAuth(){
+
+  const {
+    data
+  } =
+    await supabaseClient.auth.getSession();
+
+
+  if(data.session){
+
+    hideAuthScreen();
+
+  }else{
+
+    showAuthScreen();
+
+  }
+
+}
+
+
+/* =========================================================
+   AUTH STATE
+========================================================= */
+
+supabaseClient.auth.onAuthStateChange(
+  (event, session) => {
+
+    if(session){
+
+      hideAuthScreen();
+
+    }else{
+
+      showAuthScreen();
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   START AUTH
+========================================================= */
+
+checkAuth();
+
+</script>
+
 
 </body>
 </html>
