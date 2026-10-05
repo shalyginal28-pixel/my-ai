@@ -61,6 +61,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/sw.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sw.js'));
 });
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', '.well-known', 'assetlinks.json'));
+});
 
 app.get('/api/config', (req, res) => {
   res.json({ model: MODEL, hasKey: !!API_KEY, systemPrompt, temperature: TEMP, history: history.slice(-100) });
