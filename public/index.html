@@ -611,7 +611,7 @@ async function send(){
   const timer=startThinking(el,atts.length?["Размышляет","Читает файл","Анализирует данные","Формирует ответ"]:["Размышляет","Анализирует запрос","Подбирает ответ","Формирует ответ"]);
   const acc=await streamRequest("/api/chat",{text,attachments:atts,stream:true},el);
   clearInterval(timer);
-  acc?render(el,acc):(el.innerHTML="<i>(пусто)</i>");
+ acc?render(el,acc):(el.innerHTML="<i>Модель не ответила. Нажми ↻ или выбери другую модель.</i>");
   chat.scrollTop=chat.scrollHeight;saveCurrentMessages();endGen();
 }
 sendBtn.onclick=()=>abortCtrl?abortCtrl.abort():send();
@@ -635,7 +635,7 @@ async function regen(){
   const timer=startThinking(el,["Размышляет","Перепроверяет ответ","Подбирает другой вариант","Формирует новую версию"]);
   const acc=await streamRequest("/api/regenerate",{stream:true},el);
   clearInterval(timer);
-  acc?render(el,acc):(el.innerHTML="<i>(пусто)</i>");
+  acc?render(el,acc):(el.innerHTML="<i>Модель не ответила. Нажми ↻ или выбери другую модель.</i>");
   saveCurrentMessages();chat.scrollTop=chat.scrollHeight;endGen();
 }
 async function exportChat(){
