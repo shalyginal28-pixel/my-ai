@@ -388,7 +388,10 @@ const getActiveChat=()=>chats.find(c=>c.id===activeChatId);
 function makeTitle(t){const s=String(t).replace(/\s+/g," ").trim();return !s?"Новый чат":s.length>38?s.slice(0,38)+"…":s}
 function saveCurrentMessages(){
   const cur=getActiveChat();if(!cur)return;
-  cur.messages=[...inner.querySelectorAll(".msg")].map(m=>({role:m.classList.contains("me")?"user":"assistant",content:m.querySelector(".content")?.innerText||""})).filter(m=>m.content.trim());
+  cur.messages=[...inner.querySelectorAll(".msg:not(.error)")].map(m=>{
+    const c=m.querySelector(".content");
+    return{role:m.classList.contains("me")?"user":"assistant",content:c?(c.dataset.raw??c.innerText):""};
+  }).filter(m=>m.content.trim());
   const fu=cur.messages.find(m=>m.role==="user");
   if(fu)cur.title=makeTitle(fu.content);
   saveChats();renderHistory();
@@ -599,19 +602,23 @@ function endGen(){
   abortCtrl=null;sendBtn.disabled=false;
 }
 
+function currentModel(){const v=modelSelect.value;return v==="custom"?"":v}
+
 async function send(){
   const text=inp.value.trim();
   if(!text&&!attachments.length)return;
   if(!activeChatId)createChat();
+  const hist=(getActiveChat()?.messages||[]).slice(-20);
   const atts=attachments.filter(a=>a.type!=="error");
   const note=atts.map(a=>(a.type==="image"?"[🖼️ ":"[📄 ")+a.name+"]").join(" ");
   addMsg("user",(text+(note?"\n"+note:"")).trim());
   inp.value="";inp.style.height="auto";attachments=[];renderAttach();sendBtn.disabled=true;
   const el=addMsg("ai","");
   const timer=startThinking(el,atts.length?["Размышляет","Читает файл","Анализирует данные","Формирует ответ"]:["Размышляет","Анализирует запрос","Подбирает ответ","Формирует ответ"]);
-  const acc=await streamRequest("/api/chat",{text,attachments:atts,stream:true},el);
+  const acc=await streamRequest("/api/chat",{text,attachments:atts,stream:true,history:hist,model:currentModel()},el);
   clearInterval(timer);
- acc?render(el,acc):(el.innerHTML="<i>Модель не ответила. Нажми ↻ или выбери другую модель.</i>");
+  if(acc)render(el,acc);
+  else{el.innerHTML="<i>Модель не ответила. Нажми ↻ или выбери другую модель.</i>";el.closest(".msg").classList.add("error")}
   chat.scrollTop=chat.scrollHeight;saveCurrentMessages();endGen();
 }
 sendBtn.onclick=()=>abortCtrl?abortCtrl.abort():send();
