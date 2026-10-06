@@ -195,6 +195,8 @@ header{height:60px;min-height:60px;display:flex;align-items:center;gap:8px;paddi
       <div class="brand"><div class="mark">✦</div><span class="grad-text">Aiva</span></div>
       <div class="spacer"></div>
       <select id="model-select" title="Модель">
+        <option value="gemini">Gemini · умная</option>
+        <option value="groq">Groq · очень быстрая</option>
         <option value="openai/gpt-oss-120b:free">GPT-OSS 120B · стабильная</option>
         <option value="nvidia/nemotron-3-super-120b-a12b:free">Nemotron 120B · рассуждения</option>
         <option value="google/gemma-4-31b-it:free">Gemma 4 31B · быстрая</option>
@@ -388,10 +390,7 @@ const getActiveChat=()=>chats.find(c=>c.id===activeChatId);
 function makeTitle(t){const s=String(t).replace(/\s+/g," ").trim();return !s?"Новый чат":s.length>38?s.slice(0,38)+"…":s}
 function saveCurrentMessages(){
   const cur=getActiveChat();if(!cur)return;
-  cur.messages=[...inner.querySelectorAll(".msg:not(.error)")].map(m=>{
-    const c=m.querySelector(".content");
-    return{role:m.classList.contains("me")?"user":"assistant",content:c?(c.dataset.raw??c.innerText):""};
-  }).filter(m=>m.content.trim());
+  cur.messages=[...inner.querySelectorAll(".msg:not(.error)")].map(m=>{const c=m.querySelector(".content");return{role:m.classList.contains("me")?"user":"assistant",content:c?(c.dataset.raw??c.innerText):""}}).filter(m=>m.content.trim());
   const fu=cur.messages.find(m=>m.role==="user");
   if(fu)cur.title=makeTitle(fu.content);
   saveChats();renderHistory();
@@ -482,11 +481,11 @@ function md(t){
   h=h.replace(/`([^`\n]+)`/g,"<code>$1</code>");
   h=h.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>");
   h=h.replace(/\*([^*\n]+)\*/g,"<i>$1</i>");
-  h=h.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  h=h.replace(/\[([^\]]+)\]\((https?:[^)\s]+|\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
   h=h.split(/\n{2,}/).map(p=>/^<(pre|ul|table|blockquote|hr|div)/.test(p.trim())?p:"<p>"+p.replace(/\n/g,"<br>")+"</p>").join("");
   return h.replace(/%%C(\d+)%%/g,(m,i)=>"<pre><code>"+codes[+i]+"</code></pre>");
 }
-function render(el,text){el.classList.remove("raw");el.innerHTML=md(text)}
+function render(el,text){el.classList.remove("raw");el.dataset.raw=text;el.innerHTML=md(text)}
 
 /* ---------- озвучка и «думает» ---------- */
 function speak(text){
@@ -507,7 +506,7 @@ function addMsg(role,text,error=false,silent=false){
   const d=document.createElement("div");
   d.className="msg "+(role==="user"?"me":"ai")+(error?" error":"");
   const wrap=document.createElement("div"),c=document.createElement("div");
-  c.className="content";
+  c.className="content";c.dataset.raw=text;
   if(error)c.textContent=text;else c.innerHTML=md(text);
   wrap.appendChild(c);
   if(!error&&role!=="user"){
@@ -585,6 +584,7 @@ async function streamRequest(url,payload,el){
         if(!line.trim())continue;
         let j;try{j=JSON.parse(line)}catch(e){continue}
         if(j.err){render(el,acc||"");addMsg("ai","⚠️ "+j.err,true);return acc}
+        if(j.replace!=null){acc=j.replace}
         if(j.d){
           acc+=j.d;el.classList.add("raw");el.textContent=acc;
           const cr=document.createElement("span");cr.className="caret";cr.textContent="▍";el.appendChild(cr);
@@ -603,7 +603,6 @@ function endGen(){
 }
 
 function currentModel(){const v=modelSelect.value;return v==="custom"?"":v}
-
 async function send(){
   const text=inp.value.trim();
   if(!text&&!attachments.length)return;
@@ -637,24 +636,26 @@ async function regen(){
   closePops();
   if(abortCtrl)return;
   const ai=[...inner.querySelectorAll(".msg.ai")];if(!ai.length)return;
+  const hist=(getActiveChat()?.messages||[]).slice();
+  if(hist.length&&hist[hist.length-1].role==="assistant")hist.pop();
+  if(!hist.length||hist[hist.length-1].role!=="user")return;
   ai[ai.length-1].remove();
   const el=addMsg("ai","",false,true);
   const timer=startThinking(el,["Размышляет","Перепроверяет ответ","Подбирает другой вариант","Формирует новую версию"]);
-  const acc=await streamRequest("/api/regenerate",{stream:true},el);
+  const acc=await streamRequest("/api/regenerate",{stream:true,history:hist.slice(-21),model:currentModel()},el);
   clearInterval(timer);
-  acc?render(el,acc):(el.innerHTML="<i>Модель не ответила. Нажми ↻ или выбери другую модель.</i>");
+  if(acc)render(el,acc);
+  else{el.innerHTML="<i>Модель не ответила. Нажми ↻ или выбери другую модель.</i>";el.closest(".msg").classList.add("error")}
   saveCurrentMessages();chat.scrollTop=chat.scrollHeight;endGen();
 }
-async function exportChat(){
+function exportChat(){
   closePops();
-  try{
-    const r=await apiFetch("/api/config");const d=await r.json();
-    if(!r.ok)throw new Error(d.error||"Ошибка");
-    const t=(d.history||[]).map(m=>"**"+(m.role==="user"?"Я":"Aiva")+":**\n\n"+m.content+"\n").join("\n---\n\n");
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(new Blob(["# Aiva — экспорт чата\n\n"+t],{type:"text/markdown"}));
-    a.download="aiva-chat.md";a.click();URL.revokeObjectURL(a.href);showToast("Экспорт готов");
-  }catch(e){alert("Не удалось экспортировать чат.")}
+  const m=getActiveChat()?.messages||[];
+  if(!m.length){showToast("Чат пуст");return}
+  const t=m.map(x=>"**"+(x.role==="user"?"Я":"Aiva")+":**\n\n"+x.content+"\n").join("\n---\n\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["# Aiva — экспорт чата\n\n"+t],{type:"text/markdown"}));
+  a.download="aiva-chat.md";a.click();URL.revokeObjectURL(a.href);showToast("Экспорт готов");
 }
 async function clearChat(){
   closePops();
@@ -752,7 +753,7 @@ document.addEventListener("touchend",e=>{
 
 <script>
 if("serviceWorker" in navigator){
-  window.addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js").catch(err=>console.error("Service Worker:",err))});
+  window.addEventListener("load",()=>{fetch("/sw.js",{method:"HEAD"}).then(r=>{if(r.ok)navigator.serviceWorker.register("/sw.js")}).catch(()=>{})});
 }
 </script>
 <script src="/reset-password.js"></script>
