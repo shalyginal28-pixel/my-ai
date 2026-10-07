@@ -3,100 +3,29 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
-const https = require('https');
 const { execFile, spawn } = require('child_process');
 const multer = require('multer');
 
 const app = express();
-app.set('trust proxy', 1);
 const PORT = process.env.PORT || 4000;
 
-// ===== Провайдеры моделей =====
-// OpenRouter (как раньше)
-const API_KEY = process.env.AI_API_KEY || '';
-const API_URL = process.env.AI_API_URL || 'https://openrouter.ai/api/v1/chat/completions';
-let   MODEL   = process.env.AI_MODEL   || 'nvidia/nemotron-3-super-120b-a12b:free';
+// ===== Настройки подключения =====
+const API_KEY = process.env.AI_API_KEY  || '';
+const API_URL = process.env.AI_API_URL  || 'https://openrouter.ai/api/v1/chat/completions';
+let   MODEL   = process.env.AI_MODEL    || 'openrouter/free';
 let   TEMP    = 0.7;
-const PROXY   = process.env.AI_PROXY   || '';
-// Gemini (бесплатный ключ: aistudio.google.com)
-const GEMINI_KEY   = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL   || 'gemini-2.5-flash';
-const GEMINI_URL   = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-// Groq (бесплатный ключ: console.groq.com)
-const GROQ_KEY   = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL = process.env.GROQ_MODEL   || 'llama-3.3-70b-versatile';
-const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
-// Запасные модели OpenRouter, если основная промолчала
-const FALLBACKS = (process.env.FALLBACK_MODELS ||
-  'nvidia/nemotron-3-super-120b-a12b:free,openai/gpt-oss-120b:free,google/gemma-4-31b-it:free')
-  .split(',').map(s => s.trim()).filter(Boolean);
+const PROXY   = process.env.AI_PROXY    || '';
 
-const MAX_TOKENS    = parseInt(process.env.MAX_TOKENS || '4096', 10);
 const MAX_FILE_TEXT = 40000;
 const MAX_IMAGES    = 4;
 const HISTORY_KEEP  = 40;
-const RATE_PER_MIN  = parseInt(process.env.RATE_PER_MIN || '20', 10);
 const WEB_SEARCH_ENABLED = String(process.env.WEB_SEARCH_ENABLED || 'true').toLowerCase() !== 'false';
+const FALLBACK_MODEL = process.env.AIVA_FALLBACK_MODEL || 'nvidia/nemotron-3-ultra-550b-a55b:free';
+const MAX_RETRIES = 1;
 
-// ===== Проверка входа через Supabase =====
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://gzphouchibqjxwudncdz.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_B_NiK_UGRWAjJfLlvOqc-w_4qaRIf0U';
-const REQUIRE_AUTH = String(process.env.REQUIRE_AUTH || 'true').toLowerCase() !== 'false';
-const authCache = new Map();
-
-function verifyToken(token) {
-  return new Promise(resolve => {
-    const hit = authCache.get(token);
-    if (hit && hit.exp > Date.now()) return resolve(hit.user);
-    let u;
-    try { u = new URL(SUPABASE_URL + '/auth/v1/user'); } catch (e) { return resolve(null); }
-    const rq = https.request({
-      hostname: u.hostname, path: u.pathname, method: 'GET', timeout: 8000,
-      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + token }
-    }, r => {
-      let b = '';
-      r.on('data', d => b += d);
-      r.on('end', () => {
-        if (r.statusCode === 200) {
-          try {
-            const user = JSON.parse(b);
-            if (authCache.size > 500) authCache.clear();
-            authCache.set(token, { user, exp: Date.now() + 60000 });
-            return resolve(user);
-          } catch (e) {}
-        }
-        resolve(null);
-      });
-    });
-    rq.on('error', () => resolve(null));
-    rq.on('timeout', () => { rq.destroy(); resolve(null); });
-    rq.end();
-  });
-}
-
-async function requireUser(req, res, next) {
-  if (!REQUIRE_AUTH) return next();
-  const h = req.headers.authorization || '';
-  const token = h.startsWith('Bearer ') ? h.slice(7) : '';
-  if (!token) return res.status(401).json({ error: 'Нужно войти в аккаунт' });
-  const user = await verifyToken(token);
-  if (!user) return res.status(401).json({ error: 'Сессия недействительна, войди заново' });
-  req.user = user;
-  next();
-}
-
-const rate = new Map();
-function rateOk(id) {
-  const n = Date.now();
-  const a = (rate.get(id) || []).filter(t => n - t < 60000);
-  if (a.length >= RATE_PER_MIN) { rate.set(id, a); return false; }
-  a.push(n); rate.set(id, a);
-  return true;
-}
-
-// ===== Файлы и папки =====
 const GENERATED_DIR = path.join(__dirname, 'data', 'files');
 fs.mkdirSync(GENERATED_DIR, { recursive: true });
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024, files: 5 } });
 
 // ===== curl =====
@@ -118,16 +47,42 @@ function curlPost(url, headers, bodyObj) {
   });
 }
 
-let systemPrompt =
-  'Ты — Aiva, умный и дружелюбный русскоязычный AI-ассистент. Отвечай на языке пользователя. ' +
-  'Сначала давай ответ, потом детали. На простые сообщения (например, приветствие) отвечай коротко и по-человечески. ' +
-  'Не задавай встречных вопросов без необходимости и не используй эмодзи, если пользователь сам их не использует. ' +
-  'Не выдумывай факты: если не знаешь или не уверена, скажи об этом прямо. ' +
-  'Когда уместно, используй markdown (списки, код в блоках с указанием языка). ' +
-  'Если пользователь прислал файл — внимательно проанализируй его содержимое. ' +
-  'Если пользователь просит создать файл, подготовь содержимое без лишних пояснений и используй формат <AIVA_FILE name="filename.ext">содержимое</AIVA_FILE>. ' +
-  'Поддерживай текстовые форматы: txt, md, json, csv, html, css, js, ts, py, java, c, cpp, h, sh, xml, yaml, yml. ' +
-  'Не помещай AIVA_FILE внутрь markdown-кода и не используй этот формат для обычного текста.';
+// ===== История =====
+const HISTORY_FILE = path.join(__dirname, 'data', 'history.json');
+fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+let history = [];
+try { history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8')) || []; } catch (e) {}
+
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => fs.writeFile(HISTORY_FILE, JSON.stringify(history.slice(-200)), () => {}), 300);
+}
+
+let systemPrompt = `Ты — Aiva, полноценный AI-ассистент уровня современного ChatGPT/Claude/Kimi.
+
+
+ТВОЯ ЗАДАЧА
+
+Помогай пользователю не как простой чат-бот, а как умный универсальный помощник: понимай намерение, учитывай контекст разговора, анализируй сложные задачи по шагам и выдавай готовый полезный результат. Не показывай внутренние рассуждения или скрытые цепочки мыслей.
+
+ПРАВИЛА МЫШЛЕНИЯ
+- Сначала определи, что именно хочет пользователь и какой результат ему нужен.
+- Сложные задачи мысленно разбивай на этапы, но пользователю показывай только полезный вывод, краткие объяснения и проверяемые результаты.
+- Если данных не хватает, не выдумывай. Скажи, чего не хватает, или сделай разумное предположение и явно обозначь его.
+- Проверяй числа, имена, даты, код и логические выводы перед ответом.
+- Если задача требует актуальных данных, используй интернет-поиск.
+- Если пользователь прислал файл, сначала изучи его содержимое и опирайся именно на него.
+- Если пользователь просит выполнить действие, старайся дать готовый результат, а не длинную инструкцию о том, как его сделать.
+
+ИНТЕРНЕТ
+У тебя есть инструмент web search. Используй его автоматически, когда вопрос связан с новостями, текущими ценами, расписаниями, современными технологиями, документацией, компаниями, людьми, событиями, покупками или любыми данными, которые могли измениться. Не используй поиск без необходимости для обычного разговора. Если поиск дал источники, учитывай их и не выдавай догадки за факты.
+
+ФАЙЛЫ
+Если пользователь прислал PDF, DOCX, TXT, CSV, JSON, код или изображение — анализируй его. Не игнорируй содержимое файла. Если пользователь просит создать файл, используй формат <AIVA_FILE name=\"filename.ext\">содержимое</AIVA_FILE>. Не помещай этот тег внутрь markdown-кода.
+
+СТИЛЬ
+Отвечай естественно, уверенно и по-человечески. Русский — основной язык, но отвечай на языке пользователя. Не начинай каждый ответ с шаблонных фраз. Не повторяй вопрос пользователя. Используй Markdown, когда это улучшает читаемость. Для кода всегда используй fenced code blocks. Для простого вопроса отвечай коротко, для сложного — подробно. `;
 
 const FILE_EXTENSIONS = new Set([
   'txt','md','markdown','json','csv','tsv','html','htm','css','js','mjs','cjs','ts','tsx','jsx',
@@ -148,27 +103,37 @@ function safeFileName(name) {
   }
   return n;
 }
-const fileExtension = name => path.extname(name).toLowerCase().replace(/^\./, '');
+
+function fileExtension(name) {
+  return path.extname(name).toLowerCase().replace(/^\./, '');
+}
 
 function makeStoredFile(name, buffer) {
   const safeName = safeFileName(name);
   const ext = fileExtension(safeName);
   const id = crypto.randomBytes(12).toString('hex');
   const storedName = id + (ext ? '.' + ext : '');
-  fs.writeFileSync(path.join(GENERATED_DIR, storedName), buffer);
+  const filePath = path.join(GENERATED_DIR, storedName);
+  fs.writeFileSync(filePath, buffer);
   return {
-    id, name: safeName, size: buffer.length,
-    url: '/api/files/' + encodeURIComponent(storedName) + '?name=' + encodeURIComponent(safeName)
+    id,
+    name: safeName,
+    size: buffer.length,
+    url: '/api/files/' + encodeURIComponent(id + (ext ? '.' + ext : '')) + '?name=' + encodeURIComponent(safeName),
+    filePath
   };
 }
 
 function extractGeneratedFiles(reply) {
   const files = [];
-  const re = /<AIVA_FILE\s+name=(?:"([^"]+)"|'([^']+)')>([\s\S]*?)<\/AIVA_FILE>/gi;
-  const cleaned = String(reply || '').replace(re, (_, n1, n2, body) => {
+  const re = /<AIVA_FILE\s+name=(?:\"([^\"]+)\"|'([^']+)')>([\s\S]*?)<\/AIVA_FILE>/gi;
+  let cleaned = String(reply || '');
+  cleaned = cleaned.replace(re, (_, n1, n2, body) => {
     const originalName = safeFileName(n1 || n2 || 'aiva-file.txt');
-    if (!FILE_EXTENSIONS.has(fileExtension(originalName)))
+    const ext = fileExtension(originalName);
+    if (!FILE_EXTENSIONS.has(ext)) {
       return `\n\n⚠️ Файл «${originalName}» не создан: формат не поддерживается для автоматической выдачи.\n\n`;
+    }
     const normalized = String(body || '').replace(/^\r?\n/, '').replace(/\r?\n$/, '');
     if (!normalized) return '';
     try {
@@ -184,16 +149,13 @@ function extractGeneratedFiles(reply) {
 
 app.use(express.json({ limit: '30mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
-// всё в /api, кроме скачивания файлов, требует вход
-app.use('/api', (req, res, next) => req.path.startsWith('/files/') ? next() : requireUser(req, res, next));
 
 app.get('/api/config', (req, res) => {
-  res.json({
-    model: MODEL,
-    hasKey: !!(API_KEY || GEMINI_KEY || GROQ_KEY),
-    providers: { openrouter: !!API_KEY, gemini: !!GEMINI_KEY, groq: !!GROQ_KEY },
-    systemPrompt, temperature: TEMP, webSearch: WEB_SEARCH_ENABLED, history: []
-  });
+  res.json({ model: MODEL, hasKey: !!API_KEY, systemPrompt, temperature: TEMP, webSearch: WEB_SEARCH_ENABLED, history: history.slice(-100) });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, aiva: 'core-v1', apiConfigured: !!API_KEY, apiUrl: API_URL, model: MODEL, fallbackModel: FALLBACK_MODEL, webSearch: WEB_SEARCH_ENABLED });
 });
 
 app.get('/api/files/:storedName', (req, res) => {
@@ -201,7 +163,8 @@ app.get('/api/files/:storedName', (req, res) => {
   if (!storedName || storedName !== req.params.storedName) return res.status(400).send('Некорректное имя файла');
   const filePath = path.join(GENERATED_DIR, storedName);
   if (!fs.existsSync(filePath)) return res.status(404).send('Файл не найден');
-  res.download(filePath, safeFileName(req.query.name || 'aiva-file' + (path.extname(storedName) || '')));
+  const requestedName = safeFileName(req.query.name || 'aiva-file' + (path.extname(storedName) || ''));
+  res.download(filePath, requestedName);
 });
 
 app.post('/api/prompt', (req, res) => {
@@ -212,11 +175,11 @@ app.post('/api/prompt', (req, res) => {
 
 app.post('/api/model', (req, res) => {
   MODEL = String(req.body.model || MODEL).slice(0, 120);
-  console.log('🧠 Модель по умолчанию:', MODEL);
+  console.log('🧠 Модель:', MODEL);
   res.json({ ok: true, model: MODEL });
 });
 
-// ===== Загрузка файлов =====
+// ===== Файлы =====
 const IMAGE_MIME = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
 
 function isBinaryText(s) {
@@ -269,7 +232,9 @@ app.post('/api/upload', upload.array('files', 5), async (req, res) => {
         const stored = makeStoredFile(f.originalname, f.buffer);
         parsed.downloadUrl = stored.url;
         parsed.fileId = stored.id;
-      } catch (e) { parsed.downloadUrl = null; }
+      } catch (storeError) {
+        parsed.downloadUrl = null;
+      }
       results.push(parsed);
     } catch (e) {
       results.push({ name: f.originalname, type: 'error', error: e.message });
@@ -280,39 +245,59 @@ app.post('/api/upload', upload.array('files', 5), async (req, res) => {
 
 app.use((err, req, res, next) => {
   if (err && (err.code === 'LIMIT_FILE_SIZE' || err.code === 'LIMIT_FILE_COUNT' || err.name === 'MulterError'))
-    return res.status(400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'Файл больше 20 МБ' : 'Слишком много файлов (макс. 5)' });
+    return res.json({ ok: false, error: err.code === 'LIMIT_FILE_SIZE' ? 'Файл больше 20 МБ' : 'Слишком много файлов (макс. 5)' });
   next(err);
 });
 
-// ===== Выбор модели и запрос =====
-// Порядок: выбранная модель -> Gemini -> Groq -> запасные модели OpenRouter.
-function orTarget(model) { return { name: 'OpenRouter', url: API_URL, key: API_KEY, model, openrouter: true }; }
+// ===== Ядро чата =====
+const apiHeaders = () => ({
+  'Authorization': 'Bearer ' + API_KEY,
+  'HTTP-Referer': process.env.APP_URL || 'http://localhost',
+  'X-Title': 'Aiva'
+});
 
-function buildChain(requested) {
-  const chain = [];
-  const add = t => { if (t && !chain.some(x => x.url === t.url && x.model === t.model)) chain.push(t); };
-  const gem = GEMINI_KEY ? { name: 'Gemini', url: GEMINI_URL, key: GEMINI_KEY, model: GEMINI_MODEL } : null;
-  const grq = GROQ_KEY ? { name: 'Groq', url: GROQ_URL, key: GROQ_KEY, model: GROQ_MODEL } : null;
-  if (requested === 'gemini') add(gem);
-  else if (requested === 'groq') add(grq);
-  else if (API_KEY) add(orTarget(requested || MODEL));
-  add(gem); add(grq);
-  if (API_KEY) FALLBACKS.forEach(m => add(orTarget(m)));
-  return chain;
+function isOpenRouterUrl() {
+  try { return new URL(API_URL).hostname.endsWith('openrouter.ai'); }
+  catch (e) { return false; }
 }
 
-function tgHeaders(t) {
-  const h = { Authorization: 'Bearer ' + t.key };
-  if (t.openrouter) { h['HTTP-Referer'] = process.env.APP_URL || 'http://localhost'; h['X-Title'] = 'Aiva'; }
-  return h;
-}
-
-function reqBody(t, messages, stream) {
-  const body = { model: t.model, temperature: TEMP, messages, max_tokens: MAX_TOKENS, stream: !!stream };
-  // веб-поиск только для платных моделей: бесплатные его обычно не поддерживают
-  if (t.openrouter && WEB_SEARCH_ENABLED && !/:free$|^openrouter\/free$/.test(t.model))
+function aiRequestBody(messages, extra = {}, modelOverride = MODEL, allowTools = true) {
+  const body = { model: modelOverride, temperature: TEMP, messages, ...extra };
+  if (WEB_SEARCH_ENABLED && allowTools && isOpenRouterUrl()) {
     body.tools = [{ type: 'openrouter:web_search' }];
+  }
   return body;
+}
+
+function resolveModel(requested) {
+  const m = String(requested || MODEL).trim();
+  if (!m || m === 'auto' || m === 'fast') return 'openrouter/free';
+  if (m === 'smart' || m === 'max') return FALLBACK_MODEL;
+  return m;
+}
+
+function extractReply(data) {
+  const message = data && data.choices && data.choices[0] && data.choices[0].message;
+  if (!message) return '';
+  const content = message.content;
+  if (typeof content === 'string') return content.trim();
+  if (Array.isArray(content)) {
+    return content.map(part => {
+      if (typeof part === 'string') return part;
+      if (part && typeof part.text === 'string') return part.text;
+      return '';
+    }).join('').trim();
+  }
+  return '';
+}
+
+function parseAPIError(body) {
+  try {
+    const j = JSON.parse(body);
+    return (j && j.error && (j.error.message || j.error)) || body;
+  } catch (e) {
+    return body;
+  }
 }
 
 function buildUserContent(text, attachments) {
@@ -323,188 +308,194 @@ function buildUserContent(text, attachments) {
   const userContent = images.length
     ? [{ type: 'text', text: fullText }, ...images.map(a => ({ type: 'image_url', image_url: { url: `data:${a.mime};base64,${a.data}` } }))]
     : fullText;
-  return { userContent, textOnly: fullText, hasImages: images.length > 0 };
+  let summary = text || '(файлы)';
+  for (const a of attachments) summary += a.type === 'image' ? `\n[изображение: ${a.name}]` : `\n[файл: ${a.name}]`;
+  return { userContent, summary, hasImages: images.length > 0 };
 }
 
-const IMG_ERR = /image|vision|multimodal/i;
-const IMG_NOTE = '⚠️ Текущая модель не поддерживает изображения — ответил по тексту файлов.\n\n';
-const errMsg = (data, body) =>
-  (data && data.error && (data.error.message || JSON.stringify(data.error))) || String(body || '').slice(0, 300);
+async function chatCore(res, userText, attachments, wantStream, skipUserPush, requestedModel) {
+  const { userContent, summary, hasImages } = buildUserContent(userText, attachments);
+  const selectedModel = resolveModel(requestedModel);
+  const messagesBase = [
+    { role: 'system', content: systemPrompt },
+    ...history.slice(-HISTORY_KEEP).map(m => ({ role: m.role, content: m.content })),
+    { role: 'user', content: userContent }
+  ];
+  if (!skipUserPush) { history.push({ role: 'user', content: summary, time: Date.now() }); save(); }
 
-function parseHistory(h) {
-  if (!Array.isArray(h)) return [];
-  return h
-    .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
-    .slice(-HISTORY_KEEP)
-    .map(m => ({ role: m.role, content: m.content.slice(0, 12000) }));
-}
-
-function chatCore(res, userText, attachments, wantStream, prior, requested) {
-  const chain = buildChain(requested);
-  if (!chain.length)
-    return res.status(400).json({ error: 'Не задан ни один ключ API (AI_API_KEY, GEMINI_API_KEY или GROQ_API_KEY)' });
-
-  const { userContent, textOnly, hasImages } = buildUserContent(userText, attachments);
-  const head = [{ role: 'system', content: systemPrompt }, ...prior];
-  const msgsFull = [...head, { role: 'user', content: userContent }];
-  const msgsText = [...head, { role: 'user', content: textOnly }];
-
-  // ---- без стриминга ----
+  // Aiva intentionally uses a normal JSON response in the web app. This makes errors
+  // visible and avoids the old situation where a 200 response could contain only {d:""}.
   if (!wantStream) {
-    (async () => {
-      let lastErr = '';
-      for (const tg of chain) {
-        for (const withImg of hasImages ? [true, false] : [false]) {
-          try {
-            const r = await curlPost(tg.url, tgHeaders(tg), reqBody(tg, withImg ? msgsFull : msgsText, false));
-            let data = null; try { data = JSON.parse(r.body); } catch (e) {}
-            const m = data && data.choices && data.choices[0] && data.choices[0].message;
-            const text = m && m.content;
-            if (r.status >= 200 && r.status < 300 && typeof text === 'string' && text.trim()) {
-              const processed = extractGeneratedFiles((hasImages && !withImg ? IMG_NOTE : '') + text);
-              return res.json({
-                ok: true, reply: processed.reply, model: (data && data.model) || tg.model,
-                files: processed.files.map(f => ({ id: f.id, name: f.name, size: f.size, url: f.url }))
-              });
-            }
-            lastErr = errMsg(data, r.body) || 'пустой ответ';
-            if (!(withImg && hasImages && IMG_ERR.test(lastErr))) break;
-          } catch (e) { lastErr = e.message; break; }
+    try {
+      let currentModel = selectedModel;
+      let lastStatus = 0;
+      let lastBody = '';
+      let reply = '';
+      let data = null;
+      let usedFallback = false;
+
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        const useImages = attempt === 0 && hasImages;
+        const msgs = useImages
+          ? messagesBase
+          : messagesBase.map((m, i) => i === messagesBase.length - 1 ? { role: 'user', content: summary } : m);
+        const allowTools = attempt === 0;
+        const r = await curlPost(API_URL, apiHeaders(), aiRequestBody(msgs, {}, currentModel, allowTools));
+        lastStatus = r.status;
+        lastBody = r.body || '';
+
+        let parsed = null;
+        try { parsed = JSON.parse(r.body); } catch (e) {}
+        data = parsed;
+
+        if (r.status >= 200 && r.status < 300) {
+          reply = extractReply(parsed);
+          if (reply) break;
         }
+
+        const msg = parseAPIError(r.body);
+        const retryable = attempt < MAX_RETRIES && (
+          !reply || /empty|content|tool|unsupported|model|timeout|temporar|rate|overload|capacity/i.test(String(msg))
+        );
+        if (!retryable) break;
+
+        currentModel = FALLBACK_MODEL;
+        usedFallback = true;
       }
-      res.status(502).json({ error: 'Модель не ответила: ' + (lastErr || 'неизвестная ошибка') });
-    })();
-    return;
+
+      if (lastStatus < 200 || lastStatus >= 300) {
+        const msg = String(parseAPIError(lastBody)).slice(0, 500);
+        return res.json({ ok: false, error: 'API ' + lastStatus + ': ' + msg });
+      }
+
+      if (!reply) {
+        return res.json({
+          ok: false,
+          error: usedFallback
+            ? 'Модель не вернула текстовый ответ даже после автоматического повтора. Попробуй ещё раз.'
+            : 'Модель вернула пустой ответ. Aiva автоматически повторит запрос при следующей попытке.'
+        });
+      }
+
+      const rawReply = (usedFallback ? '⚡ Aiva автоматически переключилась на резервную модель.\n\n' : '') + reply;
+      const processed = extractGeneratedFiles(rawReply);
+      const finalReply = processed.reply;
+      history.push({ role: 'assistant', content: finalReply, time: Date.now() }); save();
+      return res.json({
+        ok: true,
+        reply: finalReply,
+        model: (data && data.model) || currentModel,
+        files: processed.files.map(f => ({ id: f.id, name: f.name, size: f.size, url: f.url }))
+      });
+    } catch (e) {
+      if (/curl/.test(e.message) && /not recognized|не является|ENOENT/i.test(e.message))
+        return res.json({ ok: false, error: 'curl не найден. Обнови Windows 10+ или поставь curl.' });
+      return res.json({ ok: false, error: 'Сеть: ' + e.message });
+    }
   }
 
-  // ---- стриминг (NDJSON) ----
+  // Backward-compatible NDJSON streaming endpoint.
   res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('X-Accel-Buffering', 'no');
 
-  let acc = '', got = false, model = '', dead = false, proc = null, tmpFile = null,
-      idx = 0, withImages = hasImages, lastErr = '', timer = null;
+  let acc = '', model = selectedModel, dead = false, proc = null, tmpFile = null;
   const w = o => { try { res.write(JSON.stringify(o) + '\n'); } catch (e) {} };
 
-  function cleanup() {
-    clearTimeout(timer);
-    const p = proc; proc = null;
-    try { if (p) p.kill(); } catch (e) {}
-    if (tmpFile) { try { fs.unlinkSync(tmpFile); } catch (e) {} tmpFile = null; }
-  }
-  function finalize() {
-    if (dead) return; dead = true; cleanup();
+  function finalize(saveIt) {
+    if (dead) return; dead = true;
+    let finalText = acc;
+    let createdFiles = [];
     if (acc) {
       const processed = extractGeneratedFiles(acc);
-      if (processed.reply !== acc) w({ replace: processed.reply });
-      if (processed.files.length) w({ files: processed.files.map(f => ({ id: f.id, name: f.name, size: f.size, url: f.url })) });
+      finalText = processed.reply;
+      createdFiles = processed.files.map(f => ({ id: f.id, name: f.name, size: f.size, url: f.url }));
     }
+    if (saveIt && finalText) { history.push({ role: 'assistant', content: finalText, time: Date.now() }); save(); }
+    if (!finalText && !createdFiles.length) w({ err: 'Модель вернула пустой ответ.' });
+    if (createdFiles.length) w({ files: createdFiles });
     w({ d: '', done: true, model });
     try { res.end(); } catch (e) {}
   }
-  function failFinal(msg) {
-    if (dead) return; dead = true; cleanup();
-    w({ err: String(msg || 'Модель не ответила').slice(0, 400) });
+  function fail(msg) {
+    if (dead) return; dead = true;
+    w({ err: String(msg || 'Ошибка модели').slice(0, 500) });
     try { res.end(); } catch (e) {}
   }
-  // переход к следующей модели (или завершение, если текст уже пошёл)
-  function retry(reason) {
-    if (dead) return;
-    lastErr = reason || lastErr;
-    cleanup();
-    if (got) return finalize();
-    if (withImages && IMG_ERR.test(lastErr)) {
-      withImages = false;
-      if (!acc) { acc = IMG_NOTE; w({ d: IMG_NOTE }); }
-      return start();
-    }
-    idx++;
-    if (idx >= chain.length) return failFinal('Модель не ответила: ' + (lastErr || 'пустой ответ'));
-    console.log('↪ переключаюсь на', chain[idx].name, chain[idx].model, '— причина:', String(lastErr).slice(0, 120));
-    start();
-  }
-  res.on('close', () => { if (!dead) { dead = true; cleanup(); } });
 
-  function start() {
-    const tg = chain[idx];
+  try {
     tmpFile = path.join(os.tmpdir(), 'myai-stream-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.json');
-    fs.writeFileSync(tmpFile, JSON.stringify(reqBody(tg, withImages ? msgsFull : msgsText, true)));
-    const args = ['-sS', '-N', '--max-time', '300', '-X', 'POST', tg.url];
+    fs.writeFileSync(tmpFile, JSON.stringify(aiRequestBody(messagesBase, { stream: true }, selectedModel, true)));
+    const args = ['-sS', '-N', '--max-time', '300', '-X', 'POST', API_URL];
     if (PROXY) args.push('-x', PROXY);
     args.push('-H', 'Content-Type: application/json');
-    for (const [k, v] of Object.entries(tgHeaders(tg))) args.push('-H', `${k}: ${v}`);
+    for (const [k, v] of Object.entries(apiHeaders())) args.push('-H', `${k}: ${v}`);
     args.push('-d', '@' + tmpFile);
     proc = spawn('curl', args, { windowsHide: true });
-    const p = proc;
-    let buf = '', errBody = '';
-    timer = setTimeout(() => { if (proc === p && !got) retry('Модель долго не отвечает'); }, 60000);
-
-    function handleLine(s) {
-      if (!s || s[0] === ':') return;
-      if (s.startsWith('data:')) {
-        const pl = s.slice(5).trim();
-        if (pl === '[DONE]') return;
-        let j; try { j = JSON.parse(pl); } catch (e) { return; }
-        if (j.error) { retry((j.error.message || JSON.stringify(j.error)).slice(0, 300)); return; }
-        if (j.model) model = j.model;
-        const d = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
-        if (typeof d === 'string' && d) { got = true; clearTimeout(timer); acc += d; w({ d }); }
-      } else {
-        errBody += s;
-      }
-    }
-
-    p.stdout.on('data', c => {
-      if (proc !== p || dead) return;
+    res.on('close', () => {
+      if (dead) return;
+      try { proc.kill(); } catch (e) {}
+      finalize(true);
+    });
+    let buf = '';
+    proc.stdout.on('data', c => {
       buf += c.toString('utf8');
       let i;
       while ((i = buf.indexOf('\n')) >= 0) {
-        const line = buf.slice(0, i); buf = buf.slice(i + 1);
-        handleLine(line.trim());
-        if (proc !== p || dead) return;
+        const line = buf.slice(0, i); buf = buf.slice(i + 1).trim();
+        if (!line.trim()) continue;
+        const s = line.trim();
+        if (s.startsWith('data:')) {
+          const payload = s.slice(5).trim();
+          if (payload === '[DONE]') continue;
+          let j; try { j = JSON.parse(payload); } catch (e) { continue; }
+          if (j.error) return fail(j.error.message || String(j.error));
+          if (j.model) model = j.model;
+          const d = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+          if (typeof d === 'string' && d) { acc += d; w({ d }); }
+        } else if (s.startsWith('{')) {
+          try { const j = JSON.parse(s); if (j.error) fail(j.error.message || JSON.stringify(j.error)); } catch (e) {}
+        }
+        if (dead) return;
       }
     });
-    p.stderr.on('data', () => {});
-    p.on('error', e => { if (proc === p) retry('curl: ' + e.message); });
-    p.on('close', () => {
-      if (proc !== p || dead) return;
-      if (buf.trim()) handleLine(buf.trim());
-      if (proc !== p || dead) return;
-      if (got) return finalize();
-      let m = '';
-      try { const j = JSON.parse(errBody); if (j.error) m = j.error.message || JSON.stringify(j.error); }
-      catch (e) { m = errBody.slice(0, 300); }
-      retry(m || 'пустой ответ от модели');
+    proc.stderr.on('data', () => {});
+    proc.on('error', e => fail('curl: ' + e.message));
+    proc.on('close', () => {
+      try { fs.unlinkSync(tmpFile); } catch (e) {}
+      if (!dead) finalize(true);
     });
+  } catch (e) {
+    try { if (tmpFile) fs.unlinkSync(tmpFile); } catch (x) {}
+    fail(e.message);
   }
-  start();
 }
-
-const NOTE_RE = /\n?\[(?:🖼️|📄|файл:|изображение:)[^\]]*\]/g;
 
 app.post('/api/chat', (req, res) => {
   const userText = String(req.body.text || '').trim().slice(0, 8000);
   const attachments = Array.isArray(req.body.attachments) ? req.body.attachments.slice(0, 5) : [];
-  if (!userText && !attachments.length) return res.status(400).json({ error: 'Пустое сообщение' });
-  if (!rateOk(req.user ? req.user.id : req.ip)) return res.status(429).json({ error: 'Слишком много запросов. Подожди минуту.' });
-  chatCore(res, userText, attachments, !!req.body.stream, parseHistory(req.body.history), String(req.body.model || '').slice(0, 120));
+  if (!userText && !attachments.length) return res.json({ ok: false, error: 'Пустое сообщение' });
+  if (!API_KEY) return res.json({ ok: false, error: 'Не задан ключ API (перезапусти с AI_API_KEY=...)' });
+  chatCore(res, userText, attachments, !!req.body.stream, false, req.body.mode || req.body.model);
 });
 
 app.post('/api/regenerate', (req, res) => {
-  const h = parseHistory(req.body.history);
-  const last = h[h.length - 1];
-  if (!last || last.role !== 'user') return res.status(400).json({ error: 'Нечего перегенерировать' });
-  if (!rateOk(req.user ? req.user.id : req.ip)) return res.status(429).json({ error: 'Слишком много запросов. Подожди минуту.' });
-  chatCore(res, last.content.replace(NOTE_RE, ''), [], !!req.body.stream, h.slice(0, -1), String(req.body.model || '').slice(0, 120));
+  if (!API_KEY) return res.json({ ok: false, error: 'Не задан ключ API' });
+  if (history.length && history[history.length - 1].role === 'assistant') { history.pop(); save(); }
+  const lastUser = [...history].reverse().find(m => m.role === 'user');
+  if (!lastUser) return res.json({ ok: false, error: 'Нечего перегенерировать' });
+  chatCore(res, lastUser.content.replace(/\n\[(файл|изображение):[^\]]+\]/g, ''), [], !!req.body.stream, true, req.body.mode || req.body.model);
 });
 
-// история теперь хранится в браузере, на сервере её нет
-app.post('/api/clear', (req, res) => res.json({ ok: true }));
+app.post('/api/clear', (req, res) => {
+  history = [];
+  save();
+  res.json({ ok: true });
+});
 
 app.listen(PORT, () => {
-  console.log(`🤖 Aiva запущена: http://localhost:${PORT}`);
-  console.log(`   OpenRouter: ${API_KEY ? 'ключ есть' : 'нет ключа'} · модель по умолчанию: ${MODEL}`);
-  console.log(`   Gemini: ${GEMINI_KEY ? 'ключ есть (' + GEMINI_MODEL + ')' : 'нет ключа'}`);
-  console.log(`   Groq:   ${GROQ_KEY ? 'ключ есть (' + GROQ_MODEL + ')' : 'нет ключа'}`);
-  console.log(`   Проверка входа: ${REQUIRE_AUTH ? 'включена' : 'ВЫКЛЮЧЕНА'}`);
+  console.log(`🤖 MyAI запущен: http://localhost:${PORT}`);
+  console.log(`   Модель: ${MODEL}`);
+  console.log(`   Ключ:   ${API_KEY ? API_KEY.slice(0, 14) + '… (подхвачен)' : 'НЕ ЗАДАН! Запусти: set AI_API_KEY=sk-... && npm start'}`);
+  console.log(`   Прокси: ${PROXY || '(нет — запросы напрямую)'}`);
 });
