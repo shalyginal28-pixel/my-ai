@@ -10,7 +10,8 @@ const app = express();
 
 const PORT = process.env.PORT || 4000;
 const API_KEY = process.env.AI_API_KEY || "";
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_URL =
+  "https://openrouter.ai/api/v1/chat/completions";
 
 const FALLBACK_MODEL =
   process.env.AIVA_FALLBACK_MODEL || "openrouter/free";
@@ -20,7 +21,8 @@ let MODEL =
   "nvidia/nemotron-3-ultra-550b-a55b:free";
 
 const WEB_SEARCH_ENABLED =
-  String(process.env.WEB_SEARCH_ENABLED || "true").toLowerCase() !== "false";
+  String(process.env.WEB_SEARCH_ENABLED || "true").toLowerCase() !==
+  "false";
 
 const DATA_DIR = path.join(__dirname, "data");
 const FILES_DIR = path.join(DATA_DIR, "files");
@@ -66,7 +68,10 @@ function cleanModelText(text) {
   if (!text) return "";
 
   return String(text)
-    .replace(/<AIVA_WEB_SEARCH[\s\S]*?<\/AIVA_WEB_SEARCH>/gi, "")
+    .replace(
+      /<AIVA_WEB_SEARCH[\s\S]*?<\/AIVA_WEB_SEARCH>/gi,
+      ""
+    )
     .replace(/<AIVA_WEB_SEARCH[^>]*>/gi, "")
     .trim();
 }
@@ -167,7 +172,7 @@ async function searchGoogleNews(query) {
 
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "Aiva/4.3"
+      "User-Agent": "Aiva/4.4"
     }
   });
 
@@ -230,8 +235,6 @@ async function searchWeb(query) {
 
   let cleanQuery = safeText(query);
 
-  /* Убираем старый год, если пользователь случайно
-     спросил "новости ИИ 2025", когда сейчас уже 2026 */
   cleanQuery = cleanQuery
     .replace(/\b2024\b/g, "")
     .replace(/\b2025\b/g, "")
@@ -265,7 +268,10 @@ async function searchWeb(query) {
         }
       }
     } catch (err) {
-      console.error("Google News error:", err.message);
+      console.error(
+        "Google News error:",
+        err.message
+      );
     }
 
     try {
@@ -282,7 +288,10 @@ async function searchWeb(query) {
         }
       }
     } catch (err) {
-      console.error("DuckDuckGo error:", err.message);
+      console.error(
+        "DuckDuckGo error:",
+        err.message
+      );
     }
   }
 
@@ -301,7 +310,7 @@ async function getWeather(city) {
 
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "Aiva/4.3"
+      "User-Agent": "Aiva/4.4"
     }
   });
 
@@ -337,27 +346,45 @@ async function getWeather(city) {
 function detectCity(text) {
   const q = safeText(text).toLowerCase();
 
-  if (q.includes("риге") || q.includes("рига")) {
+  if (
+    q.includes("риге") ||
+    q.includes("рига")
+  ) {
     return "Riga";
   }
 
-  if (q.includes("таллине") || q.includes("таллин")) {
+  if (
+    q.includes("таллине") ||
+    q.includes("таллин")
+  ) {
     return "Tallinn";
   }
 
-  if (q.includes("вильнюсе") || q.includes("вильнюс")) {
+  if (
+    q.includes("вильнюсе") ||
+    q.includes("вильнюс")
+  ) {
     return "Vilnius";
   }
 
-  if (q.includes("лондоне") || q.includes("лондон")) {
+  if (
+    q.includes("лондоне") ||
+    q.includes("лондон")
+  ) {
     return "London";
   }
 
-  if (q.includes("берлине") || q.includes("берлин")) {
+  if (
+    q.includes("берлине") ||
+    q.includes("берлин")
+  ) {
     return "Berlin";
   }
 
-  if (q.includes("нью-йорке") || q.includes("нью йорке")) {
+  if (
+    q.includes("нью-йорке") ||
+    q.includes("нью йорке")
+  ) {
     return "New York";
   }
 
@@ -375,14 +402,20 @@ const CORE_SYSTEM_PROMPT = `
 Отвечай естественно, понятно и без лишней воды.
 
 Не выдумывай факты.
-Если сервер передал результаты веб-поиска, используй их.
-Если веб-поиск дал ссылки, можешь указывать их обычным URL.
+
+Если сервер передал результаты веб-поиска,
+используй их для ответа.
+
+Если веб-поиск дал ссылки,
+можешь указывать их обычным URL.
 
 Не выводи служебные теги:
+
 <AIVA_WEB_SEARCH>
 </AIVA_WEB_SEARCH>
 
-Если пользователь просит создать файл, используй формат:
+Если пользователь просит создать файл,
+используй формат:
 
 <AIVA_FILE name="filename.txt">
 содержимое файла
@@ -402,22 +435,25 @@ async function callOpenRouter({
     );
   }
 
-  const response = await fetch(OPENROUTER_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${API_KEY}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer":
-        "https://my-aii.onrender.com",
-      "X-Title": "Aiva"
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      stream: false
-    })
-  });
+  const response = await fetch(
+    OPENROUTER_URL,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer":
+          "https://my-aii.onrender.com",
+        "X-Title": "Aiva"
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        stream: false
+      })
+    }
+  );
 
   const raw = await response.text();
 
@@ -427,7 +463,10 @@ async function callOpenRouter({
     data = JSON.parse(raw);
   } catch {
     throw new Error(
-      `OpenRouter вернул не JSON: ${raw.slice(0, 500)}`
+      `OpenRouter вернул не JSON: ${raw.slice(
+        0,
+        500
+      )}`
     );
   }
 
@@ -458,12 +497,19 @@ async function callOpenRouter({
 
 function sanitizeFilename(name) {
   return String(name || "file.txt")
-    .replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]/g, "_")
+    .replace(
+      /[^a-zA-Z0-9а-яА-ЯёЁ._-]/g,
+      "_"
+    )
     .slice(0, 150);
 }
 
-function saveGeneratedFile(filename, content) {
-  const safeName = sanitizeFilename(filename);
+function saveGeneratedFile(
+  filename,
+  content
+) {
+  const safeName =
+    sanitizeFilename(filename);
 
   const storedName =
     crypto.randomBytes(18).toString("hex") +
@@ -493,17 +539,19 @@ function processGeneratedFiles(text) {
   let match;
 
   while ((match = regex.exec(text))) {
-    const file = saveGeneratedFile(
-      match[1],
-      match[2]
-    );
+    const file =
+      saveGeneratedFile(
+        match[1],
+        match[2]
+      );
 
     files.push(file);
   }
 
-  const cleanText = text
-    .replace(regex, "")
-    .trim();
+  const cleanText =
+    text
+      .replace(regex, "")
+      .trim();
 
   return {
     text: cleanText,
@@ -517,7 +565,9 @@ function processGeneratedFiles(text) {
 
 async function extractFileText(file) {
   const ext =
-    path.extname(file.originalname).toLowerCase();
+    path
+      .extname(file.originalname)
+      .toLowerCase();
 
   if (
     file.mimetype === "application/pdf" ||
@@ -603,13 +653,20 @@ app.get(
   "/api/files/:storedName",
   (req, res) => {
     const storedName =
-      path.basename(req.params.storedName);
+      path.basename(
+        req.params.storedName
+      );
 
     const filePath =
-      path.join(FILES_DIR, storedName);
+      path.join(
+        FILES_DIR,
+        storedName
+      );
 
     if (!fs.existsSync(filePath)) {
-      return res.status(404).send("File not found");
+      return res
+        .status(404)
+        .send("File not found");
     }
 
     const requestedName =
@@ -618,7 +675,9 @@ app.get(
 
     res.download(
       filePath,
-      sanitizeFilename(requestedName)
+      sanitizeFilename(
+        requestedName
+      )
     );
   }
 );
@@ -627,33 +686,43 @@ app.get(
    HEALTH
 ========================================================= */
 
-app.get("/api/health", (req, res) => {
-  res.json({
-    ok: true,
-    app: "Aiva",
-    version: "4.3.0",
-    node: process.version,
-    model: MODEL,
-    fallbackModel: FALLBACK_MODEL,
-    webSearch: WEB_SEARCH_ENABLED,
-    hasKey: !!API_KEY
-  });
-});
+app.get(
+  "/api/health",
+  (req, res) => {
+    res.json({
+      ok: true,
+      app: "Aiva",
+      version: "4.4.0",
+      node: process.version,
+      model: MODEL,
+      fallbackModel:
+        FALLBACK_MODEL,
+      webSearch:
+        WEB_SEARCH_ENABLED,
+      hasKey: !!API_KEY
+    });
+  }
+);
 
 /* =========================================================
    CONFIG
 ========================================================= */
 
-app.get("/api/config", (req, res) => {
-  res.json({
-    ok: true,
-    model: MODEL,
-    fallbackModel: FALLBACK_MODEL,
-    hasKey: !!API_KEY,
-    webSearch: WEB_SEARCH_ENABLED,
-    temperature: 0.7
-  });
-});
+app.get(
+  "/api/config",
+  (req, res) => {
+    res.json({
+      ok: true,
+      model: MODEL,
+      fallbackModel:
+        FALLBACK_MODEL,
+      hasKey: !!API_KEY,
+      webSearch:
+        WEB_SEARCH_ENABLED,
+      temperature: 0.7
+    });
+  }
+);
 
 /* =========================================================
    CHAT
@@ -669,9 +738,10 @@ async function handleChat(req, res) {
       systemPrompt = ""
     } = req.body || {};
 
-    let history = Array.isArray(messages)
-      ? messages
-      : [];
+    let history =
+      Array.isArray(messages)
+        ? messages
+        : [];
 
     if (
       message &&
@@ -694,7 +764,10 @@ async function handleChat(req, res) {
     const lastUser =
       [...history]
         .reverse()
-        .find((m) => m?.role === "user");
+        .find(
+          (m) =>
+            m?.role === "user"
+        );
 
     const userText =
       typeof lastUser?.content === "string"
@@ -703,10 +776,15 @@ async function handleChat(req, res) {
 
     let webContext = "";
 
-    /* Погода */
+    /* =====================================================
+       WEATHER
+    ===================================================== */
+
     if (
       WEB_SEARCH_ENABLED &&
-      /погод|температур|weather/i.test(userText)
+      /погод|температур|weather/i.test(
+        userText
+      )
     ) {
       try {
         const city =
@@ -736,11 +814,16 @@ async function handleChat(req, res) {
       }
     }
 
-    /* Общий веб-поиск */
+    /* =====================================================
+       WEB SEARCH
+    ===================================================== */
+
     if (
       WEB_SEARCH_ENABLED &&
       needsWebSearch(userText) &&
-      !/погод|температур|weather/i.test(userText)
+      !/погод|температур|weather/i.test(
+        userText
+      )
     ) {
       try {
         const results =
@@ -750,14 +833,18 @@ async function handleChat(req, res) {
           webContext +=
             "\n\nАКТУАЛЬНЫЕ РЕЗУЛЬТАТЫ ВЕБ-ПОИСКА:\n";
 
-          results.forEach((r, i) => {
-            webContext +=
-              `\n${i + 1}. ${r.title}\n` +
-              `URL: ${r.url}\n` +
-              (r.date
-                ? `Дата: ${r.date}\n`
-                : "");
-          });
+          results.forEach(
+            (r, i) => {
+              webContext +=
+                `\n${i + 1}. ${r.title}\n` +
+                `URL: ${r.url}\n` +
+                (
+                  r.date
+                    ? `Дата: ${r.date}\n`
+                    : ""
+                );
+            }
+          );
         } else {
           webContext +=
             "\nВеб-поиск не вернул результатов. Не выдумывай новости.\n";
@@ -767,14 +854,19 @@ async function handleChat(req, res) {
           "Web search error:",
           err.message
         );
+
+        webContext +=
+          "\nВеб-поиск временно недоступен.\n";
       }
     }
 
     const system = [
       CORE_SYSTEM_PROMPT,
+
       systemPrompt
         ? `\nПользовательские настройки:\n${systemPrompt}`
         : "",
+
       webContext
     ]
       .filter(Boolean)
@@ -794,11 +886,14 @@ async function handleChat(req, res) {
     let answer;
 
     try {
-      answer = await callOpenRouter({
-        messages: finalMessages,
-        model: selectedModel,
-        temperature
-      });
+      answer =
+        await callOpenRouter({
+          messages:
+            finalMessages,
+          model:
+            selectedModel,
+          temperature
+        });
     } catch (primaryError) {
       console.error(
         "Primary model error:",
@@ -806,53 +901,119 @@ async function handleChat(req, res) {
       );
 
       if (
-        selectedModel !== FALLBACK_MODEL
+        selectedModel !==
+        FALLBACK_MODEL
       ) {
-        answer = await callOpenRouter({
-          messages: finalMessages,
-          model: FALLBACK_MODEL,
-          temperature
-        });
+        answer =
+          await callOpenRouter({
+            messages:
+              finalMessages,
+            model:
+              FALLBACK_MODEL,
+            temperature
+          });
       } else {
         throw primaryError;
       }
     }
 
-    answer = cleanModelText(answer);
+    answer =
+      cleanModelText(answer);
 
     const processed =
-      processGeneratedFiles(answer);
+      processGeneratedFiles(
+        answer
+      );
 
     const files =
-      processed.files.map((file) => ({
-        ...file,
-        url:
-          `/api/files/${file.storedName}?name=` +
-          encodeURIComponent(file.name)
-      }));
-    const payload = {
-      d: processed.text,
-      done: false,
-      model: selectedModel,
-      webSearch: !!webContext,
-      files
-    };
+      processed.files.map(
+        (file) => ({
+          ...file,
 
-    res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+          url:
+            `/api/files/${file.storedName}?name=` +
+            encodeURIComponent(
+              file.name
+            )
+        })
+      );
 
-    res.write(JSON.stringify(payload) + "\n");
+    /* =====================================================
+       IMPORTANT:
+       ТВОЙ CURRENT INDEX.HTML ЖДЁТ NDJSON STREAM
+    ===================================================== */
 
-    res.write(JSON.stringify({
-      d: "",
-      done: true,
-      model: selectedModel
-    }) + "\n");
+    res.status(200);
+
+    res.setHeader(
+      "Content-Type",
+      "application/x-ndjson; charset=utf-8"
+    );
+
+    res.setHeader(
+      "Cache-Control",
+      "no-cache, no-transform"
+    );
+
+    res.setHeader(
+      "Connection",
+      "keep-alive"
+    );
+
+    res.write(
+      JSON.stringify({
+        d: processed.text,
+        done: false,
+        model: selectedModel,
+        webSearch: !!webContext,
+        files
+      }) + "\n"
+    );
+
+    res.write(
+      JSON.stringify({
+        d: "",
+        done: true,
+        model: selectedModel
+      }) + "\n"
+    );
 
     res.end();
 
-app.post("/api/chat", handleChat);
+  } catch (err) {
+    console.error(
+      "CHAT ERROR:",
+      err
+    );
+
+    /* Даже ошибка отдаётся в NDJSON,
+       чтобы старый frontend её увидел */
+
+    res.status(500);
+
+    res.setHeader(
+      "Content-Type",
+      "application/x-ndjson; charset=utf-8"
+    );
+
+    res.write(
+      JSON.stringify({
+        d:
+          err?.message ||
+          "Ошибка Aiva",
+        error: true,
+        done: true
+      }) + "\n"
+    );
+
+    res.end();
+  }
+}
+
+app.post(
+  "/api/chat",
+  handleChat
+);
 
 /* =========================================================
    REGENERATE
@@ -862,23 +1023,29 @@ app.post(
   "/api/regenerate",
   async (req, res) => {
     try {
-      const body = req.body || {};
+      const body =
+        req.body || {};
 
       const messages =
-        Array.isArray(body.messages)
+        Array.isArray(
+          body.messages
+        )
           ? body.messages
           : [];
 
       const lastAssistantIndex =
         [...messages]
-          .map((m, i) => ({
-            ...m,
-            index: i
-          }))
+          .map(
+            (m, i) => ({
+              ...m,
+              index: i
+            })
+          )
           .reverse()
           .find(
             (m) =>
-              m.role === "assistant"
+              m.role ===
+              "assistant"
           );
 
       let trimmed =
@@ -894,7 +1061,11 @@ app.post(
         messages: trimmed
       };
 
-      return handleChat(req, res);
+      return handleChat(
+        req,
+        res
+      );
+
     } catch (err) {
       console.error(err);
 
@@ -910,26 +1081,32 @@ app.post(
    MODEL
 ========================================================= */
 
-app.post("/api/model", (req, res) => {
-  try {
-    const requested =
-      safeText(req.body?.model);
+app.post(
+  "/api/model",
+  (req, res) => {
+    try {
+      const requested =
+        safeText(
+          req.body?.model
+        );
 
-    if (requested) {
-      MODEL = requested;
+      if (requested) {
+        MODEL = requested;
+      }
+
+      res.json({
+        ok: true,
+        model: MODEL
+      });
+
+    } catch (err) {
+      res.status(500).json({
+        ok: false,
+        error: err.message
+      });
     }
-
-    res.json({
-      ok: true,
-      model: MODEL
-    });
-  } catch (err) {
-    res.status(500).json({
-      ok: false,
-      error: err.message
-    });
   }
-});
+);
 
 /* =========================================================
    PROMPT
@@ -937,73 +1114,95 @@ app.post("/api/model", (req, res) => {
 
 let CUSTOM_PROMPT = "";
 
-app.post("/api/prompt", (req, res) => {
-  CUSTOM_PROMPT =
-    safeText(req.body?.prompt);
+app.post(
+  "/api/prompt",
+  (req, res) => {
+    CUSTOM_PROMPT =
+      safeText(
+        req.body?.prompt
+      );
 
-  res.json({
-    ok: true,
-    prompt: CUSTOM_PROMPT
-  });
-});
+    res.json({
+      ok: true,
+      prompt:
+        CUSTOM_PROMPT
+    });
+  }
+);
 
 /* =========================================================
    CLEAR
 ========================================================= */
 
-app.post("/api/clear", (req, res) => {
-  res.json({
-    ok: true
-  });
-});
+app.post(
+  "/api/clear",
+  (req, res) => {
+    res.json({
+      ok: true
+    });
+  }
+);
 
 /* =========================================================
    FALLBACK ROUTE
 ========================================================= */
 
-app.get("*", (req, res) => {
-  if (
-    req.path.startsWith("/api/")
-  ) {
-    return res
-      .status(404)
-      .json({
-        ok: false,
-        error: "API endpoint not found"
-      });
-  }
+app.get(
+  "*",
+  (req, res) => {
+    if (
+      req.path.startsWith(
+        "/api/"
+      )
+    ) {
+      return res
+        .status(404)
+        .json({
+          ok: false,
+          error:
+            "API endpoint not found"
+        });
+    }
 
-  res.sendFile(
-    path.join(
-      __dirname,
-      "public",
-      "index.html"
-    )
-  );
-});
+    res.sendFile(
+      path.join(
+        __dirname,
+        "public",
+        "index.html"
+      )
+    );
+  }
+);
 
 /* =========================================================
    START
 ========================================================= */
 
-app.listen(PORT, () => {
-  console.log(
-    `Aiva 4.3 running on port ${PORT}`
-  );
+app.listen(
+  PORT,
+  () => {
+    console.log(
+      `Aiva 4.4 running on port ${PORT}`
+    );
 
-  console.log(
-    `Model: ${MODEL}`
-  );
+    console.log(
+      `Model: ${MODEL}`
+    );
 
-  console.log(
-    `Fallback: ${FALLBACK_MODEL}`
-  );
+    console.log(
+      `Fallback: ${FALLBACK_MODEL}`
+    );
 
-  console.log(
-    `Web search: ${WEB_SEARCH_ENABLED}`
-  );
+    console.log(
+      `Web search: ${WEB_SEARCH_ENABLED}`
+    );
 
-  console.log(
-    `API key: ${API_KEY ? "YES" : "NO"}`
-  );
-});
+    console.log(
+      `API key: ${
+        API_KEY
+          ? "YES"
+          : "NO"
+      }`
+    );
+  }
+);
