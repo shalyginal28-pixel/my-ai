@@ -369,7 +369,21 @@ function bindQuickActions(){document.querySelectorAll(".quick-card").forEach(car
 function openSidebar(){sidebar.classList.add("open");sidebarOverlay.classList.add("on")};function closeSidebar(){sidebar.classList.remove("open");sidebarOverlay.classList.remove("on")}
 $("menu-btn").onclick=openSidebar;$("sidebar-close").onclick=closeSidebar;sidebarOverlay.onclick=closeSidebar;$("new-chat").onclick=newChat;$("sidebar-prompt").onclick=()=>{$("prompt-btn").click()};$("sidebar-settings").onclick=openSettings;
 
-function md(t){let h=String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");h=h.replace(/```(\w*)\n?([\s\S]*?)```/g,(m,l,c)=>"<pre><code>"+c.replace(/^\n|\n$/g,"")+"</code></pre>");h=h.replace(/`([^`\n]+)`/g,"<code>$1</code>");h=h.replace(/^###+ (.*)$/gm,"<b>$1</b>");h=h.replace(/^## (.*)$/gm,"<b>$1</b>");h=h.replace(/^# (.*)$/gm,"<b>$1</b>");h=h.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>");h=h.replace(/\[([^\]]+)\]\((\/api\/files\/[^)\s]+)\)/g,'<a href="$2" download target="_blank" rel="noopener">$1</a>');return h.split(/\n{2,}/).map(p=>/^<pre>/.test(p.trim())?p:"<p>"+p.replace(/\n/g,"<br>")+"</p>").join("")}
+function md(t){
+  let h=String(t)
+    .replace(/\\\[/g,"[").replace(/\\\]/g,"]").replace(/\\\(/g,"(").replace(/\\\)/g,")")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  h=h.replace(/```(\w*)\n?([\s\S]*?)```/g,(m,l,c)=>"<pre><code>"+c.replace(/^\n|\n$/g,"")+"</code></pre>");
+  h=h.replace(/`([^`\n]+)`/g,"<code>$1</code>");
+  h=h.replace(/^###+ (.*)$/gm,"<b>$1</b>");
+  h=h.replace(/^## (.*)$/gm,"<b>$1</b>");
+  h=h.replace(/^# (.*)$/gm,"<b>$1</b>");
+  h=h.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>");
+  h=h.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  h=h.replace(/\[([^\]]+)\]\((\/api\/files\/[^)\s]+)\)/g,'<a href="$2" download target="_blank" rel="noopener">$1</a>');
+  h=h.replace(/(^|[\s>])(https?:\/\/[^\s<]+)/g,(m,p,url)=>{if(m.includes('href="')||m.includes('>'))return m;return p+'<a href="'+url+'" target="_blank" rel="noopener noreferrer">'+url+'</a>'});
+  return h.split(/\n{2,}/).map(p=>/^<pre>/.test(p.trim())?p:"<p>"+p.replace(/\n/g,"<br>")+"</p>").join("")
+}
 function speak(text){if(!window.speechSynthesis)return;speechSynthesis.cancel();const lines=String(text).replace(/[#*`>\-]/g," ").split("\n").filter(x=>x.trim()).slice(0,12);const u=new SpeechSynthesisUtterance(lines.join(". ").slice(0,1200));u.lang="ru-RU";u.rate=1.05;speechSynthesis.speak(u)}
 function setThinkingStatus(contentEl,text){contentEl.innerHTML='<span class="thinking-box"><span class="thinking-icon">✦</span><span>'+text+'<span class="thinking-dots"><span></span><span></span><span></span></span></span></span>'}
 function startThinking(contentEl,statuses){let i=0;setThinkingStatus(contentEl,statuses[i]);if(!uiSettings.animations)return null;const timer=setInterval(()=>{i=(i+1)%statuses.length;setThinkingStatus(contentEl,statuses[i])},1300);return timer}
