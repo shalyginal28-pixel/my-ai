@@ -1,4 +1,3 @@
-```javascript
 const express = require("express");
 const multer = require("multer");
 const fs = require("fs");
@@ -13,6 +12,7 @@ const app = express();
 
 const PORT = process.env.PORT || 4000;
 const API_KEY = process.env.AI_API_KEY || "";
+
 const OPENROUTER_URL =
   "https://openrouter.ai/api/v1/chat/completions";
 
@@ -33,19 +33,27 @@ let MODEL =
   "nvidia/nemotron-3-ultra-550b-a55b:free";
 
 const WEB_SEARCH_ENABLED =
-  String(
-    process.env.WEB_SEARCH_ENABLED || "true"
-  ).toLowerCase() !== "false";
+  String(process.env.WEB_SEARCH_ENABLED || "true").toLowerCase() !==
+  "false";
 
-const DATA_DIR =
-  path.join(__dirname, "data");
+/*
+=========================================================
+DIRECTORIES
+=========================================================
+*/
 
-const FILES_DIR =
-  path.join(DATA_DIR, "files");
+const DATA_DIR = path.join(__dirname, "data");
+const FILES_DIR = path.join(DATA_DIR, "files");
 
 fs.mkdirSync(FILES_DIR, {
   recursive: true
 });
+
+/*
+=========================================================
+EXPRESS
+=========================================================
+*/
 
 app.use(
   express.json({
@@ -66,13 +74,17 @@ app.use(
   )
 );
 
+/*
+=========================================================
+UPLOAD
+=========================================================
+*/
+
 const upload = multer({
   storage: multer.memoryStorage(),
 
   limits: {
-    fileSize:
-      20 * 1024 * 1024,
-
+    fileSize: 20 * 1024 * 1024,
     files: 5
   }
 });
@@ -126,8 +138,7 @@ function cleanModelText(text) {
 }
 
 function needsWebSearch(text) {
-  const q =
-    safeText(text).toLowerCase();
+  const q = safeText(text).toLowerCase();
 
   if (!q) {
     return false;
@@ -163,9 +174,9 @@ function needsWebSearch(text) {
     "2026"
   ];
 
-  return patterns.some(
-    (x) => q.includes(x)
-  );
+  return patterns.some(function (x) {
+    return q.includes(x);
+  });
 }
 
 /*
@@ -179,22 +190,21 @@ async function searchDuckDuckGo(query) {
     "https://html.duckduckgo.com/html/?q=" +
     encodeURIComponent(query);
 
-  const response =
-    await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150 Safari/537.36"
-      }
-    });
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150 Safari/537.36"
+    }
+  });
 
   if (!response.ok) {
     throw new Error(
-      `DuckDuckGo HTTP ${response.status}`
+      "DuckDuckGo HTTP " +
+      response.status
     );
   }
 
-  const html =
-    await response.text();
+  const html = await response.text();
 
   const results = [];
 
@@ -207,33 +217,22 @@ async function searchDuckDuckGo(query) {
     (match = regex.exec(html)) &&
     results.length < 8
   ) {
-    const url =
-      match[1];
+    const resultUrl = match[1];
 
-    const title =
-      match[2]
-        .replace(/<[^>]+>/g, "")
-        .replace(
-          /&quot;/g,
-          '"'
-        )
-        .replace(
-          /&amp;/g,
-          "&"
-        )
-        .replace(
-          /&#x27;/g,
-          "'"
-        )
-        .trim();
+    const title = match[2]
+      .replace(/<[^>]+>/g, "")
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, "&")
+      .replace(/&#x27;/g, "'")
+      .trim();
 
-    if (!title || !url) {
+    if (!title || !resultUrl) {
       continue;
     }
 
     results.push({
-      title,
-      url
+      title: title,
+      url: resultUrl
     });
   }
 
@@ -246,22 +245,20 @@ async function searchGoogleNews(query) {
     encodeURIComponent(query) +
     "&hl=ru&gl=RU&ceid=RU:ru";
 
-  const response =
-    await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Aiva/5.0"
-      }
-    });
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Aiva/5.0"
+    }
+  });
 
   if (!response.ok) {
     throw new Error(
-      `Google News HTTP ${response.status}`
+      "Google News HTTP " +
+      response.status
     );
   }
 
-  const xml =
-    await response.text();
+  const xml = await response.text();
 
   const results = [];
 
@@ -274,8 +271,7 @@ async function searchGoogleNews(query) {
     (item = itemRegex.exec(xml)) &&
     results.length < 8
   ) {
-    const block =
-      item[1];
+    const block = item[1];
 
     const titleMatch =
       block.match(
@@ -292,34 +288,18 @@ async function searchGoogleNews(query) {
         /<pubDate>([\s\S]*?)<\/pubDate>/i
       );
 
-    if (
-      !titleMatch ||
-      !linkMatch
-    ) {
+    if (!titleMatch || !linkMatch) {
       continue;
     }
 
-    const title =
-      titleMatch[1]
-        .replace(
-          /<!\[CDATA\[/g,
-          ""
-        )
-        .replace(
-          /\]\]>/g,
-          ""
-        )
-        .replace(
-          /&amp;/g,
-          "&"
-        )
-        .replace(
-          /&quot;/g,
-          '"'
-        )
-        .trim();
+    const title = titleMatch[1]
+      .replace(/<!\[CDATA\[/g, "")
+      .replace(/\]\]>/g, "")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .trim();
 
-    const url =
+    const resultUrl =
       linkMatch[1].trim();
 
     const date =
@@ -327,11 +307,11 @@ async function searchGoogleNews(query) {
         ? dateMatch[1].trim()
         : "";
 
-    if (title && url) {
+    if (title && resultUrl) {
       results.push({
-        title,
-        url,
-        date
+        title: title,
+        url: resultUrl,
+        date: date
       });
     }
   }
@@ -344,21 +324,19 @@ async function searchWeb(query) {
     return [];
   }
 
-  let cleanQuery =
-    safeText(query);
+  let cleanQuery = safeText(query);
 
-  cleanQuery =
-    cleanQuery
-      .replace(/\b2024\b/g, "")
-      .replace(/\b2025\b/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+  cleanQuery = cleanQuery
+    .replace(/\b2024\b/g, "")
+    .replace(/\b2025\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
   const queries = [
     cleanQuery,
-    `${cleanQuery} 2026`,
-    `${cleanQuery} AI`,
-    `искусственный интеллект последние новости 2026`
+    cleanQuery + " 2026",
+    cleanQuery + " AI",
+    "искусственный интеллект последние новости 2026"
   ];
 
   const all = [];
@@ -437,22 +415,20 @@ async function getWeather(city) {
     encodeURIComponent(city) +
     "?format=j1";
 
-  const response =
-    await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Aiva/5.0"
-      }
-    });
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Aiva/5.0"
+    }
+  });
 
   if (!response.ok) {
     throw new Error(
-      `Weather HTTP ${response.status}`
+      "Weather HTTP " +
+      response.status
     );
   }
 
-  const data =
-    await response.json();
+  const data = await response.json();
 
   const current =
     data.current_condition &&
@@ -465,17 +441,12 @@ async function getWeather(city) {
   }
 
   return {
-    city,
-    temperature:
-      current.temp_C,
-    feelsLike:
-      current.FeelsLikeC,
-    humidity:
-      current.humidity,
-    wind:
-      current.windspeedKmph,
-    pressure:
-      current.pressure,
+    city: city,
+    temperature: current.temp_C,
+    feelsLike: current.FeelsLikeC,
+    humidity: current.humidity,
+    wind: current.windspeedKmph,
+    pressure: current.pressure,
     description:
       current.weatherDesc &&
       current.weatherDesc[0]
@@ -485,8 +456,7 @@ async function getWeather(city) {
 }
 
 function detectCity(text) {
-  const q =
-    safeText(text).toLowerCase();
+  const q = safeText(text).toLowerCase();
 
   if (
     q.includes("риге") ||
@@ -571,7 +541,7 @@ const CORE_SYSTEM_PROMPT = `
 async function callOpenRouter({
   messages,
   model,
-  temperature = 0.7
+  temperature
 }) {
   if (!API_KEY) {
     throw new Error(
@@ -579,63 +549,70 @@ async function callOpenRouter({
     );
   }
 
-  const response =
-    await fetch(
-      OPENROUTER_URL,
-      {
-        method: "POST",
+  const response = await fetch(
+    OPENROUTER_URL,
+    {
+      method: "POST",
 
-        headers: {
-          Authorization:
-            `Bearer ${API_KEY}`,
+      headers: {
+        Authorization:
+          "Bearer " + API_KEY,
 
-          "Content-Type":
-            "application/json",
+        "Content-Type":
+          "application/json",
 
-          "HTTP-Referer":
-            "https://my-aii.onrender.com",
+        "HTTP-Referer":
+          "https://my-aii.onrender.com",
 
-          "X-Title":
-            "Aiva"
-        },
+        "X-Title":
+          "Aiva"
+      },
 
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature,
-          stream: false
-        })
-      }
-    );
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        temperature:
+          temperature === undefined
+            ? 0.7
+            : temperature,
+        stream: false
+      })
+    }
+  );
 
-  const raw =
-    await response.text();
+  const raw = await response.text();
 
   let data;
 
   try {
-    data =
-      JSON.parse(raw);
-  } catch {
+    data = JSON.parse(raw);
+  } catch (err) {
     throw new Error(
-      `OpenRouter вернул не JSON: ${raw.slice(
-        0,
-        500
-      )}`
+      "OpenRouter вернул не JSON: " +
+      raw.slice(0, 500)
     );
   }
 
   if (!response.ok) {
     const message =
-      data?.error?.message ||
-      data?.message ||
-      `OpenRouter HTTP ${response.status}`;
+      data &&
+      data.error &&
+      data.error.message
+        ? data.error.message
+        : data && data.message
+          ? data.message
+          : "OpenRouter HTTP " +
+            response.status;
 
     throw new Error(message);
   }
 
   const content =
-    data?.choices?.[0]?.message?.content;
+    data &&
+    data.choices &&
+    data.choices[0] &&
+    data.choices[0].message &&
+    data.choices[0].message.content;
 
   if (!content) {
     throw new Error(
@@ -671,9 +648,7 @@ async function saveGeneratedFile(
     sanitizeFilename(filename);
 
   const ext =
-    path.extname(
-      safeName
-    ).toLowerCase();
+    path.extname(safeName).toLowerCase();
 
   const storedName =
     crypto.randomBytes(18).toString("hex") +
@@ -686,11 +661,10 @@ async function saveGeneratedFile(
     );
 
   const text =
-    String(content ?? "")
-      .replace(
-        /\r\n/g,
-        "\n"
-      );
+    String(content || "").replace(
+      /\r\n/g,
+      "\n"
+    );
 
   if (ext === ".docx") {
     await createDocxFile(
@@ -700,7 +674,7 @@ async function saveGeneratedFile(
 
     return {
       name: safeName,
-      storedName
+      storedName: storedName
     };
   }
 
@@ -712,7 +686,7 @@ async function saveGeneratedFile(
 
     return {
       name: safeName,
-      storedName
+      storedName: storedName
     };
   }
 
@@ -724,7 +698,7 @@ async function saveGeneratedFile(
 
   return {
     name: safeName,
-    storedName
+    storedName: storedName
   };
 }
 
@@ -735,19 +709,18 @@ async function createDocxFile(
   const children =
     text
       .split("\n")
-      .map(
-        (line) =>
-          new Paragraph({
-            text: line
-          })
-      );
+      .map(function (line) {
+        return new Paragraph({
+          text: line
+        });
+      });
 
   const doc =
     new Document({
       sections: [
         {
           properties: {},
-          children
+          children: children
         }
       ]
     });
@@ -766,7 +739,7 @@ function createPdfFile(
   text
 ) {
   return new Promise(
-    (resolve, reject) => {
+    function (resolve, reject) {
       const doc =
         new PDFDocument({
           margin: 50
@@ -831,7 +804,7 @@ async function processGeneratedFiles(
       .replace(regex, "")
       .trim(),
 
-    files
+    files: files
   };
 }
 
@@ -848,9 +821,7 @@ function isImageFile(file) {
     ).toLowerCase();
 
   return (
-    file.mimetype.startsWith(
-      "image/"
-    ) ||
+    file.mimetype.startsWith("image/") ||
     [
       ".jpg",
       ".jpeg",
@@ -877,9 +848,7 @@ async function extractFileText(file) {
     ext === ".pdf"
   ) {
     const result =
-      await pdfParse(
-        file.buffer
-      );
+      await pdfParse(file.buffer);
 
     return result.text || "";
   }
@@ -898,9 +867,7 @@ async function extractFileText(file) {
   }
 
   if (
-    file.mimetype.startsWith(
-      "text/"
-    ) ||
+    file.mimetype.startsWith("text/") ||
     [
       ".txt",
       ".js",
@@ -933,16 +900,12 @@ async function extractFileText(file) {
 app.post(
   "/api/upload",
   upload.array("files", 5),
-  async (
-    req,
-    res
-  ) => {
+  async function (req, res) {
     try {
       const result = [];
 
       for (
-        const file of
-          req.files || []
+        const file of req.files || []
       ) {
         const image =
           isImageFile(file);
@@ -954,14 +917,16 @@ app.post(
                 file
               );
 
-        let dataUrl =
-          null;
+        let dataUrl = null;
 
         if (image) {
           dataUrl =
-            `data:${file.mimetype};base64,${file.buffer.toString(
+            "data:" +
+            file.mimetype +
+            ";base64," +
+            file.buffer.toString(
               "base64"
-            )}`;
+            );
         }
 
         result.push({
@@ -985,7 +950,8 @@ app.post(
               60000
             ),
 
-          dataUrl
+          dataUrl:
+            dataUrl
         });
       }
 
@@ -1017,10 +983,7 @@ DOWNLOAD GENERATED FILE
 
 app.get(
   "/api/files/:storedName",
-  (
-    req,
-    res
-  ) => {
+  function (req, res) {
     const storedName =
       path.basename(
         req.params.storedName
@@ -1033,15 +996,11 @@ app.get(
       );
 
     if (
-      !fs.existsSync(
-        filePath
-      )
+      !fs.existsSync(filePath)
     ) {
       return res
         .status(404)
-        .send(
-          "File not found"
-        );
+        .send("File not found");
     }
 
     const requestedName =
@@ -1065,29 +1024,19 @@ HEALTH
 
 app.get(
   "/api/health",
-  (
-    req,
-    res
-  ) => {
+  function (req, res) {
     res.json({
       ok: true,
       app: "Aiva",
-      version: "5.1.0",
-      node:
-        process.version,
-
-      model:
-        MODEL,
-
+      version: "5.1.1",
+      node: process.version,
+      model: MODEL,
       fallbackModel:
         FALLBACK_MODEL,
-
       visionModel:
         VISION_MODEL,
-
       webSearch:
         WEB_SEARCH_ENABLED,
-
       hasKey:
         !!API_KEY
     });
@@ -1102,30 +1051,19 @@ CONFIG
 
 app.get(
   "/api/config",
-  (
-    req,
-    res
-  ) => {
+  function (req, res) {
     res.json({
       ok: true,
-
-      model:
-        MODEL,
-
+      model: MODEL,
       fallbackModel:
         FALLBACK_MODEL,
-
       visionModel:
         VISION_MODEL,
-
       hasKey:
         !!API_KEY,
-
       webSearch:
         WEB_SEARCH_ENABLED,
-
-      temperature:
-        0.7
+      temperature: 0.7
     });
   }
 );
@@ -1136,10 +1074,7 @@ CHAT
 =========================================================
 */
 
-async function handleChat(
-  req,
-  res
-) {
+async function handleChat(req, res) {
   try {
     const body =
       req.body || {};
@@ -1189,7 +1124,7 @@ async function handleChat(
         ""
       );
 
-    let history =
+    const history =
       messages.slice(-40);
 
     const userText =
@@ -1198,11 +1133,12 @@ async function handleChat(
         ...history
       ]
         .reverse()
-        .find(
-          (m) =>
-            m?.role ===
-            "user"
-        )
+        .find(function (m) {
+          return (
+            m &&
+            m.role === "user"
+          );
+        })
         ?.content ||
       "";
 
@@ -1223,21 +1159,32 @@ async function handleChat(
       try {
         const weather =
           await getWeather(
-            detectCity(
-              userText
-            )
+            detectCity(userText)
           );
 
-        webContext += `
-АКТУАЛЬНЫЕ ДАННЫЕ О ПОГОДЕ:
-Город: ${weather.city}
-Температура: ${weather.temperature}°C
-Ощущается как: ${weather.feelsLike}°C
-Влажность: ${weather.humidity}%
-Ветер: ${weather.wind} км/ч
-Давление: ${weather.pressure} hPa
-Описание: ${weather.description}
-`;
+        webContext +=
+          "\nАКТУАЛЬНЫЕ ДАННЫЕ О ПОГОДЕ:\n" +
+          "Город: " +
+          weather.city +
+          "\n" +
+          "Температура: " +
+          weather.temperature +
+          "°C\n" +
+          "Ощущается как: " +
+          weather.feelsLike +
+          "°C\n" +
+          "Влажность: " +
+          weather.humidity +
+          "%\n" +
+          "Ветер: " +
+          weather.wind +
+          " км/ч\n" +
+          "Давление: " +
+          weather.pressure +
+          " hPa\n" +
+          "Описание: " +
+          weather.description +
+          "\n";
       } catch (err) {
         console.error(
           "Weather error:",
@@ -1254,9 +1201,7 @@ async function handleChat(
 
     if (
       WEB_SEARCH_ENABLED &&
-      needsWebSearch(
-        userText
-      ) &&
+      needsWebSearch(userText) &&
       !/погод|температур|weather/i.test(
         userText
       )
@@ -1267,32 +1212,36 @@ async function handleChat(
             userText
           );
 
-        webContext +=
-          results.length
-            ? `
-АКТУАЛЬНЫЕ РЕЗУЛЬТАТЫ ВЕБ-ПОИСКА:
+        if (results.length) {
+          webContext +=
+            "\nАКТУАЛЬНЫЕ РЕЗУЛЬТАТЫ ВЕБ-ПОИСКА:\n\n";
 
-` +
-              results
-                .map(
+          webContext +=
+            results
+              .map(function (r, i) {
+                return (
+                  "\n" +
+                  (i + 1) +
+                  ". " +
+                  r.title +
+                  "\nURL: " +
+                  r.url +
+                  "\n" +
                   (
-                    r,
-                    i
-                  ) =>
-                    `
-${i + 1}. ${r.title}
-URL: ${r.url}
-${
-  r.date
-    ? `Дата: ${r.date}\n`
-    : ""
-}`
-                )
-                .join("")
-            : `
-Веб-поиск не вернул результатов.
-Не выдумывай новости.
-`;
+                    r.date
+                      ? "Дата: " +
+                        r.date +
+                        "\n"
+                      : ""
+                  )
+                );
+              })
+              .join("");
+        } else {
+          webContext +=
+            "\nВеб-поиск не вернул результатов.\n" +
+            "Не выдумывай новости.\n";
+        }
       } catch (err) {
         console.error(
           "Web search error:",
@@ -1309,23 +1258,23 @@ ${
 
     const fileContext =
       attachments
-        .filter(
-          (a) =>
-            a.type !==
-              "image" &&
+        .filter(function (a) {
+          return (
+            a.type !== "image" &&
             a.text
-        )
-        .map(
-          (a) =>
-            `
-ФАЙЛ: ${a.name}
-${String(
-  a.text
-).slice(
-  0,
-  60000
-)}`
-        )
+          );
+        })
+        .map(function (a) {
+          return (
+            "\nФАЙЛ: " +
+            a.name +
+            "\n" +
+            String(a.text).slice(
+              0,
+              60000
+            )
+          );
+        })
         .join("\n");
 
     const system =
@@ -1333,17 +1282,15 @@ ${String(
         CORE_SYSTEM_PROMPT,
 
         systemPrompt
-          ? `
-Пользовательские настройки:
-${systemPrompt}`
+          ? "\nПользовательские настройки:\n" +
+            systemPrompt
           : "",
 
         webContext,
 
         fileContext
-          ? `
-ДАННЫЕ ИЗ ПРИКРЕПЛЁННЫХ ФАЙЛОВ:
-${fileContext}`
+          ? "\nДАННЫЕ ИЗ ПРИКРЕПЛЁННЫХ ФАЙЛОВ:\n" +
+            fileContext
           : ""
       ]
         .filter(Boolean)
@@ -1356,16 +1303,15 @@ ${fileContext}`
     */
 
     const imageAttachments =
-      attachments.filter(
-        (a) =>
-          a.type ===
-            "image" &&
+      attachments.filter(function (a) {
+        return (
+          a.type === "image" &&
           a.dataUrl
-      );
+        );
+      });
 
     const hasImages =
-      imageAttachments.length >
-      0;
+      imageAttachments.length > 0;
 
     let content =
       userText ||
@@ -1375,12 +1321,6 @@ ${fileContext}`
           : "Посмотри прикреплённые файлы."
       );
 
-    /*
-    ВАЖНО:
-    Для изображений OpenRouter получает content-массив:
-    text + image_url.
-    */
-
     if (hasImages) {
       content = [
         {
@@ -1388,20 +1328,21 @@ ${fileContext}`
           text:
             content ||
             "Что изображено на этом фото?"
-        },
-
-        ...imageAttachments.map(
-          (a) => ({
-            type:
-              "image_url",
-
-            image_url: {
-              url:
-                a.dataUrl
-            }
-          })
-        )
+        }
       ];
+
+      for (
+        const attachment of imageAttachments
+      ) {
+        content.push({
+          type: "image_url",
+
+          image_url: {
+            url:
+              attachment.dataUrl
+          }
+        });
+      }
     }
 
     /*
@@ -1410,22 +1351,20 @@ ${fileContext}`
     -------------------------------------------------------
     */
 
-    let finalMessages = [
+    const finalMessages = [
       {
         role: "system",
         content: system
-      },
-
-      ...history.slice(
-        -40
-      )
+      }
     ];
 
-    /*
-    Если в history уже есть последний пользовательский
-    запрос, не нужно добавлять старую строку повторно.
-    Но для изображения добавляем мультимодальное сообщение.
-    */
+    for (
+      const historyMessage of history.slice(-40)
+    ) {
+      finalMessages.push(
+        historyMessage
+      );
+    }
 
     if (
       userText ||
@@ -1434,7 +1373,7 @@ ${fileContext}`
     ) {
       finalMessages.push({
         role: "user",
-        content
+        content: content
       });
     }
 
@@ -1447,18 +1386,11 @@ ${fileContext}`
     let selectedModel;
 
     if (hasImages) {
-      /*
-      Главное изменение:
-      если есть фото, принудительно используем
-      vision-capable router.
-      */
       selectedModel =
         VISION_MODEL;
     } else {
       selectedModel =
-        chooseModel(
-          model
-        );
+        chooseModel(model);
     }
 
     let answer;
@@ -1472,20 +1404,14 @@ ${fileContext}`
           model:
             selectedModel,
 
-          temperature
+          temperature:
+            temperature
         });
-    } catch (
-      primaryError
-    ) {
+    } catch (primaryError) {
       console.error(
         "Primary model error:",
         primaryError.message
       );
-
-      /*
-      Если vision-модель не ответила,
-      пробуем openrouter/free ещё раз.
-      */
 
       if (
         hasImages &&
@@ -1501,7 +1427,8 @@ ${fileContext}`
               model:
                 FALLBACK_MODEL,
 
-              temperature
+              temperature:
+                temperature
             });
 
           selectedModel =
@@ -1529,7 +1456,8 @@ ${fileContext}`
             model:
               FALLBACK_MODEL,
 
-            temperature
+            temperature:
+              temperature
           });
 
         selectedModel =
@@ -1546,9 +1474,7 @@ ${fileContext}`
     */
 
     answer =
-      cleanModelText(
-        answer
-      );
+      cleanModelText(answer);
 
     /*
     -------------------------------------------------------
@@ -1563,29 +1489,37 @@ ${fileContext}`
 
     const files =
       processed.files.map(
-        (file) => ({
-          ...file,
+        function (file) {
+          return {
+            ...file,
 
-          url:
-            `/api/files/${file.storedName}?name=${encodeURIComponent(
-              file.name
-            )}`
-        })
+            url:
+              "/api/files/" +
+              file.storedName +
+              "?name=" +
+              encodeURIComponent(
+                file.name
+              )
+          };
+        }
       );
 
     let reply =
       processed.text;
 
-    if (
-      files.length
-    ) {
+    if (files.length) {
       reply +=
         "\n\n" +
         files
-          .map(
-            (f) =>
-              `📎 [Скачать ${f.name}](${f.url})`
-          )
+          .map(function (f) {
+            return (
+              "📎 [Скачать " +
+              f.name +
+              "](" +
+              f.url +
+              ")"
+            );
+          })
           .join("\n");
     }
 
@@ -1598,15 +1532,13 @@ ${fileContext}`
     res.json({
       ok: true,
 
-      reply,
+      reply: reply,
 
-      text:
-        reply,
+      text: reply,
 
-      answer:
-        reply,
+      answer: reply,
 
-      files,
+      files: files,
 
       model:
         selectedModel,
@@ -1617,7 +1549,6 @@ ${fileContext}`
       webSearch:
         !!webContext
     });
-
   } catch (err) {
     console.error(
       "CHAT ERROR:",
@@ -1628,8 +1559,10 @@ ${fileContext}`
       ok: false,
 
       error:
-        err?.message ||
-        "Ошибка Aiva"
+        err &&
+        err.message
+          ? err.message
+          : "Ошибка Aiva"
     });
   }
 }
@@ -1647,10 +1580,7 @@ REGENERATE
 
 app.post(
   "/api/regenerate",
-  async (
-    req,
-    res
-  ) => {
+  async function (req, res) {
     try {
       const body =
         req.body || {};
@@ -1666,20 +1596,21 @@ app.post(
         [
           ...messages
         ]
-          .map(
-            (m, i) => ({
+          .map(function (m, i) {
+            return {
               ...m,
               index: i
-            })
-          )
+            };
+          })
           .reverse()
-          .find(
-            (m) =>
+          .find(function (m) {
+            return (
               m.role ===
               "assistant"
-          );
+            );
+          });
 
-      let trimmed =
+      const trimmed =
         lastAssistantIndex
           ? messages.slice(
               0,
@@ -1698,11 +1629,8 @@ app.post(
         req,
         res
       );
-
     } catch (err) {
-      console.error(
-        err
-      );
+      console.error(err);
 
       res.status(500).json({
         ok: false,
@@ -1722,14 +1650,12 @@ MODEL
 
 app.post(
   "/api/model",
-  (
-    req,
-    res
-  ) => {
+  function (req, res) {
     try {
       const requested =
         safeText(
-          req.body?.model
+          req.body &&
+          req.body.model
         );
 
       if (requested) {
@@ -1743,7 +1669,6 @@ app.post(
         model:
           MODEL
       });
-
     } catch (err) {
       res.status(500).json({
         ok: false,
@@ -1765,13 +1690,11 @@ let CUSTOM_PROMPT = "";
 
 app.post(
   "/api/prompt",
-  (
-    req,
-    res
-  ) => {
+  function (req, res) {
     CUSTOM_PROMPT =
       safeText(
-        req.body?.prompt
+        req.body &&
+        req.body.prompt
       );
 
     res.json({
@@ -1791,10 +1714,7 @@ CLEAR
 
 app.post(
   "/api/clear",
-  (
-    req,
-    res
-  ) => {
+  function (req, res) {
     res.json({
       ok: true
     });
@@ -1807,16 +1727,17 @@ FALLBACK ROUTE
 =========================================================
 */
 
-app.get(
-  "*",
-  (
-    req,
-    res
-  ) => {
+/*
+Не используем app.get("*"),
+потому что в новых версиях Express
+такой wildcard может вызвать ошибку.
+*/
+
+app.use(
+  function (req, res) {
     if (
-      req.path.startsWith(
-        "/api/"
-      )
+      req.path &&
+      req.path.startsWith("/api/")
     ) {
       return res
         .status(404)
@@ -1828,13 +1749,26 @@ app.get(
         });
     }
 
-    res.sendFile(
+    const indexPath =
       path.join(
         __dirname,
         "public",
         "index.html"
-      )
-    );
+      );
+
+    if (
+      fs.existsSync(indexPath)
+    ) {
+      return res.sendFile(
+        indexPath
+      );
+    }
+
+    return res
+      .status(404)
+      .send(
+        "Aiva frontend not found"
+      );
   }
 );
 
@@ -1846,22 +1780,25 @@ START
 
 app.listen(
   PORT,
-  () => {
+  function () {
     console.log(
-      `Aiva 5.1 running on port ${PORT}`
+      "Aiva 5.1.1 running on port " +
+      PORT
     );
 
     console.log(
-      `Model: ${MODEL}`
+      "Model: " +
+      MODEL
     );
 
     console.log(
-      `Vision model: ${VISION_MODEL}`
+      "Vision model: " +
+      VISION_MODEL
     );
 
     console.log(
-      `Web search: ${WEB_SEARCH_ENABLED}`
+      "Web search: " +
+      WEB_SEARCH_ENABLED
     );
   }
 );
-```
