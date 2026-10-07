@@ -7,8 +7,7 @@ const app = express();
 
 const PORT = process.env.PORT || 4000;
 
-const OPENROUTER_API_KEY =
-  process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 const MODEL =
   process.env.AI_MODEL ||
@@ -25,227 +24,100 @@ const VISION_MODEL =
 const OPENROUTER_URL =
   "https://openrouter.ai/api/v1/chat/completions";
 
-const MAX_FILE_SIZE =
-  20 * 1024 * 1024;
-
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const MAX_FILES = 5;
 const MAX_FILE_TEXT = 40000;
 
-/* =========================================================
-   MIDDLEWARE
-========================================================= */
-
-app.use(
-  express.json({
-    limit: "50mb"
-  })
-);
-
-app.use(
-  express.urlencoded({
-    extended: true,
-    limit: "50mb"
-  })
-);
-
-/* =========================================================
-   UPLOAD
-========================================================= */
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({
+  extended: true,
+  limit: "50mb"
+}));
 
 const upload = multer({
   storage: multer.memoryStorage(),
-
   limits: {
     fileSize: MAX_FILE_SIZE,
     files: MAX_FILES
   }
 });
 
-/* =========================================================
-   PUBLIC
-========================================================= */
+app.use(express.static(path.join(__dirname, "public")));
 
-app.use(
-  express.static(
-    path.join(__dirname, "public")
-  )
-);
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
 function isImage(file) {
+  if (!file) return false;
+
   return (
-    file &&
     typeof file.mimetype === "string" &&
     file.mimetype.startsWith("image/")
   );
 }
 
+
 function imageToDataUrl(file) {
-  return (
-    `data:${file.mimetype};base64,` +
-    file.buffer.toString("base64")
-  );
+  return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
 }
 
+
 function cleanText(value) {
-  if (
-    value === undefined ||
-    value === null
-  ) {
+  if (value === undefined || value === null) {
     return "";
   }
 
   return String(value).trim();
 }
 
-/* =========================================================
-   VISION PROMPT
-========================================================= */
+
+function safeJsonParse(value, fallback = null) {
+  if (!value) return fallback;
+
+  if (typeof value === "object") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
 
 function visionPrompt(userText) {
-  const question =
-    cleanText(userText);
+  const text = cleanText(userText);
 
-  return `
-Ты — система компьютерного зрения Aiva.
+  return text || `
+Внимательно изучи изображение.
 
-Тебе передано реальное изображение пользователя.
+Опиши ТОЛЬКО то, что действительно видно на фотографии.
 
-КРИТИЧЕСКОЕ ПРАВИЛО:
+Если на изображении есть текст:
+- перепиши его максимально точно;
+- сохраняй порядок строк;
+- не придумывай отсутствующие символы;
+- если слово невозможно разобрать, напиши [неразборчиво].
 
-НИКОГДА НЕ ВЫДУМЫВАЙ ТО,
-ЧЕГО НЕТ НА ИЗОБРАЖЕНИИ.
+Если есть таблица:
+- не придумывай строки или столбцы;
+- передавай только реально видимые данные.
 
-Если ты не уверен в объекте,
-слове, цифре или символе —
-скажи, что не уверен.
+Если фотография повернута:
+- мысленно поверни её и прочитай текст.
 
-НЕ УГАДЫВАЙ.
+Если часть изображения размыта или закрыта:
+- прямо укажи это.
 
-========================================
-ЕСЛИ НА ФОТО ЕСТЬ ТЕКСТ
-========================================
-
-Работай в режиме точной расшифровки.
-
-1. Сначала внимательно изучи всё изображение.
-
-2. Определи ориентацию текста.
-
-3. Если текст находится боком,
-мысленно поверни изображение
-и прочитай его.
-
-4. Сохраняй порядок строк.
-
-5. Сохраняй видимые слова
-максимально близко к оригиналу.
-
-6. НЕ исправляй ошибки автора.
-
-7. НЕ исправляй почерк.
-
-8. НЕ заменяй непонятные слова
-похожими словами.
-
-9. НЕ додумывай отсутствующие буквы.
-
-10. НЕ додумывай цифры.
-
-11. НЕ создавай таблицу,
-если настоящей таблицы
-на изображении не видно.
-
-12. НЕ придумывай заголовки.
-
-13. НЕ добавляй строки,
-которых нет.
-
-14. НЕ восстанавливай текст
-по смыслу.
-
-15. Если слово невозможно
-уверенно прочитать:
-
-[неразборчиво]
-
-16. Если цифра неразборчива:
-
-[неразборчиво]
-
-17. Если часть строки не читается:
-
-[неразборчиво]
-
-18. Если изображение слишком
-маленькое или размытое —
-честно сообщи об этом.
-
-========================================
-ВАЖНО
-========================================
-
-Не превращай похожий текст
-в знакомое тебе слово.
-
-Например:
-
-если ты видишь:
-
-МТЗ-8?
-
-и не уверен в последней цифре,
-
-НЕ ПИШИ:
-
-МТЗ-82
-
-Напиши:
-
-МТЗ-8[неразборчиво]
-
-Не угадывай смысл документа.
-
-Не придумывай названия организаций.
-
-Не придумывай фамилии.
-
-Не придумывай номера.
-
-Не придумывай даты.
-
-Не придумывай технические характеристики.
-
-========================================
-ЕСЛИ ПОЛЬЗОВАТЕЛЬ СПРАШИВАЕТ
-"ЧТО НА ФОТО?"
-========================================
-
-Сначала коротко опиши
-реально видимые объекты.
-
-Затем, если присутствует текст:
-
-Текст на изображении:
-
-и ниже максимально точная
-расшифровка.
-
-Если текста нет,
-скажи:
-
-"Видимого текста на изображении нет."
-
-========================================
-ВОПРОС ПОЛЬЗОВАТЕЛЯ
-========================================
-
-${question || "Что на фото?"}
-`;
+Не угадывай.
+Не додумывай.
+Не исправляй текст по своему предположению.
+  `.trim();
 }
+
 
 /* =========================================================
    OPENROUTER
@@ -254,46 +126,30 @@ ${question || "Что на фото?"}
 async function callOpenRouter({
   model,
   messages,
-  temperature
+  temperature = 0.7
 }) {
   if (!OPENROUTER_API_KEY) {
-    throw new Error(
-      "OPENROUTER_API_KEY не настроен."
-    );
+    throw new Error("OPENROUTER_API_KEY не настроен на Render");
   }
 
-  const response =
-    await fetch(
-      OPENROUTER_URL,
-      {
-        method: "POST",
+  const response = await fetch(OPENROUTER_URL, {
+    method: "POST",
 
-        headers: {
-          "Content-Type":
-            "application/json",
+    headers: {
+      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://my-aii.onrender.com",
+      "X-Title": "Aiva"
+    },
 
-          Authorization:
-            `Bearer ${OPENROUTER_API_KEY}`,
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature
+    })
+  });
 
-          "HTTP-Referer":
-            process.env.PUBLIC_APP_URL ||
-            "https://my-aii.onrender.com",
-
-          "X-Title":
-            "Aiva AI Assistant"
-        },
-
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature,
-          max_tokens: 4000
-        })
-      }
-    );
-
-  const raw =
-    await response.text();
+  const raw = await response.text();
 
   let data;
 
@@ -301,400 +157,293 @@ async function callOpenRouter({
     data = JSON.parse(raw);
   } catch {
     throw new Error(
-      `OpenRouter вернул неправильный ответ: ${raw.slice(
-        0,
-        1000
-      )}`
+      `OpenRouter вернул неправильный ответ: ${raw.slice(0, 1000)}`
     );
   }
 
   if (!response.ok) {
-    throw new Error(
+    const errorText =
       data?.error?.message ||
-        data?.error ||
-        `HTTP ${response.status}`
-    );
+      data?.message ||
+      `OpenRouter HTTP ${response.status}`;
+
+    throw new Error(errorText);
   }
 
   const answer =
-    data?.choices?.[0]?.message?.content;
+    data?.choices?.[0]?.message?.content ??
+    data?.choices?.[0]?.text ??
+    "";
 
-  if (!answer) {
-    throw new Error(
-      "Модель не вернула ответ."
-    );
+  if (Array.isArray(answer)) {
+    return answer
+      .map(part => {
+        if (typeof part === "string") return part;
+        return part?.text || "";
+      })
+      .join("");
   }
 
-  return answer;
+  return String(answer || "");
 }
 
+
 /* =========================================================
-   FILE TEXT
+   FILE TEXT EXTRACTION
 ========================================================= */
 
 async function extractFileText(file) {
-  if (!file) {
+  if (!file || isImage(file)) {
     return "";
   }
 
-  const mime =
-    file.mimetype || "";
+  const name = (file.originalname || "").toLowerCase();
+  const mime = file.mimetype || "";
 
-  if (
-    mime.startsWith("text/") ||
-    mime ===
-      "application/json" ||
-    mime ===
-      "application/javascript"
-  ) {
-    return file.buffer
-      .toString("utf8")
-      .slice(
-        0,
-        MAX_FILE_TEXT
-      );
-  }
+  try {
 
-  if (
-    mime ===
-    "application/pdf"
-  ) {
-    try {
-      const pdfParse =
-        require("pdf-parse");
+    /*
+      TXT / CSV / JSON / MD / HTML
+    */
 
-      const result =
-        await pdfParse(
-          file.buffer
-        );
-
-      return String(
-        result.text || ""
-      ).slice(
-        0,
-        MAX_FILE_TEXT
-      );
-    } catch (error) {
-      return `[Не удалось прочитать PDF: ${error.message}]`;
+    if (
+      mime.startsWith("text/") ||
+      /\.(txt|csv|json|md|html|htm|xml)$/i.test(name)
+    ) {
+      return file.buffer
+        .toString("utf8")
+        .slice(0, MAX_FILE_TEXT);
     }
-  }
 
-  if (
-    mime ===
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    mime ===
-      "application/msword"
-  ) {
-    try {
-      const mammoth =
-        require("mammoth");
 
-      const result =
-        await mammoth.extractRawText(
-          {
-            buffer:
-              file.buffer
+    /*
+      DOCX
+    */
+
+    if (
+      mime.includes("word") ||
+      mime.includes("officedocument") ||
+      name.endsWith(".docx")
+    ) {
+      try {
+        const mammoth = require("mammoth");
+
+        const result = await mammoth.extractRawText({
+          buffer: file.buffer
+        });
+
+        return String(result.value || "")
+          .slice(0, MAX_FILE_TEXT);
+
+      } catch {
+        return `[Файл DOCX: ${file.originalname}. Не удалось извлечь текст автоматически.]`;
+      }
+    }
+
+
+    /*
+      PDF
+    */
+
+    if (
+      mime === "application/pdf" ||
+      name.endsWith(".pdf")
+    ) {
+      try {
+        let pdfParse;
+
+        try {
+          pdfParse = require("pdf-parse");
+        } catch {
+          try {
+            pdfParse = require("pdf-parse/lib/pdf-parse");
+          } catch {
+            pdfParse = null;
           }
-        );
+        }
 
-      return String(
-        result.value || ""
-      ).slice(
-        0,
-        MAX_FILE_TEXT
-      );
-    } catch (error) {
-      return `[Не удалось прочитать DOCX: ${error.message}]`;
+        if (pdfParse) {
+          const result = await pdfParse(file.buffer);
+
+          return String(result.text || "")
+            .slice(0, MAX_FILE_TEXT);
+        }
+
+      } catch {}
+
+      return `[PDF-файл: ${file.originalname}. Текст PDF не удалось извлечь автоматически.]`;
     }
-  }
 
-  return "";
+
+    /*
+      Остальные файлы
+    */
+
+    return `[Прикреплён файл: ${file.originalname}]`;
+
+  } catch (error) {
+    return `[Не удалось прочитать файл: ${file.originalname}]`;
+  }
 }
 
+
 /* =========================================================
-   UPLOAD API
+   HISTORY
 ========================================================= */
 
-app.post(
-  "/api/upload",
-  upload.array(
-    "files",
-    MAX_FILES
-  ),
-  async (req, res) => {
-    try {
-      const files =
-        req.files || [];
+function parseHistory(body) {
+  let history =
+    body?.history ??
+    body?.messages ??
+    [];
 
-      const result = [];
+  history = safeJsonParse(history, history);
 
-      for (const file of files) {
-        const item = {
-          name:
-            file.originalname,
+  if (!Array.isArray(history)) {
+    return [];
+  }
 
-          type:
-            file.mimetype,
+  return history
+    .filter(item => item && typeof item === "object")
+    .map(item => ({
+      role:
+        item.role === "assistant"
+          ? "assistant"
+          : item.role === "system"
+          ? "system"
+          : "user",
 
-          size:
-            file.size
-        };
+      content:
+        typeof item.content === "string"
+          ? item.content
+          : Array.isArray(item.content)
+          ? item.content
+          : String(item.content || "")
+    }))
+    .slice(-40);
+}
 
-        if (
-          isImage(file)
-        ) {
-          item.isImage = true;
 
-          item.dataUrl =
-            imageToDataUrl(
-              file
-            );
-        } else {
-          item.isImage = false;
+/* =========================================================
+   MAIN CHAT HANDLER
+========================================================= */
 
-          item.text =
-            await extractFileText(
-              file
-            );
-        }
+async function handleChat(req, res) {
+  try {
+    const body = req.body || {};
 
-        result.push(item);
-      }
+    let userText =
+      cleanText(body.message) ||
+      cleanText(body.prompt) ||
+      cleanText(body.text) ||
+      cleanText(body.content);
 
-      res.json({
-        ok: true,
-        files: result
-      });
-    } catch (error) {
-      console.error(
-        "UPLOAD ERROR:",
-        error
-      );
+    const files = Array.isArray(req.files)
+      ? req.files
+      : [];
 
-      res.status(500).json({
+    const imageFiles = files.filter(isImage);
+    const otherFiles = files.filter(file => !isImage(file));
+
+    /*
+      Если текста нет, но есть фотография
+    */
+
+    if (!userText && imageFiles.length) {
+      userText = "Что на фото?";
+    }
+
+    if (!userText && !files.length) {
+      return res.status(400).json({
         ok: false,
-        error:
-          error.message
+        error: "Пустое сообщение"
       });
     }
-  }
-);
 
-/* =========================================================
-   CHAT
-========================================================= */
 
-app.post(
-  "/api/chat",
-  upload.array(
-    "files",
-    MAX_FILES
-  ),
-  async (req, res) => {
-    try {
-      const userText =
-        cleanText(
-          req.body.message ||
-          req.body.prompt ||
-          req.body.text
+    /*
+      История
+    */
+
+    const history = parseHistory(body);
+
+
+    /*
+      Текст прикреплённых документов
+    */
+
+    const fileTexts = [];
+
+    for (const file of otherFiles) {
+      const extracted = await extractFileText(file);
+
+      if (extracted) {
+        fileTexts.push(
+          `\n\n--- ФАЙЛ: ${file.originalname} ---\n${extracted}`
         );
-
-      let history = [];
-
-      if (
-        req.body.history
-      ) {
-        try {
-          history =
-            JSON.parse(
-              req.body.history
-            );
-
-          if (
-            !Array.isArray(
-              history
-            )
-          ) {
-            history = [];
-          }
-        } catch {
-          history = [];
-        }
       }
+    }
 
-      const files =
-        req.files || [];
 
-      const imageFiles =
-        files.filter(
-          isImage
-        );
+    /*
+      Если есть обычные файлы,
+      добавляем их содержимое в сообщение
+    */
 
-      const documentFiles =
-        files.filter(
-          file =>
-            !isImage(file)
-        );
+    if (fileTexts.length) {
+      userText += fileTexts.join("\n");
+    }
 
-      const hasImages =
-        imageFiles.length > 0;
 
-      /* SYSTEM */
+    /*
+      Создаём сообщения
+    */
 
-      const systemPrompt =
-        hasImages
-          ? visionPrompt(
-              userText
-            )
-          : `
-Ты — Aiva, современный AI-ассистент.
+    const messages = [];
 
-Отвечай понятно,
-естественно и по делу.
 
-Не выдумывай факты.
+    /*
+      Передаём историю
+    */
 
-Если чего-то не знаешь —
-скажи об этом.
+    for (const item of history) {
+      /*
+        Не передаём текущий пользовательский запрос второй раз,
+        если frontend уже положил его в history.
+      */
 
-Используй содержимое
-прикреплённых документов.
+      messages.push({
+        role: item.role,
+        content: item.content
+      });
+    }
 
-Пользовательский запрос:
 
-${userText}
-`;
+    /*
+      Сообщение пользователя
+    */
 
-      const messages = [
-        {
-          role: "system",
-          content:
-            systemPrompt
-        }
-      ];
+    if (imageFiles.length) {
 
-      /* HISTORY */
+      const content = [];
 
-      if (
-        Array.isArray(
-          history
-        )
-      ) {
-        for (
-          const message of
-            history.slice(-30)
-        ) {
-          if (
-            !message ||
-            !message.role
-          ) {
-            continue;
+      content.push({
+        type: "text",
+        text: visionPrompt(userText)
+      });
+
+
+      /*
+        Поддержка нескольких фотографий
+      */
+
+      for (const imageFile of imageFiles) {
+        content.push({
+          type: "image_url",
+          image_url: {
+            url: imageToDataUrl(imageFile)
           }
-
-          if (
-            message.role !==
-              "user" &&
-            message.role !==
-              "assistant"
-          ) {
-            continue;
-          }
-
-          if (
-            typeof message.content ===
-            "string"
-          ) {
-            messages.push({
-              role:
-                message.role,
-
-              content:
-                message.content.slice(
-                  0,
-                  20000
-                )
-            });
-          }
-        }
-      }
-
-      /* USER CONTENT */
-
-      let content;
-
-      if (
-        hasImages
-      ) {
-        content = [
-          {
-            type: "text",
-
-            text:
-              userText ||
-              "Что на фото? Внимательно изучи изображение. Опиши только то, что реально видно. Если есть текст — прочитай его максимально точно. Ничего не угадывай."
-          }
-        ];
-
-        for (
-          const imageFile of
-            imageFiles
-        ) {
-          content.push({
-            type:
-              "image_url",
-
-            image_url: {
-              url:
-                imageToDataUrl(
-                  imageFile
-                )
-            }
-          });
-        }
-
-        for (
-          const file of
-            documentFiles
-        ) {
-          const extracted =
-            await extractFileText(
-              file
-            );
-
-          if (
-            extracted
-          ) {
-            content.push({
-              type: "text",
-
-              text:
-                `\n\nФайл "${file.originalname}":\n${extracted}`
-            });
-          }
-        }
-      } else {
-        let fullText =
-          userText;
-
-        for (
-          const file of
-            documentFiles
-        ) {
-          const extracted =
-            await extractFileText(
-              file
-            );
-
-          if (
-            extracted
-          ) {
-            fullText +=
-              `\n\n--- ${file.originalname} ---\n${extracted}`;
-          }
-        }
-
-        content =
-          fullText;
+        });
       }
 
       messages.push({
@@ -702,270 +451,397 @@ ${userText}
         content
       });
 
-      /* MODEL */
+    } else {
 
-      const selectedModel =
-        hasImages
-          ? VISION_MODEL
-          : MODEL;
+      messages.push({
+        role: "user",
+        content: userText
+      });
 
-      const temperature =
-        hasImages
-          ? 0.1
-          : 0.7;
+    }
 
-      console.log(
-        `REQUEST → ${selectedModel}`
+
+    /*
+      Выбираем модель
+    */
+
+    const hasImages = imageFiles.length > 0;
+
+    const selectedModel = hasImages
+      ? VISION_MODEL
+      : MODEL;
+
+    const temperature = hasImages
+      ? 0.1
+      : 0.7;
+
+
+    /*
+      Первый запрос
+    */
+
+    let answer = "";
+    let usedModel = selectedModel;
+
+    try {
+
+      answer = await callOpenRouter({
+        model: selectedModel,
+        messages,
+        temperature
+      });
+
+    } catch (firstError) {
+
+      console.error(
+        "Primary model error:",
+        firstError.message
       );
 
-      let answer;
 
-      try {
-        answer =
-          await callOpenRouter({
-            model:
-              selectedModel,
+      /*
+        Если основная модель не ответила,
+        пробуем fallback.
+      */
 
+      if (FALLBACK_MODEL && FALLBACK_MODEL !== selectedModel) {
+
+        try {
+
+          usedModel = FALLBACK_MODEL;
+
+          answer = await callOpenRouter({
+            model: FALLBACK_MODEL,
             messages,
-
             temperature
           });
-      } catch (
-        firstError
-      ) {
-        console.error(
-          "PRIMARY MODEL ERROR:",
-          firstError.message
-        );
 
-        if (
-          selectedModel ===
-          FALLBACK_MODEL
-        ) {
-          throw firstError;
+        } catch (fallbackError) {
+
+          console.error(
+            "Fallback model error:",
+            fallbackError.message
+          );
+
+          return res.status(502).json({
+            ok: false,
+            error:
+              fallbackError.message ||
+              firstError.message ||
+              "Ошибка AI"
+          });
         }
 
-        console.log(
-          `FALLBACK → ${FALLBACK_MODEL}`
-        );
+      } else {
 
-        answer =
-          await callOpenRouter({
-            model:
-              FALLBACK_MODEL,
+        return res.status(502).json({
+          ok: false,
+          error:
+            firstError.message ||
+            "Ошибка AI"
+        });
+      }
+    }
 
-            messages,
 
-            temperature:
-              hasImages
-                ? 0.1
-                : 0.7
-          });
+    /*
+      Нормализуем ответ
+    */
+
+    answer = cleanText(answer);
+
+    if (!answer) {
+      answer = "Модель не вернула текстовый ответ.";
+    }
+
+
+    /*
+      Ответ frontend
+    */
+
+    return res.json({
+      ok: true,
+
+      answer,
+
+      text: answer,
+
+      content: answer,
+
+      model: usedModel,
+
+      vision: hasImages,
+
+      files: files.map(file => ({
+        name: file.originalname,
+        type: file.mimetype,
+        size: file.size,
+        isImage: isImage(file)
+      }))
+    });
+
+  } catch (error) {
+
+    console.error(
+      "CHAT ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      ok: false,
+      error:
+        error?.message ||
+        "Внутренняя ошибка сервера"
+    });
+  }
+}
+
+
+/* =========================================================
+   UPLOAD
+========================================================= */
+
+app.post(
+  "/api/upload",
+  upload.array("files", MAX_FILES),
+  async (req, res) => {
+
+    try {
+
+      const files = Array.isArray(req.files)
+        ? req.files
+        : [];
+
+      const result = [];
+
+      for (const file of files) {
+
+        const item = {
+          name: file.originalname,
+          filename: file.originalname,
+          type: file.mimetype,
+          mimetype: file.mimetype,
+          size: file.size,
+          isImage: isImage(file)
+        };
+
+
+        /*
+          Для документов возвращаем текст
+        */
+
+        if (!isImage(file)) {
+          item.text = await extractFileText(file);
+        }
+
+
+        /*
+          Для изображений можно вернуть preview
+        */
+
+        if (isImage(file)) {
+          item.dataUrl = imageToDataUrl(file);
+        }
+
+        result.push(item);
       }
 
-      /* RESPONSE */
-
-      res.json({
+      return res.json({
         ok: true,
-
-        answer,
-
-        model:
-          selectedModel,
-
-        vision:
-          hasImages,
-
-        attachments:
-          files.map(
-            file => ({
-              name:
-                file.originalname,
-
-              type:
-                file.mimetype,
-
-              size:
-                file.size,
-
-              isImage:
-                isImage(file)
-            })
-          )
+        files: result,
+        attachments: result
       });
-    } catch (
-      error
-    ) {
+
+    } catch (error) {
+
       console.error(
-        "CHAT ERROR:",
+        "UPLOAD ERROR:",
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         ok: false,
-
         error:
-          error.message ||
-          "Ошибка Aiva"
+          error?.message ||
+          "Ошибка загрузки файла"
       });
     }
   }
 );
+
+
+/* =========================================================
+   CHAT
+========================================================= */
+
+app.post(
+  "/api/chat",
+  upload.array("files", MAX_FILES),
+  handleChat
+);
+
+
+/* =========================================================
+   REGENERATE
+   ВАЖНО: ЭТОГО ENDPOINT НЕ ХВАТАЛО
+========================================================= */
+
+app.post(
+  "/api/regenerate",
+  upload.array("files", MAX_FILES),
+  handleChat
+);
+
 
 /* =========================================================
    HEALTH
 ========================================================= */
 
-app.get(
-  "/api/health",
-  (req, res) => {
-    res.json({
-      ok: true,
+app.get("/api/health", (req, res) => {
 
-      version:
-        "5.3.1",
+  res.json({
+    ok: true,
+    service: "Aiva",
+    version: "5.3.2",
+    model: MODEL,
+    fallbackModel: FALLBACK_MODEL,
+    visionModel: VISION_MODEL,
+    apiKey: Boolean(OPENROUTER_API_KEY)
+  });
 
-      model:
-        MODEL,
+});
 
-      fallbackModel:
-        FALLBACK_MODEL,
-
-      visionModel:
-        VISION_MODEL,
-
-      apiKey:
-        !!OPENROUTER_API_KEY
-    });
-  }
-);
 
 /* =========================================================
    CONFIG
 ========================================================= */
 
-app.get(
-  "/api/config",
-  (req, res) => {
-    res.json({
-      ok: true,
+app.get("/api/config", (req, res) => {
 
-      model:
-        MODEL,
+  res.json({
+    ok: true,
 
-      visionModel:
-        VISION_MODEL
-    });
-  }
-);
+    model: MODEL,
+
+    fallbackModel: FALLBACK_MODEL,
+
+    visionModel: VISION_MODEL,
+
+    maxFiles: MAX_FILES,
+
+    maxFileSize: MAX_FILE_SIZE,
+
+    vision: true,
+
+    features: {
+      chat: true,
+      regenerate: true,
+      upload: true,
+      images: true,
+      vision: true
+    }
+  });
+
+});
+
 
 /* =========================================================
-   404
+   ROOT
 ========================================================= */
 
-app.use(
-  (req, res) => {
-    if (
-      req.path.startsWith(
-        "/api/"
-      )
-    ) {
-      return res
-        .status(404)
-        .json({
-          ok: false,
-          error:
-            "API endpoint not found"
-        });
-    }
+app.get("/", (req, res) => {
 
-    const index =
-      path.join(
-        __dirname,
-        "public",
-        "index.html"
-      );
+  const index = path.join(
+    __dirname,
+    "public",
+    "index.html"
+  );
 
-    if (
-      fs.existsSync(index)
-    ) {
-      return res.sendFile(
-        index
-      );
-    }
-
-    res
-      .status(404)
-      .send(
-        "Aiva frontend not found"
-      );
+  if (fs.existsSync(index)) {
+    return res.sendFile(index);
   }
-);
+
+  res.status(404).send("Aiva frontend not found");
+});
+
+
+/* =========================================================
+   API 404
+========================================================= */
+
+app.use((req, res, next) => {
+
+  if (req.path.startsWith("/api/")) {
+
+    return res.status(404).json({
+      ok: false,
+      error: "API endpoint not found",
+      endpoint: req.path,
+      method: req.method
+    });
+  }
+
+  next();
+});
+
 
 /* =========================================================
    ERROR HANDLER
 ========================================================= */
 
-app.use(
-  (
-    error,
-    req,
-    res,
-    next
-  ) => {
-    console.error(
-      "SERVER ERROR:",
-      error
-    );
+app.use((error, req, res, next) => {
 
-    if (
-      res.headersSent
-    ) {
-      return next(
-        error
-      );
-    }
+  console.error(
+    "SERVER ERROR:",
+    error
+  );
 
-    res.status(500).json({
+  if (
+    error instanceof multer.MulterError
+  ) {
+
+    return res.status(400).json({
       ok: false,
-
       error:
-        error.message ||
-        "Internal server error"
+        error.code === "LIMIT_FILE_SIZE"
+          ? "Файл слишком большой. Максимум 20 MB."
+          : error.message
     });
   }
-);
+
+  return res.status(500).json({
+    ok: false,
+    error:
+      error?.message ||
+      "Ошибка сервера"
+  });
+});
+
 
 /* =========================================================
    START
 ========================================================= */
 
-app.listen(
-  PORT,
-  "0.0.0.0",
-  () => {
-    console.log(
-      `Aiva 5.3.1 running on port ${PORT}`
-    );
+app.listen(PORT, () => {
 
-    console.log(
-      `Model: ${MODEL}`
-    );
+  console.log(
+    `Aiva 5.3.2 running on port ${PORT}`
+  );
 
-    console.log(
-      `Fallback model: ${FALLBACK_MODEL}`
-    );
+  console.log(
+    `Model: ${MODEL}`
+  );
 
-    console.log(
-      `Vision model: ${VISION_MODEL}`
-    );
+  console.log(
+    `Fallback model: ${FALLBACK_MODEL}`
+  );
 
-    console.log(
-      `API key: ${
-        OPENROUTER_API_KEY
-          ? "YES"
-          : "NO"
-      }`
-    );
-  }
-);
+  console.log(
+    `Vision model: ${VISION_MODEL}`
+  );
+
+  console.log(
+    `API key: ${OPENROUTER_API_KEY ? "YES" : "NO"}`
+  );
+
+});
