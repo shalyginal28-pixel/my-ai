@@ -168,6 +168,36 @@ header{height:62px;min-height:62px;display:flex;align-items:center;gap:10px;padd
 @media(max-width:800px){#sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);box-shadow:20px 0 60px rgba(0,0,0,.35)}#sidebar.open{transform:none}.sidebar-close{display:block}.menu-btn{display:block}#sidebar-overlay.on{display:block}header{height:58px;min-height:58px;padding:0 10px}.model-select{display:none}.profile-menu{position:fixed;top:62px;right:10px}.toolbar{opacity:1}#chat{padding:22px 13px 150px}#welcome{min-height:calc(100vh - 220px);padding:25px 5px}.welcome-logo{width:64px;height:64px;border-radius:19px;font-size:29px}.quick-actions{grid-template-columns:1fr 1fr;gap:8px}.quick-card{padding:13px}.quick-description{display:none}.msg{gap:8px;margin-bottom:22px}.msg .ava{width:28px;height:28px}.msg>div:nth-child(2){max-width:88%}.content{font-size:14.5px}#inputbar{padding:7px 10px max(10px,env(safe-area-inset-bottom))}#inputrow{padding:7px;border-radius:16px}#inp{font-size:14px}#prompt-panel{width:100%;max-width:100%}}
 @media(max-width:420px){.quick-actions{grid-template-columns:1fr}.quick-card{display:flex;align-items:center;gap:10px}.quick-icon{margin:0}.quick-title{margin:0}.profile-menu{right:8px;width:calc(100vw - 16px);max-width:292px}#aiva-tools-panel{width:calc(100vw - 24px);max-width:calc(100vw - 24px)}}
 </style>
+
+<style id="aiva-final-polish">
+/* Aiva 4.1 — ChatGPT-style polish */
+header{height:58px;min-height:58px;padding:0 22px;background:rgba(11,11,15,.78)}
+#sidebar{width:278px;padding:14px 12px;background:rgba(16,17,22,.96)}
+.chat-inner{max-width:900px}
+#chat{padding:30px 24px 190px}
+.msg{gap:13px;margin-bottom:30px}
+.msg .ava{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.msg.ai .content{padding-top:3px}
+.msg.me .content{background:var(--user);border:1px solid var(--border);border-radius:16px;padding:11px 14px}
+.content{font-size:15px;line-height:1.65}
+.content p{margin:0 0 10px}.content p:last-child{margin-bottom:0}
+.content a{color:#a99fff;text-decoration:none;border-bottom:1px solid rgba(169,159,255,.28)}
+.content a:hover{border-bottom-color:#a99fff}
+.content pre{margin:12px 0;padding:14px;border-radius:12px;overflow:auto;background:#08090c;border:1px solid var(--border)}
+.content code{font-size:.9em}
+.toolbar{margin-top:7px;opacity:.45}.msg:hover .toolbar{opacity:1}
+.toolbar button{width:28px;height:28px;border-radius:8px;background:transparent;color:var(--muted)}
+.toolbar button:hover{background:var(--hover);color:var(--text)}
+#inputbar{padding:10px max(24px,calc((100vw - 900px)/2)) 20px;background:linear-gradient(to top,var(--bg) 74%,transparent)}
+#inputrow{max-width:900px;border-radius:20px;padding:10px;background:rgba(21,22,27,.97);box-shadow:0 12px 45px rgba(0,0,0,.35)}
+#inp{font-size:15px}
+#aiva-more-btn{border:1px solid transparent}.profile-btn{border:1px solid rgba(255,255,255,.13)}
+.profile-plan-arrow,.profile-item-arrow{display:none!important}
+.profile-plan{justify-content:flex-start}
+.quick-actions{max-width:720px;gap:10px}.quick-card{border-radius:15px;padding:16px;background:rgba(255,255,255,.022)}
+#aiva-tools-panel,#prompt-panel{border-radius:20px 0 0 20px}
+@media(max-width:800px){#sidebar{width:286px}#chat{padding:22px 13px 160px}.chat-inner{max-width:none}.msg.me .content{border-radius:15px}.content{font-size:14.5px}#inputbar{padding:7px 10px max(10px,env(safe-area-inset-bottom))}}
+</style>
 </head>
 <body>
 <div id="app">
@@ -370,18 +400,19 @@ function openSidebar(){sidebar.classList.add("open");sidebarOverlay.classList.ad
 $("menu-btn").onclick=openSidebar;$("sidebar-close").onclick=closeSidebar;sidebarOverlay.onclick=closeSidebar;$("new-chat").onclick=newChat;$("sidebar-prompt").onclick=()=>{$("prompt-btn").click()};$("sidebar-settings").onclick=openSettings;
 
 function md(t){
-  let h=String(t)
-    .replace(/\\\[/g,"[").replace(/\\\]/g,"]").replace(/\\\(/g,"(").replace(/\\\)/g,")")
-    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  let raw=String(t)
+    .replace(/\\\[/g,"[").replace(/\\\]/g,"]").replace(/\\\(/g,"(").replace(/\\\)/g,")");
+  // Repair malformed Markdown links sometimes returned by models, e.g. [site]([https://...](...))
+  raw=raw.replace(/\[([^\]]+)\]\(\[?(https?:\/\/[^\s)\]]+)(?:\]\([^)]*\))?\)/gi,'[$1]($2)');
+  raw=raw.replace(/\[([^\]]+)\]\(\[?(https?:\/\/[^\s)\]]+)\]?\)/gi,'[$1]($2)');
+  let h=raw.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   h=h.replace(/```(\w*)\n?([\s\S]*?)```/g,(m,l,c)=>"<pre><code>"+c.replace(/^\n|\n$/g,"")+"</code></pre>");
   h=h.replace(/`([^`\n]+)`/g,"<code>$1</code>");
-  h=h.replace(/^###+ (.*)$/gm,"<b>$1</b>");
-  h=h.replace(/^## (.*)$/gm,"<b>$1</b>");
-  h=h.replace(/^# (.*)$/gm,"<b>$1</b>");
+  h=h.replace(/^###+ (.*)$/gm,"<b>$1</b>").replace(/^## (.*)$/gm,"<b>$1</b>").replace(/^# (.*)$/gm,"<b>$1</b>");
   h=h.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>");
   h=h.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
   h=h.replace(/\[([^\]]+)\]\((\/api\/files\/[^)\s]+)\)/g,'<a href="$2" download target="_blank" rel="noopener">$1</a>');
-  h=h.replace(/(^|[\s>])(https?:\/\/[^\s<]+)/g,(m,p,url)=>{if(m.includes('href="')||m.includes('>'))return m;return p+'<a href="'+url+'" target="_blank" rel="noopener noreferrer">'+url+'</a>'});
+  h=h.replace(/(^|[\s>])(https?:\/\/[^\s<]+)/g,(m,p,url)=>{if(m.includes('href="'))return m;const clean=url.replace(/[.,!?;:]+$/,'');return p+'<a href="'+clean+'" target="_blank" rel="noopener noreferrer">'+clean+'</a>'+(url.slice(clean.length)||'')});
   return h.split(/\n{2,}/).map(p=>/^<pre>/.test(p.trim())?p:"<p>"+p.replace(/\n/g,"<br>")+"</p>").join("")
 }
 function speak(text){if(!window.speechSynthesis)return;speechSynthesis.cancel();const lines=String(text).replace(/[#*`>\-]/g," ").split("\n").filter(x=>x.trim()).slice(0,12);const u=new SpeechSynthesisUtterance(lines.join(". ").slice(0,1200));u.lang="ru-RU";u.rate=1.05;speechSynthesis.speak(u)}
