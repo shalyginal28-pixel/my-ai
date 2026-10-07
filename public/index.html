@@ -444,73 +444,83 @@ async function streamRequest(url,payload,contentEl){
   sendBtn.disabled=false;
   sendBtn.textContent="■";
   sendBtn.classList.add("stop");
-
   try{
-    const body={
-      ...payload,
-      stream:false
-    };
-
+    const body={...payload,stream:false};
     const r=await apiFetch(url,{
       method:"POST",
       signal:abortCtrl.signal,
-      headers:{
-        "Content-Type":"application/json"
-      },
+      headers:{"Content-Type":"application/json"},
       body:JSON.stringify(body)
     });
 
     const raw=await r.text();
-
     let data=null;
-    try{
-      data=JSON.parse(raw);
-    }catch(e){
-      throw new Error("Сервер вернул неправильный ответ");
-    }
+    try{data=JSON.parse(raw)}catch(e){}
 
     if(!r.ok){
-      throw new Error(data?.error||("HTTP "+r.status));
+      throw new Error((data&&data.error)||raw.slice(0,500)||("HTTP "+r.status));
     }
 
-    const answer=String(
-      data?.reply ??
-      data?.answer ??
-      data?.text ??
-      ""
-    ).trim();
-
-    if(!answer){
-      throw new Error("AI вернул пустой ответ");
+    if(data&&data.ok===false){
+      throw new Error(data.error||"Не удалось получить ответ");
     }
 
-    contentEl.textContent=answer;
+    let acc="";
+    if(data){
+      acc=String(data.reply??data.answer??data.text??"");
+    }else{
+      // Совместимость со старым NDJSON-ответом сервера.
+      acc=raw.split("\n").filter(Boolean).map(line=>{
+        try{const x=JSON.parse(line);return String(x.d??x.reply??x.answer??x.text??"")}catch(e){return ""}
+      }).join("");
+    }
+
+    if(!acc) throw new Error("Модель не вернула текстовый ответ.");
+
+    contentEl.textContent=acc;
     chat.scrollTop=chat.scrollHeight;
-
-    return answer;
-
+    return acc;
   }catch(e){
     if(e.name!=="AbortError"){
       contentEl.textContent="";
-      addMsg(
-        "ai",
-        "⚠️ "+(e.message||"Не удалось получить ответ"),
-        true
-      );
+      addMsg("ai","⚠️ "+(e.message||"Не удалось получить ответ"),true)
     }
-    return "";
-  }finally{
-    sendBtn.disabled=false;
-    sendBtn.textContent="➤";
-    sendBtn.classList.remove("stop");
-    abortCtrl=null;
+    return ""
   }
 }
+
+function endGen(){sendBtn.textContent="↑";sendBtn.classList.remove("stop");abortCtrl=null;sendBtn.disabled=false;if(uiSettings.autofocus)inp.focus()}
 
 async function send(){const text=inp.value.trim();if(!text&&!attachments.length)return;if(!activeChatId)createChat();const atts=attachments.filter(a=>a.type!=="error");const attNote=atts.map(a=>a.type==="image"?`[🖼️ ${a.name}]`:`[📄 ${a.name}]`).join(" ");addMsg("user",(text+(attNote?"\n"+attNote:" ")).trim());inp.value="";inp.style.height="auto";attachments=[];renderAttach();sendBtn.disabled=true;const contentEl=addMsg("ai","");const statuses=atts.length?["Размышляет","Просматривает файл","Анализирует данные","Формирует ответ"]:["Размышляет","Анализирует запрос","Подбирает ответ","Формирует ответ"];thinkingTimer=startThinking(contentEl,statuses);const acc=await streamRequest("/api/chat",{text,attachments:atts,mode:modelSelect.value},contentEl);if(thinkingTimer)clearInterval(thinkingTimer);contentEl.innerHTML=acc?md(acc):"<i>(пусто)</i>";saveCurrentMessages();endGen()}
 sendBtn.onclick=()=>abortCtrl?abortCtrl.abort():send();inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});inp.addEventListener("input",()=>{inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,160)+"px"});
 
-$("regen-btn").onclick=async()=>{if(abortCtrl)return;const aiMsgs=[...chatInner.querySelectorAll(".msg.ai")];if(!aiMsgs.length)return;aiMsgs[aiMsgs.length-1].remove();const contentEl=addMsg("ai","");const statuses=["Размышляет","Перепроверяет ответ","Подбирает другой вариант","Формирует новую версию"];const timer=startThinking(contentEl,statuses);const acc=await streamRequest("/api/regenerate",{mode:modelSelect.value},contentEl);if(timer)clearInterval(timer);contentEl.innerHTML=acc?md(acc):"<i>(пусто)</i>";saveCurrentMessages();endGen()};
+$("regen-btn").onclick=async()=>{
+  if(abortCtrl)return;
+  const msgs=[...chatInner.querySelectorAll(".msg")];
+  let lastUser=null;
+  for(let i=msgs.length-1;i>=0;i--){
+    if(msgs[i].classList.contains("me")){lastUser=msgs[i];break}
+  }
+  if(!lastUser)return;
+  const userText=lastUser.querySelector(".content")?.innerText?.trim()||"";
+  if(!userText)return;
+
+  const aiMsgs=[...chatInner.querySelectorAll(".msg.ai")];
+  if(aiMsgs.length)aiMsgs[aiMsgs.length-1].remove();
+
+  const contentEl=addMsg("ai","");
+  const statuses=["Размышляет","Перепроверяет запрос","Подбирает другой вариант","Формирует новую версию"];
+  const timer=startThinking(contentEl,statuses);
+  const acc=await streamRequest("/api/chat",{
+    text:userText,
+    attachments:[],
+    mode:modelSelect.value
+  },contentEl);
+  if(timer)clearInterval(timer);
+  contentEl.innerHTML=acc?md(acc):"<i>(пусто)</i>";
+  saveCurrentMessages();
+  endGen();
+};
 $("export-btn").onclick=async()=>{try{const r=await apiFetch("/api/config");const d=await r.json();if(!r.ok)throw new Error(d.error||"Ошибка");const text=(d.history||[]).map(m=>`**${m.role==="user"?"Я":"Aiva"}:**\n\n${m.content}\n`).join("\n---\n\n");const blob=new Blob([`# Aiva — экспорт чата\n\n${text}`],{type:"text/markdown"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="aiva-chat.md";a.click();URL.revokeObjectURL(a.href);toast("Экспорт готов")}catch(e){alert("Не удалось экспортировать чат.")}};
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){micBtn.style.display="";let rec=null,recording=false;micBtn.onclick=()=>{if(recording){rec.stop();return}rec=new SR();rec.lang="ru-RU";rec.interimResults=false;rec.onresult=e=>{inp.value=(inp.value?inp.value+" ":"")+e.results[0][0].transcript;inp.dispatchEvent(new Event("input"))};rec.onend=()=>{recording=false;micBtn.classList.remove("on")};rec.onerror=()=>{recording=false;micBtn.classList.remove("on")};recording=true;micBtn.classList.add("on");rec.start()}}
 
