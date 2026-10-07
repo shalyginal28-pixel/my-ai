@@ -1,47 +1,44 @@
-# MyAI — твой личный AI-ассистент
+AIVA 4.0 — READY TO UPLOAD TO RENDER
 
-Тёмный чат-интерфейс + любая модель через OpenAI-совместимый API.
+THIS ZIP IS FLAT: server.js and package.json are in the ROOT.
+public/ contains the web app, PWA manifest, service worker, icons and Android asset links.
 
-## Запуск (Windows)
-1. Установи Node.js: https://nodejs.org (LTS)
-2. Ключ бери на https://openrouter.ai (раздел Keys → Create Key) — есть бесплатные модели
-3. В папке проекта:
+RENDER
+Build Command: npm install
+Start Command: npm start
+Runtime: Node
 
-```bat
-set AI_API_KEY=sk-or-v1-ТВОЙ_КЛЮЧ
-npm install
-npm start
-```
+REQUIRED ENVIRONMENT VARIABLE
+AI_API_KEY = your OpenRouter API key
 
-PowerShell: `$env:AI_API_KEY="sk-or-v1-..."; npm start`
+OPTIONAL
+AI_MODEL = nvidia/nemotron-3-ultra-550b-a55b:free
+WEB_SEARCH_ENABLED = true
+AIVA_FALLBACK_MODEL = openrouter/free
 
-Открой http://localhost:4000
+IMPORTANT
+1. Never put the OpenRouter secret key into index.html.
+2. Keep AI_API_KEY in Render Environment Variables.
+3. Do not create another nested folder when uploading these files to your GitHub repository.
+4. After deployment open /api/health.
 
-## Если OpenRouter блочит (403 / Access denied by security policy)
-- Запросы идут через curl (обход TLS-фингерпринта). Если блочит по IP/региону — включи VPN
-  или пропиши локальный прокси Happ/Clash: `set AI_PROXY=http://127.0.0.1:7890`
+EXPECTED HEALTH RESPONSE
+{
+  "ok": true,
+  "app": "Aiva",
+  "version": "4.0.0",
+  "webSearch": true,
+  "hasKey": true
+}
 
-## Что умеет
-- ⚡ **Стриминг ответов** — печатает потоком в реальном времени, кнопка ⏹ останавливает генерацию
-- 🔄 **🔄 «ещё вариант»** — перегенерация последнего ответа
-- 🎤 **Голосовой ввод** (🎤) и 🔊 **озвучка ответов** (встроенные средства Windows/Chrome)
-- 📋 Копирование ответов, ⬇ экспорт истории в .md
-- 🌡 Ползунок «креативности» (temperature) в панели «Характер»
-
-## Было раньше
-- 💬 Диалог с памятью (последние 40 сообщений контекста)
-- 📎 **Файлы**: текст, код, markdown, csv, json — читает как есть; **PDF** и **DOCX** — извлекает текст;
-  **картинки** (png/jpg/webp/gif) — отправляет моделям с «зрением»
-- 🧠 **Выбор модели прямо в шапке** (openrouter/free, Nemotron 120B, GPT-OSS 120B, Gemma… или свой slug)
-- 🎭 Кнопка «Характер» — свой системный промпт
-- 💾 История сохраняется между перезапусками (data/history.json)
-- 🗑 Очистка диалога
-
-## Лимиты
-- Файл до 20 МБ, до 5 файлов за сообщение, до 4 картинок
-- Текст из файла — до 40 000 символов в контекст
-- Бесплатные модели OpenRouter: ~20 запросов/мин, ~200/день
-
-## Не OpenRouter?
-- `AI_API_URL` — адрес API (DeepSeek: https://api.deepseek.com/chat/completions)
-- `AI_MODEL` — slug модели
+WHAT CHANGED
+- No curl dependency. The backend uses Node 18+ fetch, which works on Render Linux.
+- Primary model: NVIDIA Nemotron 3 Ultra free.
+- Automatic fallback: openrouter/free.
+- Real web search for current questions. Weather uses live wttr.in data; general fresh queries use DuckDuckGo results.
+- If a model prints <AIVA_WEB_SEARCH>, the server catches it and performs the search instead of showing the tag.
+- Files: PDF, DOCX, images and text/code files.
+- Generated files are downloadable from Aiva.
+- Password reset UI remains in the frontend.
+- PWA manifest, safe service worker and Digital Asset Links are included.
+- The service worker has NO fetch handler, so /api/chat is not intercepted.
