@@ -1229,150 +1229,45 @@ window.addEventListener("drop", e => {
   uploadFiles(e.dataTransfer.files);
 });
 
-/* ================= STREAM ================= */
+/* ================= AIVA CORE REQUEST ================= */
 async function streamRequest(url, payload, contentEl){
-
   abortCtrl = new AbortController();
-
   sendBtn.disabled = false;
   sendBtn.textContent = "■";
   sendBtn.classList.add("stop");
 
-  let acc = "";
-
   try{
-
-    /*
-      Отправляем обычный JSON-ответ.
-      Backend server.js это поддерживает:
-      { ok:true, reply:"...", model:"..." }
-
-      Это убирает проблему браузерного
-      "Failed to fetch" из-за NDJSON/стриминга.
-    */
-
-    const r = await apiFetch(
-      url,
-      {
-        method: "POST",
-
-        signal: abortCtrl.signal,
-
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-          ...payload,
-          stream: false
-        })
-      }
-    );
-
+    const r = await apiFetch(url, {
+      method: "POST",
+      signal: abortCtrl.signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, stream: false })
+    });
 
     let data = null;
-
-    try{
-
-      data = await r.json();
-
-    }catch(e){
-
-      data = null;
-
+    try{ data = await r.json(); }catch(e){
+      throw new Error("Сервер вернул некорректный ответ (HTTP " + r.status + ")");
     }
 
-
-    if(!r.ok){
-
-      throw new Error(
-        data?.error ||
-        "HTTP " + r.status
-      );
-
+    if(!r.ok || data?.ok === false){
+      throw new Error(data?.error || "Ошибка сервера HTTP " + r.status);
     }
 
-
-    if(!data){
-
-      throw new Error(
-        "Сервер вернул пустой ответ"
-      );
-
+    const acc = String(data?.reply || "").trim();
+    if(!acc){
+      throw new Error("Aiva получила пустой ответ от AI. Backend уже сделал автоматическую повторную попытку.");
     }
 
-
-    if(data.ok === false){
-
-      throw new Error(
-        data.error ||
-        "Сервер не смог обработать запрос"
-      );
-
-    }
-
-
-    acc = String(
-      data.reply ||
-      ""
-    );
-
-
-    if(data.model){
-
-      modelInfo.textContent =
-        data.model;
-
-    }
-
-
-    contentEl.textContent =
-      acc;
-
-
-    chat.scrollTop =
-      chat.scrollHeight;
-
-
+    if(data.model) modelInfo.textContent = data.model;
+    contentEl.innerHTML = md(acc);
+    chat.scrollTop = chat.scrollHeight;
     return acc;
-
-
   }catch(e){
-
-    if(
-      e.name === "AbortError"
-    ){
-
-      return acc;
-
-    }
-
-
-    console.error(
-      "Aiva chat error:",
-      e
-    );
-
-
-    contentEl.textContent =
-      "";
-
-
-    addMsg(
-      "ai",
-      "⚠️ " +
-      (
-        e.message ||
-        "Не удалось получить ответ от сервера"
-      ),
-      true
-    );
-
-
-    return acc;
-
+    if(e?.name === "AbortError") return "";
+    console.error("Aiva Core error:", e);
+    contentEl.textContent = "⚠️ " + (e?.message || "Неизвестная ошибка");
+    return "";
   }
-
 }
 
 function endGen(){
@@ -1406,7 +1301,7 @@ async function send(){
   const acc = await streamRequest("/api/chat", { text, attachments: atts, stream: true }, contentEl);
 
   clearInterval(thinkingTimer);
-  contentEl.innerHTML = acc ? md(acc) : "<i>(пусто)</i>";
+  if(acc) contentEl.innerHTML = md(acc);
   chat.scrollTop = chat.scrollHeight;
   saveCurrentMessages();
   endGen();
@@ -1432,7 +1327,7 @@ document.getElementById("regen-btn").onclick = async () => {
     ["Размышляет","Перепроверяет ответ","Подбирает другой вариант","Формирует новую версию"]);
   const acc = await streamRequest("/api/regenerate", { stream: true }, contentEl);
   clearInterval(thinkingTimer);
-  contentEl.innerHTML = acc ? md(acc) : "<i>(пусто)</i>";
+  if(acc) contentEl.innerHTML = md(acc);
   saveCurrentMessages();
   chat.scrollTop = chat.scrollHeight;
   endGen();
