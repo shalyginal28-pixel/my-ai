@@ -830,29 +830,27 @@ async function handleChat(req, res) {
           `/api/files/${file.storedName}?name=` +
           encodeURIComponent(file.name)
       }));
-
-    res.json({
-      ok: true,
-      text: processed.text,
-      answer: processed.text,
-      files,
+    const payload = {
+      d: processed.text,
+      done: false,
       model: selectedModel,
-      webSearch: !!webContext
-    });
-  } catch (err) {
-    console.error(
-      "CHAT ERROR:",
-      err
-    );
+      webSearch: !!webContext,
+      files
+    };
 
-    res.status(500).json({
-      ok: false,
-      error:
-        err?.message ||
-        "Ошибка Aiva"
-    });
-  }
-}
+    res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    res.write(JSON.stringify(payload) + "\n");
+
+    res.write(JSON.stringify({
+      d: "",
+      done: true,
+      model: selectedModel
+    }) + "\n");
+
+    res.end();
 
 app.post("/api/chat", handleChat);
 
