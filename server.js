@@ -1,643 +1,189 @@
 const express = require("express");
 const multer = require("multer");
-const fs = require("fs");
+const cors = require("cors");
 const path = require("path");
-const crypto = require("crypto");
-const pdfParse = require("pdf-parse");
-const mammoth = require("mammoth");
-const { Document, Packer, Paragraph } = require("docx");
-const PDFDocument = require("pdfkit");
+const fs = require("fs");
 
 const app = express();
 
-/* =========================================================
-   AIVA CONFIG
-========================================================= */
-
 const PORT = process.env.PORT || 4000;
-const API_KEY = process.env.AI_API_KEY || "";
 
-const OPENROUTER_URL =
-  "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-/* Обычная модель */
-const FALLBACK_MODEL =
-  process.env.AIVA_FALLBACK_MODEL || "openrouter/free";
-
-let MODEL =
+const MODEL =
   process.env.AI_MODEL ||
   "nvidia/nemotron-3-ultra-550b-a55b:free";
 
-/*
-  ОТДЕЛЬНАЯ МОДЕЛЬ ДЛЯ ФОТО.
+const FALLBACK_MODEL =
+  process.env.AIVA_FALLBACK_MODEL ||
+  "openrouter/free";
 
-  Она принимает изображения и лучше подходит
-  для OCR / документов / фотографий.
-*/
 const VISION_MODEL =
   process.env.AIVA_VISION_MODEL ||
   "google/gemma-4-31b-it:free";
 
-const WEB_SEARCH_ENABLED =
-  String(
-    process.env.WEB_SEARCH_ENABLED || "true"
-  ).toLowerCase() !== "false";
+const OPENROUTER_URL =
+  "https://openrouter.ai/api/v1/chat/completions";
 
-const DATA_DIR = path.join(__dirname, "data");
-const FILES_DIR = path.join(DATA_DIR, "files");
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const MAX_FILES = 5;
+const MAX_FILE_TEXT = 40000;
 
-fs.mkdirSync(FILES_DIR, {
-  recursive: true
-});
-
-/* =========================================================
-   EXPRESS
-========================================================= */
-
-app.use(
-  express.json({
-    limit: "50mb"
-  })
-);
-
-app.use(
-  express.urlencoded({
-    extended: true,
-    limit: "50mb"
-  })
-);
-
-app.use(
-  express.static(
-    path.join(__dirname, "public")
-  )
-);
+app.use(cors());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 /* =========================================================
-   MULTER
+   FILE UPLOAD
 ========================================================= */
 
 const upload = multer({
   storage: multer.memoryStorage(),
+
   limits: {
-    fileSize: 20 * 1024 * 1024,
-    files: 5
+    fileSize: MAX_FILE_SIZE,
+    files: MAX_FILES
   }
 });
+
+/* =========================================================
+   PUBLIC
+========================================================= */
+
+app.use(express.static(path.join(__dirname, "public")));
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function safeText(value) {
-  return String(value || "")
-    .replace(/\u0000/g, "")
-    .trim();
-}
-
-function chooseModel(mode) {
-  if (
-    !mode ||
-    mode === "auto" ||
-    mode === "fast"
-  ) {
-    return FALLBACK_MODEL;
-  }
-
-  if (
-    mode === "smart" ||
-    mode === "max"
-  ) {
-    return MODEL;
-  }
-
-  return mode;
-}
-
-function cleanModelText(text) {
-  if (!text) return "";
-
-  return String(text)
-    .replace(
-      /<AIVA_WEB_SEARCH[\s\S]*?<\/AIVA_WEB_SEARCH>/gi,
-      ""
-    )
-    .replace(
-      /<AIVA_WEB_SEARCH[^>]*>/gi,
-      ""
-    )
-    .trim();
-}
-
-/* =========================================================
-   WEB SEARCH DETECTION
-========================================================= */
-
-function needsWebSearch(text) {
-  const q =
-    safeText(text).toLowerCase();
-
-  if (!q) return false;
-
-  const patterns = [
-    "погода",
-    "погоду",
-    "температур",
-    "сейчас",
-    "сегодня",
-    "завтра",
-    "последние новости",
-    "последн",
-    "новост",
-    "актуаль",
-    "найди в интернете",
-    "поищи в интернете",
-    "найди в сети",
-    "поищи",
-    "в интернете",
-    "курс евро",
-    "курс доллара",
-    "цена",
-    "стоимость",
-    "latest",
-    "today",
-    "tomorrow",
-    "current",
-    "news",
-    "search the web",
-    "look up",
-    "2026"
-  ];
-
-  return patterns.some(
-    (x) => q.includes(x)
+function isImage(file) {
+  return (
+    file &&
+    typeof file.mimetype === "string" &&
+    file.mimetype.startsWith("image/")
   );
 }
 
-/* =========================================================
-   DUCKDUCKGO
-========================================================= */
-
-async function searchDuckDuckGo(query) {
-  const url =
-    "https://html.duckduckgo.com/html/?q=" +
-    encodeURIComponent(query);
-
-  const response = await fetch(
-    url,
-    {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150 Safari/537.36"
-      }
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "DuckDuckGo HTTP " +
-      response.status
-    );
-  }
-
-  const html =
-    await response.text();
-
-  const results = [];
-
-  const regex =
-    /result__a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-
-  let match;
-
-  while (
-    (match = regex.exec(html)) &&
-    results.length < 8
-  ) {
-    const url = match[1];
-
-    const title = match[2]
-      .replace(/<[^>]+>/g, "")
-      .replace(/&quot;/g, '"')
-      .replace(/&amp;/g, "&")
-      .replace(/&#x27;/g, "'")
-      .trim();
-
-    if (!title || !url) {
-      continue;
-    }
-
-    results.push({
-      title,
-      url
-    });
-  }
-
-  return results;
+function imageToDataUrl(file) {
+  return `data:${file.mimetype};base64,${file.buffer.toString(
+    "base64"
+  )}`;
 }
 
-/* =========================================================
-   GOOGLE NEWS
-========================================================= */
-
-async function searchGoogleNews(query) {
-  const url =
-    "https://news.google.com/rss/search?q=" +
-    encodeURIComponent(query) +
-    "&hl=ru&gl=RU&ceid=RU:ru";
-
-  const response = await fetch(
-    url,
-    {
-      headers: {
-        "User-Agent": "Aiva/5.1.1"
-      }
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Google News HTTP " +
-      response.status
-    );
+function cleanText(value) {
+  if (value === undefined || value === null) {
+    return "";
   }
 
-  const xml =
-    await response.text();
-
-  const results = [];
-
-  const itemRegex =
-    /<item>([\s\S]*?)<\/item>/gi;
-
-  let item;
-
-  while (
-    (item = itemRegex.exec(xml)) &&
-    results.length < 8
-  ) {
-    const block = item[1];
-
-    const titleMatch =
-      block.match(
-        /<title>([\s\S]*?)<\/title>/i
-      );
-
-    const linkMatch =
-      block.match(
-        /<link>([\s\S]*?)<\/link>/i
-      );
-
-    const dateMatch =
-      block.match(
-        /<pubDate>([\s\S]*?)<\/pubDate>/i
-      );
-
-    if (
-      !titleMatch ||
-      !linkMatch
-    ) {
-      continue;
-    }
-
-    const title =
-      titleMatch[1]
-        .replace(
-          /<!\[CDATA\[/g,
-          ""
-        )
-        .replace(
-          /\]\]>/g,
-          ""
-        )
-        .replace(
-          /&amp;/g,
-          "&"
-        )
-        .replace(
-          /&quot;/g,
-          '"'
-        )
-        .trim();
-
-    const url =
-      linkMatch[1].trim();
-
-    const date =
-      dateMatch
-        ? dateMatch[1].trim()
-        : "";
-
-    if (title && url) {
-      results.push({
-        title,
-        url,
-        date
-      });
-    }
-  }
-
-  return results;
+  return String(value).trim();
 }
 
-/* =========================================================
-   WEB SEARCH
-========================================================= */
+function visionPrompt(userText) {
+  const question = cleanText(userText);
 
-async function searchWeb(query) {
-  if (!WEB_SEARCH_ENABLED) {
-    return [];
-  }
+  return `
+Ты — система компьютерного зрения Aiva.
 
-  let cleanQuery =
-    safeText(query);
+Тебе передано реальное изображение пользователя.
 
-  cleanQuery =
-    cleanQuery
-      .replace(/\b2024\b/g, "")
-      .replace(/\b2025\b/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+Главное правило:
+НИКОГДА НЕ ВЫДУМЫВАЙ то, чего нет на изображении.
 
-  const queries = [
-    cleanQuery,
-    cleanQuery + " 2026",
-    cleanQuery + " AI",
-    "искусственный интеллект последние новости 2026"
-  ];
+Если пользователь спрашивает, что на фото:
+- описывай только реально видимые объекты;
+- не додумывай назначение предметов;
+- не придумывай бренды, надписи, модели и числа.
 
-  const all = [];
-  const seen = new Set();
+ЕСЛИ НА ИЗОБРАЖЕНИИ ЕСТЬ ТЕКСТ:
 
-  for (const q of queries) {
-    if (!q) continue;
+Работай в режиме ТОЧНОЙ РАСШИФРОВКИ.
 
-    try {
-      const google =
-        await searchGoogleNews(q);
+1. Сначала внимательно посмотри на изображение целиком.
+2. Определи фактическую ориентацию изображения.
+3. Если текст расположен боком или вверх ногами, мысленно поверни изображение для чтения.
+4. Переписывай текст в том порядке, в котором он визуально расположен.
+5. НЕ исправляй орфографию.
+6. НЕ исправляй почерк.
+7. НЕ заменяй непонятное слово похожим настоящим словом.
+8. НЕ составляй таблицу из текста, если на фотографии фактически не видно таблицы.
+9. НЕ придумывай заголовки таблиц.
+10. НЕ добавляй отсутствующие строки.
+11. НЕ додумывай цифры.
+12. НЕ превращай неразборчивые символы в реальные слова.
+13. Если слово невозможно уверенно прочитать, напиши:
+[неразборчиво]
+14. Если видна только часть слова:
+[неразборчиво]
+15. Если цифра сомнительная:
+[неразборчиво]
+16. Если целая строка не читается:
+[неразборчиво]
+17. Если текст очень плохого качества, прямо скажи, что изображение недостаточно чёткое.
 
-      for (const item of google) {
-        if (
-          !item.url ||
-          seen.has(item.url)
-        ) {
-          continue;
-        }
+Очень важно:
+НЕ ПЫТАЙСЯ УГАДАТЬ СМЫСЛ ТЕКСТА.
 
-        seen.add(item.url);
-        all.push(item);
+Например, если на фотографии написано что-то похожее на:
+"МТЗ-8?"
+но последняя цифра плохо видна,
+нельзя самостоятельно превращать это в "МТЗ-82".
 
-        if (all.length >= 10) {
-          return all;
-        }
-      }
-    } catch (err) {
-      console.error(
-        "Google News error:",
-        err.message
-      );
-    }
+Нужно написать:
+"МТЗ-8[неразборчиво]"
 
-    try {
-      const duck =
-        await searchDuckDuckGo(q);
+Если пользователь просит "что на фото", сначала коротко опиши изображение.
+Если на нём есть текст, отдельно покажи блок:
 
-      for (const item of duck) {
-        if (
-          !item.url ||
-          seen.has(item.url)
-        ) {
-          continue;
-        }
+Текст на изображении:
+...
 
-        seen.add(item.url);
-        all.push(item);
+Если текста нет — так и скажи.
 
-        if (all.length >= 10) {
-          return all;
-        }
-      }
-    } catch (err) {
-      console.error(
-        "DuckDuckGo error:",
-        err.message
-      );
-    }
-  }
-
-  return all;
-}
-
-/* =========================================================
-   WEATHER
-========================================================= */
-
-async function getWeather(city) {
-  const url =
-    "https://wttr.in/" +
-    encodeURIComponent(city) +
-    "?format=j1";
-
-  const response = await fetch(
-    url,
-    {
-      headers: {
-        "User-Agent": "Aiva/5.1.1"
-      }
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Weather HTTP " +
-      response.status
-    );
-  }
-
-  const data =
-    await response.json();
-
-  const current =
-    data.current_condition &&
-    data.current_condition[0];
-
-  if (!current) {
-    throw new Error(
-      "Weather data unavailable"
-    );
-  }
-
-  return {
-    city,
-    temperature:
-      current.temp_C,
-    feelsLike:
-      current.FeelsLikeC,
-    humidity:
-      current.humidity,
-    wind:
-      current.windspeedKmph,
-    pressure:
-      current.pressure,
-    description:
-      current.weatherDesc &&
-      current.weatherDesc[0]
-        ? current.weatherDesc[0].value
-        : ""
-  };
-}
-
-function detectCity(text) {
-  const q =
-    safeText(text).toLowerCase();
-
-  if (
-    q.includes("риге") ||
-    q.includes("рига")
-  ) {
-    return "Riga";
-  }
-
-  if (
-    q.includes("таллине") ||
-    q.includes("таллин")
-  ) {
-    return "Tallinn";
-  }
-
-  if (
-    q.includes("вильнюсе") ||
-    q.includes("вильнюс")
-  ) {
-    return "Vilnius";
-  }
-
-  if (
-    q.includes("лондоне") ||
-    q.includes("лондон")
-  ) {
-    return "London";
-  }
-
-  if (
-    q.includes("берлине") ||
-    q.includes("берлин")
-  ) {
-    return "Berlin";
-  }
-
-  if (
-    q.includes("нью-йорке") ||
-    q.includes("нью йорке")
-  ) {
-    return "New York";
-  }
-
-  return "Riga";
-}
-
-/* =========================================================
-   AI SYSTEM PROMPT
-========================================================= */
-
-const CORE_SYSTEM_PROMPT = `
-Ты — Aiva, современный AI-ассистент.
-
-Отвечай на русском, если пользователь пишет по-русски.
-
-Отвечай естественно, понятно и без лишней воды.
-
-Не выдумывай факты.
-
-ОСОБО ВАЖНО ПРИ РАБОТЕ С ИЗОБРАЖЕНИЯМИ:
-
-Если пользователь прикрепил изображение,
-ты ДЕЙСТВИТЕЛЬНО должен его анализировать.
-
-Опиши то, что реально видно на изображении.
-
-Если на фото есть текст:
-- внимательно прочитай его;
-- сохраняй оригинальный язык;
-- не придумывай отсутствующие слова;
-- если слово плохо различимо, напиши [неразборчиво];
-- не заменяй непонятный текст случайными похожими словами;
-- не делай вид, что уверен, если текст невозможно прочитать.
-
-Если пользователь спрашивает "что на фото",
-сначала кратко опиши содержимое изображения,
-а затем при необходимости перечисли видимые детали.
-
-Если изображение содержит таблицу,
-пытайся читать строки и столбцы последовательно.
-
-Если это рукописный текст,
-будь особенно осторожен:
-лучше отметить сомнительное место,
-чем придумать его.
-
-Если сервер передал результаты веб-поиска,
-используй их.
-
-Не выводи служебные теги:
-<AIVA_WEB_SEARCH>
-</AIVA_WEB_SEARCH>
-
-Если пользователь просит создать файл,
-используй:
-
-<AIVA_FILE name="filename.txt">
-содержимое файла
-</AIVA_FILE>
-
-Будь полезным, точным и дружелюбным.
+Вопрос пользователя:
+${question || "Что на фото?"}
 `;
+}
 
 /* =========================================================
    OPENROUTER
 ========================================================= */
 
 async function callOpenRouter({
-  messages,
   model,
+  messages,
   temperature = 0.7
 }) {
-  if (!API_KEY) {
+  if (!OPENROUTER_API_KEY) {
     throw new Error(
-      "AI_API_KEY не установлен на сервере Render."
+      "OPENROUTER_API_KEY не настроен на сервере."
     );
   }
 
-  const response = await fetch(
-    OPENROUTER_URL,
-    {
-      method: "POST",
+  const response = await fetch(OPENROUTER_URL, {
+    method: "POST",
 
-      headers: {
-        Authorization:
-          "Bearer " + API_KEY,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
 
-        "Content-Type":
-          "application/json",
+      "HTTP-Referer":
+        process.env.PUBLIC_APP_URL ||
+        "https://my-aii.onrender.com",
 
-        "HTTP-Referer":
-          "https://my-aii.onrender.com",
+      "X-Title": "Aiva AI Assistant"
+    },
 
-        "X-Title":
-          "Aiva"
-      },
+    body: JSON.stringify({
+      model,
+      messages,
 
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        stream: false
-      })
-    }
-  );
+      temperature,
 
-  const raw =
-    await response.text();
+      max_tokens: 4000
+    })
+  });
+
+  const raw = await response.text();
 
   let data;
 
@@ -645,435 +191,444 @@ async function callOpenRouter({
     data = JSON.parse(raw);
   } catch {
     throw new Error(
-      "OpenRouter вернул не JSON: " +
-      raw.slice(0, 500)
+      `OpenRouter вернул неправильный ответ: ${raw.slice(
+        0,
+        1000
+      )}`
     );
   }
 
   if (!response.ok) {
     const message =
       data?.error?.message ||
-      data?.message ||
-      "OpenRouter HTTP " +
-        response.status;
+      data?.error ||
+      `HTTP ${response.status}`;
 
     throw new Error(message);
   }
 
-  const content =
+  const answer =
     data?.choices?.[0]?.message?.content;
 
-  if (!content) {
+  if (!answer) {
     throw new Error(
       "Модель не вернула текстовый ответ."
     );
   }
 
-  return String(content);
+  return answer;
 }
 
 /* =========================================================
-   GENERATED FILES
+   EXTRACT TEXT
 ========================================================= */
 
-function sanitizeFilename(name) {
-  return String(
-    name || "file.txt"
-  )
-    .replace(
-      /[^a-zA-Z0-9а-яА-ЯёЁ._-]/g,
-      "_"
-    )
-    .slice(0, 150);
-}
-
-async function createDocxFile(
-  filePath,
-  text
-) {
-  const children =
-    String(text)
-      .split("\n")
-      .map(
-        (line) =>
-          new Paragraph({
-            text: line
-          })
-      );
-
-  const doc =
-    new Document({
-      sections: [
-        {
-          properties: {},
-          children
-        }
-      ]
-    });
-
-  const buffer =
-    await Packer.toBuffer(doc);
-
-  fs.writeFileSync(
-    filePath,
-    buffer
-  );
-}
-
-function createPdfFile(
-  filePath,
-  text
-) {
-  return new Promise(
-    (resolve, reject) => {
-      const doc =
-        new PDFDocument({
-          margin: 50
-        });
-
-      const out =
-        fs.createWriteStream(
-          filePath
-        );
-
-      out.on(
-        "finish",
-        resolve
-      );
-
-      out.on(
-        "error",
-        reject
-      );
-
-      doc.pipe(out);
-
-      doc.fontSize(11);
-
-      for (
-        const line of String(
-          text
-        ).split("\n")
-      ) {
-        doc.text(
-          line || " "
-        );
-      }
-
-      doc.end();
-    }
-  );
-}
-
-async function saveGeneratedFile(
-  filename,
-  content
-) {
-  const safeName =
-    sanitizeFilename(filename);
-
-  const ext =
-    path.extname(
-      safeName
-    ).toLowerCase();
-
-  const storedName =
-    crypto.randomBytes(18)
-      .toString("hex") +
-    (ext || ".txt");
-
-  const filePath =
-    path.join(
-      FILES_DIR,
-      storedName
-    );
-
-  const text =
-    String(
-      content ?? ""
-    ).replace(
-      /\r\n/g,
-      "\n"
-    );
-
-  if (ext === ".docx") {
-    await createDocxFile(
-      filePath,
-      text
-    );
-  } else if (ext === ".pdf") {
-    await createPdfFile(
-      filePath,
-      text
-    );
-  } else {
-    fs.writeFileSync(
-      filePath,
-      text,
-      "utf8"
-    );
-  }
-
-  return {
-    name: safeName,
-    storedName
-  };
-}
-
-async function processGeneratedFiles(
-  text
-) {
-  const files = [];
-
-  const regex =
-    /<AIVA_FILE\s+name=["']([^"']+)["']>([\s\S]*?)<\/AIVA_FILE>/gi;
-
-  let match;
-
-  while (
-    (match = regex.exec(text))
-  ) {
-    const file =
-      await saveGeneratedFile(
-        match[1],
-        match[2]
-      );
-
-    files.push(file);
-  }
-
-  return {
-    text:
-      text
-        .replace(regex, "")
-        .trim(),
-
-    files
-  };
-}
-
-/* =========================================================
-   FILE UPLOAD
-========================================================= */
-
-function isImageFile(file) {
-  const ext =
-    path.extname(
-      file.originalname
-    ).toLowerCase();
-
-  return (
-    file.mimetype.startsWith(
-      "image/"
-    ) ||
-    [
-      ".jpg",
-      ".jpeg",
-      ".png",
-      ".webp",
-      ".gif"
-    ].includes(ext)
-  );
-}
-
-async function extractFileText(
-  file
-) {
-  const ext =
-    path.extname(
-      file.originalname
-    ).toLowerCase();
-
-  if (isImageFile(file)) {
+async function extractFileText(file) {
+  if (!file) {
     return "";
   }
 
-  if (
-    file.mimetype ===
-      "application/pdf" ||
-    ext === ".pdf"
-  ) {
-    const result =
-      await pdfParse(
-        file.buffer
-      );
+  const mime = file.mimetype || "";
 
-    return result.text || "";
+  if (
+    mime.startsWith("text/") ||
+    mime === "application/json" ||
+    mime === "application/javascript"
+  ) {
+    return file.buffer
+      .toString("utf8")
+      .slice(0, MAX_FILE_TEXT);
   }
 
   if (
-    file.mimetype ===
+    mime ===
+    "application/pdf"
+  ) {
+    try {
+      const pdfParse =
+        require("pdf-parse");
+
+      const result =
+        await pdfParse(file.buffer);
+
+      return String(
+        result.text || ""
+      ).slice(0, MAX_FILE_TEXT);
+    } catch (error) {
+      return `[Не удалось прочитать PDF: ${error.message}]`;
+    }
+  }
+
+  if (
+    mime ===
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    ext === ".docx"
+    mime === "application/msword"
   ) {
-    const result =
-      await mammoth.extractRawText(
-        {
-          buffer:
-            file.buffer
-        }
-      );
+    try {
+      const mammoth =
+        require("mammoth");
 
-    return result.value || "";
-  }
+      const result =
+        await mammoth.extractRawText({
+          buffer: file.buffer
+        });
 
-  if (
-    file.mimetype.startsWith(
-      "text/"
-    ) ||
-    [
-      ".txt",
-      ".js",
-      ".json",
-      ".html",
-      ".css",
-      ".md",
-      ".csv",
-      ".xml",
-      ".ts",
-      ".tsx",
-      ".jsx",
-      ".py",
-      ".java",
-      ".c",
-      ".cpp",
-      ".sql",
-      ".yml",
-      ".yaml"
-    ].includes(ext)
-  ) {
-    return file.buffer.toString(
-      "utf8"
-    );
+      return String(
+        result.value || ""
+      ).slice(0, MAX_FILE_TEXT);
+    } catch (error) {
+      return `[Не удалось прочитать DOCX: ${error.message}]`;
+    }
   }
 
   return "";
 }
 
+/* =========================================================
+   UPLOAD API
+========================================================= */
+
 app.post(
   "/api/upload",
-  upload.array("files", 5),
-  async (
-    req,
-    res
-  ) => {
+  upload.array("files", MAX_FILES),
+  async (req, res) => {
     try {
+      const files = req.files || [];
+
       const result = [];
 
-      for (
-        const file of
-          req.files || []
-      ) {
-        const image =
-          isImageFile(file);
+      for (const file of files) {
+        const item = {
+          name: file.originalname,
+          type: file.mimetype,
+          size: file.size
+        };
 
-        const text =
-          image
-            ? ""
-            : await extractFileText(
-                file
-              );
+        if (isImage(file)) {
+          item.isImage = true;
+          item.dataUrl = imageToDataUrl(file);
+        } else {
+          item.isImage = false;
 
-        let dataUrl = null;
+          const text =
+            await extractFileText(file);
 
-        if (image) {
-          dataUrl =
-            "data:" +
-            file.mimetype +
-            ";base64," +
-            file.buffer.toString(
-              "base64"
-            );
+          item.text = text;
         }
 
-        result.push({
-          name:
-            file.originalname,
-
-          type:
-            image
-              ? "image"
-              : "file",
-
-          mimeType:
-            file.mimetype,
-
-          size:
-            file.size,
-
-          text:
-            text.slice(
-              0,
-              60000
-            ),
-
-          dataUrl
-        });
+        result.push(item);
       }
 
       res.json({
         ok: true,
         files: result
       });
-    } catch (err) {
+    } catch (error) {
       console.error(
         "UPLOAD ERROR:",
-        err
+        error
       );
 
       res.status(500).json({
         ok: false,
-        error:
-          err.message ||
-          "Ошибка загрузки файла"
+        error: error.message
       });
     }
   }
 );
 
 /* =========================================================
-   DOWNLOAD GENERATED FILE
+   CHAT
 ========================================================= */
 
-app.get(
-  "/api/files/:storedName",
-  (
-    req,
-    res
-  ) => {
-    const storedName =
-      path.basename(
-        req.params.storedName
-      );
-
-    const filePath =
-      path.join(
-        FILES_DIR,
-        storedName
-      );
-
-    if (
-      !fs.existsSync(
-        filePath
-      )
-    ) {
-      return res
-        .status(404)
-        .send(
-          "File not found"
+app.post(
+  "/api/chat",
+  upload.array("files", MAX_FILES),
+  async (req, res) => {
+    try {
+      const userText =
+        cleanText(
+          req.body.message ||
+          req.body.prompt ||
+          req.body.text
         );
+
+      let history = [];
+
+      if (req.body.history) {
+        try {
+          history =
+            JSON.parse(req.body.history);
+
+          if (!Array.isArray(history)) {
+            history = [];
+          }
+        } catch {
+          history = [];
+        }
+      }
+
+      const files =
+        req.files || [];
+
+      const imageFiles =
+        files.filter(isImage);
+
+      const documentFiles =
+        files.filter(
+          (file) => !isImage(file)
+        );
+
+      const hasImages =
+        imageFiles.length > 0;
+
+      /* -----------------------------------------
+         BASE SYSTEM PROMPT
+      ----------------------------------------- */
+
+      const systemPrompt = hasImages
+        ? visionPrompt(userText)
+        : `
+Ты — Aiva, современный AI-ассистент.
+
+Отвечай понятно, естественно и по делу.
+
+Не выдумывай факты.
+Если чего-то не знаешь — скажи об этом.
+
+Если пользователь прикрепил документы,
+используй их содержимое.
+
+Пользовательский запрос:
+${userText}
+`;
+
+      /* -----------------------------------------
+         HISTORY
+      ----------------------------------------- */
+
+      const messages = [
+        {
+          role: "system",
+          content: systemPrompt
+        }
+      ];
+
+      if (Array.isArray(history)) {
+        for (
+          const message of history.slice(-30)
+        ) {
+          if (
+            !message ||
+            !message.role
+          ) {
+            continue;
+          }
+
+          if (
+            message.role !== "user" &&
+            message.role !== "assistant"
+          ) {
+            continue;
+          }
+
+          if (
+            typeof message.content ===
+            "string"
+          ) {
+            messages.push({
+              role: message.role,
+              content:
+                message.content.slice(
+                  0,
+                  20000
+                )
+            });
+          }
+        }
+      }
+
+      /* -----------------------------------------
+         USER CONTENT
+      ----------------------------------------- */
+
+      let content;
+
+      if (hasImages) {
+        content = [
+          {
+            type: "text",
+            text:
+              userText ||
+              "Что на фото? Очень внимательно опиши изображение и максимально точно прочитай видимый текст."
+          }
+        ];
+
+        for (
+          const imageFile of imageFiles
+        ) {
+          content.push({
+            type: "image_url",
+
+            image_url: {
+              url:
+                imageToDataUrl(
+                  imageFile
+                )
+            }
+          });
+        }
+
+        /*
+         Добавляем документы после изображения.
+        */
+
+        for (
+          const file of documentFiles
+        ) {
+          const extracted =
+            await extractFileText(
+              file
+            );
+
+          if (extracted) {
+            content.push({
+              type: "text",
+
+              text:
+                `\n\nФайл "${file.originalname}":\n${extracted}`
+            });
+          }
+        }
+      } else {
+        let fullText =
+          userText;
+
+        for (
+          const file of documentFiles
+        ) {
+          const extracted =
+            await extractFileText(
+              file
+            );
+
+          if (extracted) {
+            fullText +=
+              `\n\n--- ${file.originalname} ---\n${extracted}`;
+          }
+        }
+
+        content = fullText;
+      }
+
+      messages.push({
+        role: "user",
+        content
+      });
+
+      /* -----------------------------------------
+         MODEL
+      ----------------------------------------- */
+
+      const selectedModel =
+        hasImages
+          ? VISION_MODEL
+          : MODEL;
+
+      const temperature =
+        hasImages
+          ? 0.1
+          : 0.7;
+
+      console.log(
+        hasImages
+          ? `VISION REQUEST → ${selectedModel}`
+          : `CHAT REQUEST → ${selectedModel}`
+      );
+
+      let answer;
+
+      try {
+        answer =
+          await callOpenRouter({
+            model:
+              selectedModel,
+
+            messages,
+
+            temperature
+          });
+      } catch (firstError) {
+        console.error(
+          "PRIMARY MODEL ERROR:",
+          firstError.message
+        );
+
+        if (
+          selectedModel ===
+          FALLBACK_MODEL
+        ) {
+          throw firstError;
+        }
+
+        console.log(
+          `Trying fallback → ${FALLBACK_MODEL}`
+        );
+
+        answer =
+          await callOpenRouter({
+            model:
+              FALLBACK_MODEL,
+
+            messages,
+
+            temperature:
+              hasImages
+                ? 0.1
+                : 0.7
+          });
+      }
+
+      res.json({
+        ok: true,
+        answer,
+
+        model:
+          selectedModel,
+
+        vision:
+          hasImages,
+
+        attachments:
+          files.map(
+            (file) => ({
+              name:
+                file.originalname,
+
+              type:
+                file.mimetype,
+
+              size:
+                file.size,
+
+              isImage:
+                isImage(file)
+            })
+          )
+      });
+    } catch (error) {
+      console.error(
+        "CHAT ERROR:",
+        error
+      );
+
+      res.status(500).json({
+        ok: false,
+        error:
+          error.message ||
+          "Ошибка Aiva"
+      });
     }
-
-    const requestedName =
-      req.query.name ||
-      storedName;
-
-    res.download(
-      filePath,
-      sanitizeFilename(
-        requestedName
-      )
-    );
   }
 );
 
@@ -1083,24 +638,27 @@ app.get(
 
 app.get(
   "/api/health",
-  (
-    req,
-    res
-  ) => {
+  (req, res) => {
     res.json({
       ok: true,
-      app: "Aiva",
-      version: "5.1.2",
-      node: process.version,
-      model: MODEL,
+
+      version:
+        "5.3.0",
+
+      model:
+        MODEL,
+
       fallbackModel:
         FALLBACK_MODEL,
+
       visionModel:
         VISION_MODEL,
+
       webSearch:
-        WEB_SEARCH_ENABLED,
-      hasKey:
-        !!API_KEY
+        true,
+
+      apiKey:
+        !!OPENROUTER_API_KEY
     });
   }
 );
@@ -1109,792 +667,64 @@ app.get(
    CONFIG
 ========================================================= */
 
-let CUSTOM_PROMPT = "";
-let TEMPERATURE = 0.7;
-
 app.get(
   "/api/config",
-  (
-    req,
-    res
-  ) => {
+  (req, res) => {
     res.json({
       ok: true,
-      model: MODEL,
-      fallbackModel:
-        FALLBACK_MODEL,
-      visionModel:
-        VISION_MODEL,
-      hasKey:
-        !!API_KEY,
-      webSearch:
-        WEB_SEARCH_ENABLED,
-      systemPrompt:
-        CUSTOM_PROMPT,
-      temperature:
-        TEMPERATURE
-    });
-  }
-);
-
-/* =========================================================
-   CHAT
-========================================================= */
-
-async function handleChat(
-  req,
-  res
-) {
-  try {
-    const body =
-      req.body || {};
-
-    const messages =
-      Array.isArray(
-        body.messages
-      )
-        ? body.messages
-        : [];
-
-    const message =
-      safeText(
-        body.message ||
-        body.text ||
-        ""
-      );
-
-    const attachments =
-      Array.isArray(
-        body.attachments
-      )
-        ? body.attachments.slice(
-            0,
-            5
-          )
-        : [];
-
-    const requestedModel =
-      body.model ||
-      body.mode;
-
-    const temperatureValue =
-      Number(
-        body.temperature
-      );
-
-    const normalTemperature =
-      Number.isFinite(
-        temperatureValue
-      )
-        ? temperatureValue
-        : TEMPERATURE;
-
-    const systemPrompt =
-      safeText(
-        body.systemPrompt ||
-        ""
-      );
-
-    let history =
-      messages.slice(-40);
-
-    /*
-      Если frontend передал
-      старую историю, берём
-      последнее пользовательское
-      сообщение.
-    */
-    const historyUserText =
-      [
-        ...history
-      ]
-        .reverse()
-        .find(
-          (m) =>
-            m &&
-            m.role === "user"
-        );
-
-    let userText =
-      message ||
-      (
-        historyUserText &&
-        typeof historyUserText.content ===
-          "string"
-          ? historyUserText.content
-          : ""
-      );
-
-    /* =====================================================
-       WEB / WEATHER
-    ===================================================== */
-
-    let webContext = "";
-
-    if (
-      WEB_SEARCH_ENABLED &&
-      /погод|температур|weather/i.test(
-        userText
-      )
-    ) {
-      try {
-        const weather =
-          await getWeather(
-            detectCity(
-              userText
-            )
-          );
-
-        webContext +=
-          "\nАКТУАЛЬНЫЕ ДАННЫЕ О ПОГОДЕ:\n" +
-          "Город: " +
-          weather.city +
-          "\n" +
-          "Температура: " +
-          weather.temperature +
-          "°C\n" +
-          "Ощущается как: " +
-          weather.feelsLike +
-          "°C\n" +
-          "Влажность: " +
-          weather.humidity +
-          "%\n" +
-          "Ветер: " +
-          weather.wind +
-          " км/ч\n" +
-          "Давление: " +
-          weather.pressure +
-          " hPa\n" +
-          "Описание: " +
-          weather.description +
-          "\n";
-      } catch (err) {
-        console.error(
-          "Weather error:",
-          err.message
-        );
-      }
-    }
-
-    if (
-      WEB_SEARCH_ENABLED &&
-      needsWebSearch(
-        userText
-      ) &&
-      !/погод|температур|weather/i.test(
-        userText
-      )
-    ) {
-      try {
-        const results =
-          await searchWeb(
-            userText
-          );
-
-        if (results.length) {
-          webContext +=
-            "\nАКТУАЛЬНЫЕ РЕЗУЛЬТАТЫ ВЕБ-ПОИСКА:\n";
-
-          results.forEach(
-            (
-              r,
-              i
-            ) => {
-              webContext +=
-                "\n" +
-                (i + 1) +
-                ". " +
-                r.title +
-                "\nURL: " +
-                r.url +
-                "\n";
-
-              if (r.date) {
-                webContext +=
-                  "Дата: " +
-                  r.date +
-                  "\n";
-              }
-            }
-          );
-        } else {
-          webContext +=
-            "\nВеб-поиск не вернул результатов. Не выдумывай новости.\n";
-        }
-      } catch (err) {
-        console.error(
-          "Web search error:",
-          err.message
-        );
-      }
-    }
-
-    /* =====================================================
-       FILE CONTEXT
-    ===================================================== */
-
-    const fileContext =
-      attachments
-        .filter(
-          (a) =>
-            a &&
-            a.type !==
-              "image" &&
-            a.text
-        )
-        .map(
-          (a) =>
-            "\nФАЙЛ: " +
-            safeText(
-              a.name
-            ) +
-            "\n" +
-            String(
-              a.text
-            ).slice(
-              0,
-              60000
-            )
-        )
-        .join("\n");
-
-    /* =====================================================
-       SYSTEM
-    ===================================================== */
-
-    const system =
-      [
-        CORE_SYSTEM_PROMPT,
-
-        systemPrompt
-          ? "\nПользовательские настройки:\n" +
-            systemPrompt
-          : "",
-
-        webContext,
-
-        fileContext
-          ? "\nДАННЫЕ ИЗ ПРИКРЕПЛЁННЫХ ФАЙЛОВ:\n" +
-            fileContext
-          : ""
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-    /* =====================================================
-       IMAGES
-    ===================================================== */
-
-    const imageAttachments =
-      attachments.filter(
-        (a) =>
-          a &&
-          a.type ===
-            "image" &&
-          a.dataUrl
-      );
-
-    /*
-      Очень важно:
-      image_url идёт вторым элементом
-      после text.
-    */
-    let content =
-      userText ||
-      (
-        imageAttachments.length
-          ? "Проанализируй прикреплённое изображение."
-          : "Посмотри прикреплённые файлы."
-      );
-
-    if (
-      imageAttachments.length
-    ) {
-      content = [
-        {
-          type: "text",
-          text:
-            userText ||
-            "Проанализируй изображение. Опиши, что на нём видно. Если есть текст, прочитай его максимально точно. Неразборчивые места помечай как [неразборчиво], ничего не придумывай."
-        },
-
-        ...imageAttachments.map(
-          (a) => ({
-            type:
-              "image_url",
-
-            image_url: {
-              url:
-                a.dataUrl
-            }
-          })
-        )
-      ];
-    }
-
-    /* =====================================================
-       FINAL MESSAGES
-    ===================================================== */
-
-    const finalMessages = [
-      {
-        role: "system",
-        content: system
-      },
-
-      ...history.slice(-40)
-    ];
-
-    /*
-      В историю не добавляем повторно
-      последний текст, если он уже там есть
-      и нет изображения.
-    */
-    if (
-      userText ||
-      imageAttachments.length ||
-      attachments.length
-    ) {
-      finalMessages.push({
-        role: "user",
-        content
-      });
-    }
-
-    /* =====================================================
-       MODEL SELECTION
-    ===================================================== */
-
-    let selectedModel =
-      chooseModel(
-        requestedModel
-      );
-
-    let usedVision =
-      false;
-
-    /*
-      ЕСЛИ ЕСТЬ ФОТО —
-      ВСЕГДА используем отдельную
-      vision-модель.
-
-      Это главное изменение.
-    */
-    if (
-      imageAttachments.length
-    ) {
-      selectedModel =
-        VISION_MODEL;
-
-      usedVision = true;
-    }
-
-    /* =====================================================
-       CALL AI
-    ===================================================== */
-
-    let answer;
-
-    try {
-      answer =
-        await callOpenRouter({
-          messages:
-            finalMessages,
-
-          model:
-            selectedModel,
-
-          /*
-            Для vision ставим
-            более низкую температуру,
-            чтобы меньше было фантазий.
-          */
-          temperature:
-            usedVision
-              ? 0.2
-              : normalTemperature
-        });
-    } catch (primaryError) {
-      console.error(
-        "Primary model error:",
-        primaryError.message
-      );
-
-      /*
-        Если vision-модель временно
-        недоступна — пробуем free router.
-      */
-      if (
-        usedVision &&
-        selectedModel !==
-          FALLBACK_MODEL
-      ) {
-        try {
-          console.log(
-            "Vision fallback:",
-            FALLBACK_MODEL
-          );
-
-          answer =
-            await callOpenRouter({
-              messages:
-                finalMessages,
-
-              model:
-                FALLBACK_MODEL,
-
-              temperature: 0.2
-            });
-
-          selectedModel =
-            FALLBACK_MODEL;
-        } catch (
-          visionFallbackError
-        ) {
-          console.error(
-            "Vision fallback error:",
-            visionFallbackError.message
-          );
-
-          throw primaryError;
-        }
-      } else if (
-        selectedModel !==
-        FALLBACK_MODEL
-      ) {
-        answer =
-          await callOpenRouter({
-            messages:
-              finalMessages,
-
-            model:
-              FALLBACK_MODEL,
-
-            temperature:
-              normalTemperature
-          });
-
-        selectedModel =
-          FALLBACK_MODEL;
-      } else {
-        throw primaryError;
-      }
-    }
-
-    /* =====================================================
-       PROCESS RESPONSE
-    ===================================================== */
-
-    answer =
-      cleanModelText(
-        answer
-      );
-
-    const processed =
-      await processGeneratedFiles(
-        answer
-      );
-
-    const files =
-      processed.files.map(
-        (file) => ({
-          ...file,
-
-          url:
-            "/api/files/" +
-            file.storedName +
-            "?name=" +
-            encodeURIComponent(
-              file.name
-            )
-        })
-      );
-
-    let reply =
-      processed.text;
-
-    if (files.length) {
-      reply +=
-        "\n\n" +
-        files
-          .map(
-            (f) =>
-              "📎 [Скачать " +
-              f.name +
-              "](" +
-              f.url +
-              ")"
-          )
-          .join("\n");
-    }
-
-    return res.json({
-      ok: true,
-
-      reply,
-
-      text:
-        reply,
-
-      answer:
-        reply,
-
-      files,
 
       model:
-        selectedModel,
-
-      vision:
-        usedVision,
+        MODEL,
 
       visionModel:
-        usedVision
-          ? selectedModel
-          : null,
-
-      webSearch:
-        !!webContext
-    });
-  } catch (err) {
-    console.error(
-      "CHAT ERROR:",
-      err
-    );
-
-    return res.status(500).json({
-      ok: false,
-      error:
-        err?.message ||
-        "Ошибка Aiva"
-    });
-  }
-}
-
-app.post(
-  "/api/chat",
-  handleChat
-);
-
-/* =========================================================
-   REGENERATE
-========================================================= */
-
-app.post(
-  "/api/regenerate",
-  async (
-    req,
-    res
-  ) => {
-    try {
-      const body =
-        req.body || {};
-
-      const messages =
-        Array.isArray(
-          body.messages
-        )
-          ? body.messages
-          : [];
-
-      const lastAssistantIndex =
-        [
-          ...messages
-        ]
-          .map(
-            (
-              m,
-              i
-            ) => ({
-              ...m,
-              index: i
-            })
-          )
-          .reverse()
-          .find(
-            (m) =>
-              m.role ===
-              "assistant"
-          );
-
-      const trimmed =
-        lastAssistantIndex
-          ? messages.slice(
-              0,
-              lastAssistantIndex.index
-            )
-          : messages;
-
-      req.body = {
-        ...body,
-        messages:
-          trimmed
-      };
-
-      return handleChat(
-        req,
-        res
-      );
-    } catch (err) {
-      console.error(
-        "REGENERATE ERROR:",
-        err
-      );
-
-      res.status(500).json({
-        ok: false,
-        error:
-          err.message
-      });
-    }
-  }
-);
-
-/* =========================================================
-   MODEL
-========================================================= */
-
-app.post(
-  "/api/model",
-  (
-    req,
-    res
-  ) => {
-    try {
-      const requested =
-        safeText(
-          req.body?.model
-        );
-
-      if (requested) {
-        MODEL =
-          requested;
-      }
-
-      res.json({
-        ok: true,
-        model:
-          MODEL
-      });
-    } catch (err) {
-      res.status(500).json({
-        ok: false,
-        error:
-          err.message
-      });
-    }
-  }
-);
-
-/* =========================================================
-   PROMPT
-========================================================= */
-
-app.post(
-  "/api/prompt",
-  (
-    req,
-    res
-  ) => {
-    try {
-      CUSTOM_PROMPT =
-        safeText(
-          req.body?.systemPrompt ??
-          req.body?.prompt
-        );
-
-      if (
-        req.body?.temperature !=
-        null
-      ) {
-        const value =
-          Number(
-            req.body.temperature
-          );
-
-        if (
-          Number.isFinite(
-            value
-          )
-        ) {
-          TEMPERATURE =
-            Math.min(
-              2,
-              Math.max(
-                0,
-                value
-              )
-            );
-        }
-      }
-
-      res.json({
-        ok: true,
-        systemPrompt:
-          CUSTOM_PROMPT,
-        temperature:
-          TEMPERATURE
-      });
-    } catch (err) {
-      res.status(500).json({
-        ok: false,
-        error:
-          err.message
-      });
-    }
-  }
-);
-
-/* =========================================================
-   CLEAR
-========================================================= */
-
-app.post(
-  "/api/clear",
-  (
-    req,
-    res
-  ) => {
-    res.json({
-      ok: true
+        VISION_MODEL
     });
   }
 );
 
 /* =========================================================
-   FALLBACK ROUTE
+   ROOT FALLBACK
 ========================================================= */
 
-/*
-  Используем app.use вместо app.get("*"),
-  чтобы не было проблем с wildcard
-  маршрутами в новых версиях Express.
-*/
-app.use(
-  function (
-    req,
-    res
-  ) {
-    if (
-      req.path.startsWith(
-        "/api/"
-      )
-    ) {
-      return res
-        .status(404)
-        .json({
-          ok: false,
-          error:
-            "API endpoint not found"
-        });
-    }
-
-    res.sendFile(
+app.get(
+  "*",
+  (req, res) => {
+    const index =
       path.join(
         __dirname,
         "public",
         "index.html"
-      )
+      );
+
+    if (
+      fs.existsSync(index)
+    ) {
+      res.sendFile(index);
+    } else {
+      res.status(404).send(
+        "Aiva frontend not found"
+      );
+    }
+  }
+);
+
+/* =========================================================
+   ERROR HANDLER
+========================================================= */
+
+app.use(
+  (error, req, res, next) => {
+    console.error(
+      "SERVER ERROR:",
+      error
     );
+
+    res.status(500).json({
+      ok: false,
+      error:
+        error.message ||
+        "Internal server error"
+    });
   }
 );
 
@@ -1904,39 +734,30 @@ app.use(
 
 app.listen(
   PORT,
+  "0.0.0.0",
   () => {
     console.log(
-      "Aiva 5.1.2 running on port " +
-      PORT
+      `Aiva 5.3.0 running on port ${PORT}`
     );
 
     console.log(
-      "Model: " +
-      MODEL
+      `Model: ${MODEL}`
     );
 
     console.log(
-      "Fallback model: " +
-      FALLBACK_MODEL
+      `Fallback model: ${FALLBACK_MODEL}`
     );
 
     console.log(
-      "Vision model: " +
-      VISION_MODEL
+      `Vision model: ${VISION_MODEL}`
     );
 
     console.log(
-      "Web search: " +
-      WEB_SEARCH_ENABLED
-    );
-
-    console.log(
-      "API key: " +
-      (
-        API_KEY
+      `API key: ${
+        OPENROUTER_API_KEY
           ? "YES"
           : "NO"
-      )
+      }`
     );
   }
 );
