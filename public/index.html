@@ -416,110 +416,13 @@ const savedMode=localStorage.getItem("aiva_model_mode");if(savedMode&&[...modelS
 (async()=>{await authReady;loadChats();if(!chats.length)createChat();else activeChatId=chats[0].id;renderHistory();try{const r=await apiFetch("/api/config");const d=await r.json();if(!r.ok)throw new Error(d.error||"HTTP "+r.status);modelInfo.textContent="Твой AI-ассистент";$("prompt-text").value=d.systemPrompt||"";if(d.temperature!=null){tempInput.value=d.temperature;tempVal.textContent=d.temperature}const current=getActiveChat();if(current&&current.messages.length)openChat(current.id);else showWelcome()}catch(e){showWelcome();const {data}=await supabaseClient.auth.getSession();if(data.session)addMsg("ai","Не удалось загрузить конфигурацию: "+e.message,true)}})();
 </script>
 <script>
-/* ===== CLEAN OLD SERVICE WORKER =====
-   Раньше Aiva регистрировала /sw.js. Если старый SW остался у браузера,
-   он мог ломать POST /api/chat и давать именно "Failed to fetch".
-*/
-(async()=>{
-  if(!('serviceWorker' in navigator)) return;
-  try{
-    const regs=await navigator.serviceWorker.getRegistrations();
-    if(!regs.length) return;
-    await Promise.all(regs.map(r=>r.unregister()));
-    if(window.caches){
-      const keys=await caches.keys();
-      await Promise.all(keys.map(k=>caches.delete(k)));
-    }
-    if(!sessionStorage.getItem('aiva_sw_cleaned_once')){
-      sessionStorage.setItem('aiva_sw_cleaned_once','1');
-      window.location.reload();
-    }
-  }catch(e){ console.warn('Aiva SW cleanup:',e); }
-})();
+/* AIVA PWA SERVICE WORKER — безопасный: API-запросы не перехватывает. */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 </script>
-<script>
-/* ===== PASSWORD RESET — полностью встроено, отдельный reset-password.js не нужен ===== */
-(function(){
-  const forgot=document.getElementById('aiva-forgot-password');
-  if(!forgot || !window.supabaseClient) return;
 
-  function buildModal(){
-    let modal=document.getElementById('aiva-reset-modal');
-    if(modal) return modal;
-    modal=document.createElement('div');
-    modal.id='aiva-reset-modal';
-    modal.innerHTML=`
-      <div class="aiva-reset-card">
-        <button id="aiva-reset-close" class="aiva-reset-close" type="button" aria-label="Закрыть">×</button>
-        <div class="aiva-reset-logo">A</div>
-        <h2>Сброс пароля</h2>
-        <p class="aiva-reset-subtitle">На email придёт ссылка для создания нового пароля.</p>
-        <input id="aiva-new-password" type="password" placeholder="Новый пароль" autocomplete="new-password" minlength="6">
-        <input id="aiva-confirm-password" type="password" placeholder="Повтори новый пароль" autocomplete="new-password" minlength="6">
-        <button id="aiva-reset-submit" class="aiva-reset-submit" type="button">Сохранить новый пароль</button>
-        <div id="aiva-reset-message" class="aiva-reset-message"></div>
-        <button id="aiva-reset-back" class="aiva-reset-back" type="button">Вернуться ко входу</button>
-      </div>`;
-    document.body.appendChild(modal);
-
-    const close=()=>{modal.classList.remove('open');document.body.classList.remove('aiva-reset-open')};
-    const message=(t,ok=false)=>{const el=document.getElementById('aiva-reset-message');el.textContent=t||'';el.classList.toggle('success',!!ok)};
-    document.getElementById('aiva-reset-close').onclick=close;
-    document.getElementById('aiva-reset-back').onclick=close;
-    modal.addEventListener('click',e=>{if(e.target===modal)close()});
-
-    document.getElementById('aiva-reset-submit').onclick=async()=>{
-      const np=document.getElementById('aiva-new-password');
-      const cp=document.getElementById('aiva-confirm-password');
-      const btn=document.getElementById('aiva-reset-submit');
-      const a=np.value,b=cp.value;
-      message('');
-      if(a.length<6)return message('Пароль должен содержать минимум 6 символов.');
-      if(a!==b)return message('Пароли не совпадают.');
-      btn.disabled=true;
-      try{
-        const {error}=await window.supabaseClient.auth.updateUser({password:a});
-        if(error) throw error;
-        np.value='';cp.value='';message('Пароль успешно изменён.',true);
-        setTimeout(()=>{close();window.history.replaceState({},document.title,window.location.pathname);window.location.reload()},900);
-      }catch(e){message(e?.message||'Не удалось изменить пароль. Попробуй ещё раз.')}finally{btn.disabled=false}
-    };
-
-    return modal;
-  }
-
-  async function sendResetEmail(){
-    const email=String(document.getElementById('authEmail')?.value||'').trim();
-    const err=document.getElementById('authError');
-    if(!email){
-      if(err){err.classList.remove('success');err.textContent='Сначала введи email.'}
-      document.getElementById('authEmail')?.focus();
-      return;
-    }
-    forgot.disabled=true;
-    if(err){err.classList.remove('success');err.textContent=''}
-    try{
-      const {error}=await window.supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:`${window.location.origin}/?reset=1`});
-      if(error)throw error;
-      if(err){err.classList.add('success');err.textContent='Письмо для сброса пароля отправлено. Проверь почту.'}
-    }catch(e){
-      if(err){err.classList.remove('success');err.textContent=`Не удалось отправить письмо: ${e?.message||'ошибка'}`}
-    }finally{forgot.disabled=false}
-  }
-
-  forgot.onclick=sendResetEmail;
-  const modal=buildModal();
-  const openReset=()=>{
-    const m=buildModal();
-    m.classList.add('open');
-    document.body.classList.add('aiva-reset-open');
-    const msg=document.getElementById('aiva-reset-message');if(msg){msg.textContent='';msg.classList.remove('success')}
-    setTimeout(()=>document.getElementById('aiva-new-password')?.focus(),50);
-  };
-  window.supabaseClient.auth.onAuthStateChange(event=>{if(event==='PASSWORD_RECOVERY')openReset()});
-  if(new URLSearchParams(window.location.search).get('reset')==='1')setTimeout(openReset,500);
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('aiva-reset-modal')?.classList.remove('open')});
-})();
-</script>
 </body>
 </html>
