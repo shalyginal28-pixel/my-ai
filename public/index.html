@@ -439,8 +439,73 @@ async function uploadFiles(files){if(!files.length)return;const fd=new FormData(
 attachBtn.onclick=()=>fileInput.click();fileInput.onchange=()=>uploadFiles(fileInput.files);
 let dragDepth=0;window.addEventListener("dragenter",e=>{e.preventDefault();dragDepth++;dropzone.classList.add("on")});window.addEventListener("dragleave",e=>{e.preventDefault();dragDepth--;if(dragDepth<=0){dragDepth=0;dropzone.classList.remove("on")}});window.addEventListener("dragover",e=>e.preventDefault());window.addEventListener("drop",e=>{e.preventDefault();dragDepth=0;dropzone.classList.remove("on");uploadFiles(e.dataTransfer.files)});
 
-async function streamRequest(url,payload,contentEl){abortCtrl=new AbortController();sendBtn.disabled=false;sendBtn.textContent="■";sendBtn.classList.add("stop");try{const body={...payload,stream:false};const r=await apiFetch(url,{method:"POST",signal:abortCtrl.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});let data=null;try{data=await r.json()}catch(e){}if(!r.ok)throw new Error((data&&data.error)||("HTTP "+r.status));if(!data||data.ok===false)throw new Error((data&&data.error)||"Не удалось получить ответ");const acc=String(data.reply||"");contentEl.textContent=acc;chat.scrollTop=chat.scrollHeight;return acc}catch(e){if(e.name!=="AbortError"){contentEl.textContent="";addMsg("ai","⚠️ "+(e.message||"Не удалось получить ответ"),true)}return ""}}
-function endGen(){sendBtn.textContent="↑";sendBtn.classList.remove("stop");abortCtrl=null;sendBtn.disabled=false;if(uiSettings.autofocus)inp.focus()}
+async function streamRequest(url,payload,contentEl){
+  abortCtrl=new AbortController();
+  sendBtn.disabled=false;
+  sendBtn.textContent="■";
+  sendBtn.classList.add("stop");
+
+  try{
+    const body={
+      ...payload,
+      stream:false
+    };
+
+    const r=await apiFetch(url,{
+      method:"POST",
+      signal:abortCtrl.signal,
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify(body)
+    });
+
+    const raw=await r.text();
+
+    let data=null;
+    try{
+      data=JSON.parse(raw);
+    }catch(e){
+      throw new Error("Сервер вернул неправильный ответ");
+    }
+
+    if(!r.ok){
+      throw new Error(data?.error||("HTTP "+r.status));
+    }
+
+    const answer=String(
+      data?.reply ??
+      data?.answer ??
+      data?.text ??
+      ""
+    ).trim();
+
+    if(!answer){
+      throw new Error("AI вернул пустой ответ");
+    }
+
+    contentEl.textContent=answer;
+    chat.scrollTop=chat.scrollHeight;
+
+    return answer;
+
+  }catch(e){
+    if(e.name!=="AbortError"){
+      contentEl.textContent="";
+      addMsg(
+        "ai",
+        "⚠️ "+(e.message||"Не удалось получить ответ"),
+        true
+      );
+    }
+    return "";
+  }finally{
+    sendBtn.disabled=false;
+    sendBtn.textContent="➤";
+    sendBtn.classList.remove("stop");
+    abortCtrl=null;
+  }
+}
 
 async function send(){const text=inp.value.trim();if(!text&&!attachments.length)return;if(!activeChatId)createChat();const atts=attachments.filter(a=>a.type!=="error");const attNote=atts.map(a=>a.type==="image"?`[🖼️ ${a.name}]`:`[📄 ${a.name}]`).join(" ");addMsg("user",(text+(attNote?"\n"+attNote:" ")).trim());inp.value="";inp.style.height="auto";attachments=[];renderAttach();sendBtn.disabled=true;const contentEl=addMsg("ai","");const statuses=atts.length?["Размышляет","Просматривает файл","Анализирует данные","Формирует ответ"]:["Размышляет","Анализирует запрос","Подбирает ответ","Формирует ответ"];thinkingTimer=startThinking(contentEl,statuses);const acc=await streamRequest("/api/chat",{text,attachments:atts,mode:modelSelect.value},contentEl);if(thinkingTimer)clearInterval(thinkingTimer);contentEl.innerHTML=acc?md(acc):"<i>(пусто)</i>";saveCurrentMessages();endGen()}
 sendBtn.onclick=()=>abortCtrl?abortCtrl.abort():send();inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});inp.addEventListener("input",()=>{inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,160)+"px"});
