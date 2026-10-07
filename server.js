@@ -1,3 +1,4 @@
+```javascript
 const express = require("express");
 const multer = require("multer");
 const fs = require("fs");
@@ -12,38 +13,75 @@ const app = express();
 
 const PORT = process.env.PORT || 4000;
 const API_KEY = process.env.AI_API_KEY || "";
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_URL =
+  "https://openrouter.ai/api/v1/chat/completions";
+
+/*
+=========================================================
+MODELS
+=========================================================
+*/
 
 const FALLBACK_MODEL =
   process.env.AIVA_FALLBACK_MODEL || "openrouter/free";
+
+const VISION_MODEL =
+  process.env.AIVA_VISION_MODEL || "openrouter/free";
 
 let MODEL =
   process.env.AI_MODEL ||
   "nvidia/nemotron-3-ultra-550b-a55b:free";
 
 const WEB_SEARCH_ENABLED =
-  String(process.env.WEB_SEARCH_ENABLED || "true").toLowerCase() !== "false";
+  String(
+    process.env.WEB_SEARCH_ENABLED || "true"
+  ).toLowerCase() !== "false";
 
-const DATA_DIR = path.join(__dirname, "data");
-const FILES_DIR = path.join(DATA_DIR, "files");
+const DATA_DIR =
+  path.join(__dirname, "data");
 
-fs.mkdirSync(FILES_DIR, { recursive: true });
+const FILES_DIR =
+  path.join(DATA_DIR, "files");
 
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+fs.mkdirSync(FILES_DIR, {
+  recursive: true
+});
+
+app.use(
+  express.json({
+    limit: "50mb"
+  })
+);
+
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "50mb"
+  })
+);
+
+app.use(
+  express.static(
+    path.join(__dirname, "public")
+  )
+);
 
 const upload = multer({
   storage: multer.memoryStorage(),
+
   limits: {
-    fileSize: 20 * 1024 * 1024,
+    fileSize:
+      20 * 1024 * 1024,
+
     files: 5
   }
 });
 
-/* =========================================================
-   HELPERS
-========================================================= */
+/*
+=========================================================
+HELPERS
+=========================================================
+*/
 
 function safeText(value) {
   return String(value || "")
@@ -52,11 +90,18 @@ function safeText(value) {
 }
 
 function chooseModel(mode) {
-  if (!mode || mode === "auto" || mode === "fast") {
+  if (
+    !mode ||
+    mode === "auto" ||
+    mode === "fast"
+  ) {
     return FALLBACK_MODEL;
   }
 
-  if (mode === "smart" || mode === "max") {
+  if (
+    mode === "smart" ||
+    mode === "max"
+  ) {
     return MODEL;
   }
 
@@ -64,18 +109,29 @@ function chooseModel(mode) {
 }
 
 function cleanModelText(text) {
-  if (!text) return "";
+  if (!text) {
+    return "";
+  }
 
   return String(text)
-    .replace(/<AIVA_WEB_SEARCH[\s\S]*?<\/AIVA_WEB_SEARCH>/gi, "")
-    .replace(/<AIVA_WEB_SEARCH[^>]*>/gi, "")
+    .replace(
+      /<AIVA_WEB_SEARCH[\s\S]*?<\/AIVA_WEB_SEARCH>/gi,
+      ""
+    )
+    .replace(
+      /<AIVA_WEB_SEARCH[^>]*>/gi,
+      ""
+    )
     .trim();
 }
 
 function needsWebSearch(text) {
-  const q = safeText(text).toLowerCase();
+  const q =
+    safeText(text).toLowerCase();
 
-  if (!q) return false;
+  if (!q) {
+    return false;
+  }
 
   const patterns = [
     "погода",
@@ -107,30 +163,38 @@ function needsWebSearch(text) {
     "2026"
   ];
 
-  return patterns.some((x) => q.includes(x));
+  return patterns.some(
+    (x) => q.includes(x)
+  );
 }
 
-/* =========================================================
-   WEB SEARCH
-========================================================= */
+/*
+=========================================================
+WEB SEARCH
+=========================================================
+*/
 
 async function searchDuckDuckGo(query) {
   const url =
     "https://html.duckduckgo.com/html/?q=" +
     encodeURIComponent(query);
 
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150 Safari/537.36"
-    }
-  });
+  const response =
+    await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150 Safari/537.36"
+      }
+    });
 
   if (!response.ok) {
-    throw new Error(`DuckDuckGo HTTP ${response.status}`);
+    throw new Error(
+      `DuckDuckGo HTTP ${response.status}`
+    );
   }
 
-  const html = await response.text();
+  const html =
+    await response.text();
 
   const results = [];
 
@@ -139,17 +203,33 @@ async function searchDuckDuckGo(query) {
 
   let match;
 
-  while ((match = regex.exec(html)) && results.length < 8) {
-    const url = match[1];
+  while (
+    (match = regex.exec(html)) &&
+    results.length < 8
+  ) {
+    const url =
+      match[1];
 
-    const title = match[2]
-      .replace(/<[^>]+>/g, "")
-      .replace(/&quot;/g, '"')
-      .replace(/&amp;/g, "&")
-      .replace(/&#x27;/g, "'")
-      .trim();
+    const title =
+      match[2]
+        .replace(/<[^>]+>/g, "")
+        .replace(
+          /&quot;/g,
+          '"'
+        )
+        .replace(
+          /&amp;/g,
+          "&"
+        )
+        .replace(
+          /&#x27;/g,
+          "'"
+        )
+        .trim();
 
-    if (!title || !url) continue;
+    if (!title || !url) {
+      continue;
+    }
 
     results.push({
       title,
@@ -166,17 +246,22 @@ async function searchGoogleNews(query) {
     encodeURIComponent(query) +
     "&hl=ru&gl=RU&ceid=RU:ru";
 
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "Aiva/5.0"
-    }
-  });
+  const response =
+    await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Aiva/5.0"
+      }
+    });
 
   if (!response.ok) {
-    throw new Error(`Google News HTTP ${response.status}`);
+    throw new Error(
+      `Google News HTTP ${response.status}`
+    );
   }
 
-  const xml = await response.text();
+  const xml =
+    await response.text();
 
   const results = [];
 
@@ -185,32 +270,62 @@ async function searchGoogleNews(query) {
 
   let item;
 
-  while ((item = itemRegex.exec(xml)) && results.length < 8) {
-    const block = item[1];
+  while (
+    (item = itemRegex.exec(xml)) &&
+    results.length < 8
+  ) {
+    const block =
+      item[1];
 
     const titleMatch =
-      block.match(/<title>([\s\S]*?)<\/title>/i);
+      block.match(
+        /<title>([\s\S]*?)<\/title>/i
+      );
 
     const linkMatch =
-      block.match(/<link>([\s\S]*?)<\/link>/i);
+      block.match(
+        /<link>([\s\S]*?)<\/link>/i
+      );
 
     const dateMatch =
-      block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i);
+      block.match(
+        /<pubDate>([\s\S]*?)<\/pubDate>/i
+      );
 
-    if (!titleMatch || !linkMatch) continue;
+    if (
+      !titleMatch ||
+      !linkMatch
+    ) {
+      continue;
+    }
 
-    const title = titleMatch[1]
-      .replace(/<!\[CDATA\[/g, "")
-      .replace(/\]\]>/g, "")
-      .replace(/&amp;/g, "&")
-      .replace(/&quot;/g, '"')
-      .trim();
+    const title =
+      titleMatch[1]
+        .replace(
+          /<!\[CDATA\[/g,
+          ""
+        )
+        .replace(
+          /\]\]>/g,
+          ""
+        )
+        .replace(
+          /&amp;/g,
+          "&"
+        )
+        .replace(
+          /&quot;/g,
+          '"'
+        )
+        .trim();
 
-    const url = linkMatch[1].trim();
+    const url =
+      linkMatch[1].trim();
 
-    const date = dateMatch
-      ? dateMatch[1].trim()
-      : "";
+    const date =
+      dateMatch
+        ? dateMatch[1].trim()
+        : "";
 
     if (title && url) {
       results.push({
@@ -229,13 +344,15 @@ async function searchWeb(query) {
     return [];
   }
 
-  let cleanQuery = safeText(query);
+  let cleanQuery =
+    safeText(query);
 
-  cleanQuery = cleanQuery
-    .replace(/\b2024\b/g, "")
-    .replace(/\b2025\b/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  cleanQuery =
+    cleanQuery
+      .replace(/\b2024\b/g, "")
+      .replace(/\b2025\b/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
 
   const queries = [
     cleanQuery,
@@ -248,30 +365,21 @@ async function searchWeb(query) {
   const seen = new Set();
 
   for (const q of queries) {
-    if (!q) continue;
-
-    try {
-      const google = await searchGoogleNews(q);
-
-      for (const item of google) {
-        if (!item.url || seen.has(item.url)) continue;
-
-        seen.add(item.url);
-        all.push(item);
-
-        if (all.length >= 10) {
-          return all;
-        }
-      }
-    } catch (err) {
-      console.error("Google News error:", err.message);
+    if (!q) {
+      continue;
     }
 
     try {
-      const duck = await searchDuckDuckGo(q);
+      const google =
+        await searchGoogleNews(q);
 
-      for (const item of duck) {
-        if (!item.url || seen.has(item.url)) continue;
+      for (const item of google) {
+        if (
+          !item.url ||
+          seen.has(item.url)
+        ) {
+          continue;
+        }
 
         seen.add(item.url);
         all.push(item);
@@ -281,16 +389,47 @@ async function searchWeb(query) {
         }
       }
     } catch (err) {
-      console.error("DuckDuckGo error:", err.message);
+      console.error(
+        "Google News error:",
+        err.message
+      );
+    }
+
+    try {
+      const duck =
+        await searchDuckDuckGo(q);
+
+      for (const item of duck) {
+        if (
+          !item.url ||
+          seen.has(item.url)
+        ) {
+          continue;
+        }
+
+        seen.add(item.url);
+        all.push(item);
+
+        if (all.length >= 10) {
+          return all;
+        }
+      }
+    } catch (err) {
+      console.error(
+        "DuckDuckGo error:",
+        err.message
+      );
     }
   }
 
   return all;
 }
 
-/* =========================================================
-   WEATHER
-========================================================= */
+/*
+=========================================================
+WEATHER
+=========================================================
+*/
 
 async function getWeather(city) {
   const url =
@@ -298,33 +437,45 @@ async function getWeather(city) {
     encodeURIComponent(city) +
     "?format=j1";
 
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "Aiva/5.0"
-    }
-  });
+  const response =
+    await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Aiva/5.0"
+      }
+    });
 
   if (!response.ok) {
-    throw new Error(`Weather HTTP ${response.status}`);
+    throw new Error(
+      `Weather HTTP ${response.status}`
+    );
   }
 
-  const data = await response.json();
+  const data =
+    await response.json();
 
   const current =
     data.current_condition &&
     data.current_condition[0];
 
   if (!current) {
-    throw new Error("Weather data unavailable");
+    throw new Error(
+      "Weather data unavailable"
+    );
   }
 
   return {
     city,
-    temperature: current.temp_C,
-    feelsLike: current.FeelsLikeC,
-    humidity: current.humidity,
-    wind: current.windspeedKmph,
-    pressure: current.pressure,
+    temperature:
+      current.temp_C,
+    feelsLike:
+      current.FeelsLikeC,
+    humidity:
+      current.humidity,
+    wind:
+      current.windspeedKmph,
+    pressure:
+      current.pressure,
     description:
       current.weatherDesc &&
       current.weatherDesc[0]
@@ -334,25 +485,41 @@ async function getWeather(city) {
 }
 
 function detectCity(text) {
-  const q = safeText(text).toLowerCase();
+  const q =
+    safeText(text).toLowerCase();
 
-  if (q.includes("риге") || q.includes("рига")) {
+  if (
+    q.includes("риге") ||
+    q.includes("рига")
+  ) {
     return "Riga";
   }
 
-  if (q.includes("таллине") || q.includes("таллин")) {
+  if (
+    q.includes("таллине") ||
+    q.includes("таллин")
+  ) {
     return "Tallinn";
   }
 
-  if (q.includes("вильнюсе") || q.includes("вильнюс")) {
+  if (
+    q.includes("вильнюсе") ||
+    q.includes("вильнюс")
+  ) {
     return "Vilnius";
   }
 
-  if (q.includes("лондоне") || q.includes("лондон")) {
+  if (
+    q.includes("лондоне") ||
+    q.includes("лондон")
+  ) {
     return "London";
   }
 
-  if (q.includes("берлине") || q.includes("берлин")) {
+  if (
+    q.includes("берлине") ||
+    q.includes("берлин")
+  ) {
     return "Berlin";
   }
 
@@ -366,9 +533,11 @@ function detectCity(text) {
   return "Riga";
 }
 
-/* =========================================================
-   OPENROUTER
-========================================================= */
+/*
+=========================================================
+OPENROUTER
+=========================================================
+*/
 
 const CORE_SYSTEM_PROMPT = `
 Ты — Aiva, современный AI-ассистент.
@@ -378,6 +547,13 @@ const CORE_SYSTEM_PROMPT = `
 
 Не выдумывай факты.
 Если сервер передал результаты веб-поиска, используй их.
+
+Если пользователь прикрепил изображение:
+- внимательно проанализируй изображение;
+- отвечай именно по тому, что видно на изображении;
+- если пользователь спрашивает «что на фото», опиши основные объекты, людей, текст, обстановку и важные детали;
+- не говори, что не видишь изображение, если изображение действительно передано модели;
+- не выдумывай детали, которых на изображении нет.
 
 Не выводи служебные теги:
 <AIVA_WEB_SEARCH>
@@ -403,32 +579,49 @@ async function callOpenRouter({
     );
   }
 
-  const response = await fetch(OPENROUTER_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${API_KEY}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer":
-        "https://my-aii.onrender.com",
-      "X-Title": "Aiva"
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      stream: false
-    })
-  });
+  const response =
+    await fetch(
+      OPENROUTER_URL,
+      {
+        method: "POST",
 
-  const raw = await response.text();
+        headers: {
+          Authorization:
+            `Bearer ${API_KEY}`,
+
+          "Content-Type":
+            "application/json",
+
+          "HTTP-Referer":
+            "https://my-aii.onrender.com",
+
+          "X-Title":
+            "Aiva"
+        },
+
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature,
+          stream: false
+        })
+      }
+    );
+
+  const raw =
+    await response.text();
 
   let data;
 
   try {
-    data = JSON.parse(raw);
+    data =
+      JSON.parse(raw);
   } catch {
     throw new Error(
-      `OpenRouter вернул не JSON: ${raw.slice(0, 500)}`
+      `OpenRouter вернул не JSON: ${raw.slice(
+        0,
+        500
+      )}`
     );
   }
 
@@ -453,32 +646,51 @@ async function callOpenRouter({
   return String(content);
 }
 
-/* =========================================================
-   FILES
-========================================================= */
+/*
+=========================================================
+FILES
+=========================================================
+*/
 
 function sanitizeFilename(name) {
-  return String(name || "file.txt")
-    .replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]/g, "_")
+  return String(
+    name || "file.txt"
+  )
+    .replace(
+      /[^a-zA-Z0-9а-яА-ЯёЁ._-]/g,
+      "_"
+    )
     .slice(0, 150);
 }
 
-async function saveGeneratedFile(filename, content) {
-  const safeName = sanitizeFilename(filename);
+async function saveGeneratedFile(
+  filename,
+  content
+) {
+  const safeName =
+    sanitizeFilename(filename);
 
   const ext =
-    path.extname(safeName).toLowerCase();
+    path.extname(
+      safeName
+    ).toLowerCase();
 
   const storedName =
     crypto.randomBytes(18).toString("hex") +
     (ext || ".txt");
 
   const filePath =
-    path.join(FILES_DIR, storedName);
+    path.join(
+      FILES_DIR,
+      storedName
+    );
 
   const text =
     String(content ?? "")
-      .replace(/\r\n/g, "\n");
+      .replace(
+        /\r\n/g,
+        "\n"
+      );
 
   if (ext === ".docx") {
     await createDocxFile(
@@ -618,13 +830,16 @@ async function processGeneratedFiles(
     text: text
       .replace(regex, "")
       .trim(),
+
     files
   };
 }
 
-/* =========================================================
-   FILE UPLOAD
-========================================================= */
+/*
+=========================================================
+FILE UPLOAD
+=========================================================
+*/
 
 function isImageFile(file) {
   const ext =
@@ -718,7 +933,10 @@ async function extractFileText(file) {
 app.post(
   "/api/upload",
   upload.array("files", 5),
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
     try {
       const result = [];
 
@@ -736,11 +954,14 @@ app.post(
                 file
               );
 
-        let dataUrl = null;
+        let dataUrl =
+          null;
 
         if (image) {
           dataUrl =
-            `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+            `data:${file.mimetype};base64,${file.buffer.toString(
+              "base64"
+            )}`;
         }
 
         result.push({
@@ -759,7 +980,10 @@ app.post(
             file.size,
 
           text:
-            text.slice(0, 60000),
+            text.slice(
+              0,
+              60000
+            ),
 
           dataUrl
         });
@@ -785,13 +1009,18 @@ app.post(
   }
 );
 
-/* =========================================================
-   DOWNLOAD GENERATED FILE
-========================================================= */
+/*
+=========================================================
+DOWNLOAD GENERATED FILE
+=========================================================
+*/
 
 app.get(
   "/api/files/:storedName",
-  (req, res) => {
+  (
+    req,
+    res
+  ) => {
     const storedName =
       path.basename(
         req.params.storedName
@@ -828,53 +1057,84 @@ app.get(
   }
 );
 
-/* =========================================================
-   HEALTH
-========================================================= */
+/*
+=========================================================
+HEALTH
+=========================================================
+*/
 
 app.get(
   "/api/health",
-  (req, res) => {
+  (
+    req,
+    res
+  ) => {
     res.json({
       ok: true,
       app: "Aiva",
-      version: "5.0.0",
-      node: process.version,
-      model: MODEL,
+      version: "5.1.0",
+      node:
+        process.version,
+
+      model:
+        MODEL,
+
       fallbackModel:
         FALLBACK_MODEL,
+
+      visionModel:
+        VISION_MODEL,
+
       webSearch:
         WEB_SEARCH_ENABLED,
+
       hasKey:
         !!API_KEY
     });
   }
 );
 
-/* =========================================================
-   CONFIG
-========================================================= */
+/*
+=========================================================
+CONFIG
+=========================================================
+*/
 
 app.get(
   "/api/config",
-  (req, res) => {
+  (
+    req,
+    res
+  ) => {
     res.json({
       ok: true,
-      model: MODEL,
+
+      model:
+        MODEL,
+
       fallbackModel:
         FALLBACK_MODEL,
+
+      visionModel:
+        VISION_MODEL,
+
       hasKey:
         !!API_KEY,
+
       webSearch:
         WEB_SEARCH_ENABLED,
-      temperature: 0.7
+
+      temperature:
+        0.7
     });
   }
 );
 
-/* =========================================================
-   CHAT
-========================================================= */
+/*
+=========================================================
+CHAT
+=========================================================
+*/
 
 async function handleChat(
   req,
@@ -934,18 +1194,23 @@ async function handleChat(
 
     const userText =
       message ||
-      (
-        [
-          ...history
-        ]
-          .reverse()
-          .find(
-            (m) =>
-              m?.role ===
-              "user"
-          )
-          ?.content || ""
-      );
+      [
+        ...history
+      ]
+        .reverse()
+        .find(
+          (m) =>
+            m?.role ===
+            "user"
+        )
+        ?.content ||
+      "";
+
+    /*
+    -------------------------------------------------------
+    WEATHER
+    -------------------------------------------------------
+    */
 
     let webContext = "";
 
@@ -980,6 +1245,12 @@ async function handleChat(
         );
       }
     }
+
+    /*
+    -------------------------------------------------------
+    WEB SEARCH
+    -------------------------------------------------------
+    */
 
     if (
       WEB_SEARCH_ENABLED &&
@@ -1030,6 +1301,12 @@ ${
       }
     }
 
+    /*
+    -------------------------------------------------------
+    FILE CONTEXT
+    -------------------------------------------------------
+    */
+
     const fileContext =
       attachments
         .filter(
@@ -1072,6 +1349,12 @@ ${fileContext}`
         .filter(Boolean)
         .join("\n");
 
+    /*
+    -------------------------------------------------------
+    IMAGES
+    -------------------------------------------------------
+    */
+
     const imageAttachments =
       attachments.filter(
         (a) =>
@@ -1080,23 +1363,38 @@ ${fileContext}`
           a.dataUrl
       );
 
+    const hasImages =
+      imageAttachments.length >
+      0;
+
     let content =
       userText ||
-      "Посмотри прикреплённые файлы.";
+      (
+        hasImages
+          ? "Проанализируй прикреплённое изображение."
+          : "Посмотри прикреплённые файлы."
+      );
 
-    if (
-      imageAttachments.length
-    ) {
+    /*
+    ВАЖНО:
+    Для изображений OpenRouter получает content-массив:
+    text + image_url.
+    */
+
+    if (hasImages) {
       content = [
         {
           type: "text",
-          text: content
+          text:
+            content ||
+            "Что изображено на этом фото?"
         },
 
         ...imageAttachments.map(
           (a) => ({
             type:
               "image_url",
+
             image_url: {
               url:
                 a.dataUrl
@@ -1105,6 +1403,12 @@ ${fileContext}`
         )
       ];
     }
+
+    /*
+    -------------------------------------------------------
+    HISTORY
+    -------------------------------------------------------
+    */
 
     let finalMessages = [
       {
@@ -1117,9 +1421,15 @@ ${fileContext}`
       )
     ];
 
+    /*
+    Если в history уже есть последний пользовательский
+    запрос, не нужно добавлять старую строку повторно.
+    Но для изображения добавляем мультимодальное сообщение.
+    */
+
     if (
       userText ||
-      imageAttachments.length ||
+      hasImages ||
       attachments.length
     ) {
       finalMessages.push({
@@ -1128,10 +1438,28 @@ ${fileContext}`
       });
     }
 
-    let selectedModel =
-      chooseModel(
-        model
-      );
+    /*
+    -------------------------------------------------------
+    MODEL SELECTION
+    -------------------------------------------------------
+    */
+
+    let selectedModel;
+
+    if (hasImages) {
+      /*
+      Главное изменение:
+      если есть фото, принудительно используем
+      vision-capable router.
+      */
+      selectedModel =
+        VISION_MODEL;
+    } else {
+      selectedModel =
+        chooseModel(
+          model
+        );
+    }
 
     let answer;
 
@@ -1140,8 +1468,10 @@ ${fileContext}`
         await callOpenRouter({
           messages:
             finalMessages,
+
           model:
             selectedModel,
+
           temperature
         });
     } catch (
@@ -1152,16 +1482,53 @@ ${fileContext}`
         primaryError.message
       );
 
+      /*
+      Если vision-модель не ответила,
+      пробуем openrouter/free ещё раз.
+      */
+
       if (
+        hasImages &&
         selectedModel !==
-        FALLBACK_MODEL
+          FALLBACK_MODEL
+      ) {
+        try {
+          answer =
+            await callOpenRouter({
+              messages:
+                finalMessages,
+
+              model:
+                FALLBACK_MODEL,
+
+              temperature
+            });
+
+          selectedModel =
+            FALLBACK_MODEL;
+        } catch (
+          visionFallbackError
+        ) {
+          console.error(
+            "Vision fallback error:",
+            visionFallbackError.message
+          );
+
+          throw visionFallbackError;
+        }
+      } else if (
+        !hasImages &&
+        selectedModel !==
+          FALLBACK_MODEL
       ) {
         answer =
           await callOpenRouter({
             messages:
               finalMessages,
+
             model:
               FALLBACK_MODEL,
+
             temperature
           });
 
@@ -1172,10 +1539,22 @@ ${fileContext}`
       }
     }
 
+    /*
+    -------------------------------------------------------
+    CLEAN ANSWER
+    -------------------------------------------------------
+    */
+
     answer =
       cleanModelText(
         answer
       );
+
+    /*
+    -------------------------------------------------------
+    GENERATED FILES
+    -------------------------------------------------------
+    */
 
     const processed =
       await processGeneratedFiles(
@@ -1210,14 +1589,31 @@ ${fileContext}`
           .join("\n");
     }
 
+    /*
+    -------------------------------------------------------
+    RESPONSE
+    -------------------------------------------------------
+    */
+
     res.json({
       ok: true,
+
       reply,
-      text: reply,
-      answer: reply,
+
+      text:
+        reply,
+
+      answer:
+        reply,
+
       files,
+
       model:
         selectedModel,
+
+      vision:
+        hasImages,
+
       webSearch:
         !!webContext
     });
@@ -1230,6 +1626,7 @@ ${fileContext}`
 
     res.status(500).json({
       ok: false,
+
       error:
         err?.message ||
         "Ошибка Aiva"
@@ -1242,9 +1639,11 @@ app.post(
   handleChat
 );
 
-/* =========================================================
-   REGENERATE
-========================================================= */
+/*
+=========================================================
+REGENERATE
+=========================================================
+*/
 
 app.post(
   "/api/regenerate",
@@ -1290,6 +1689,7 @@ app.post(
 
       req.body = {
         ...body,
+
         messages:
           trimmed
       };
@@ -1300,10 +1700,13 @@ app.post(
       );
 
     } catch (err) {
-      console.error(err);
+      console.error(
+        err
+      );
 
       res.status(500).json({
         ok: false,
+
         error:
           err.message
       });
@@ -1311,13 +1714,18 @@ app.post(
   }
 );
 
-/* =========================================================
-   MODEL
-========================================================= */
+/*
+=========================================================
+MODEL
+=========================================================
+*/
 
 app.post(
   "/api/model",
-  (req, res) => {
+  (
+    req,
+    res
+  ) => {
     try {
       const requested =
         safeText(
@@ -1331,12 +1739,15 @@ app.post(
 
       res.json({
         ok: true,
-        model: MODEL
+
+        model:
+          MODEL
       });
 
     } catch (err) {
       res.status(500).json({
         ok: false,
+
         error:
           err.message
       });
@@ -1344,15 +1755,20 @@ app.post(
   }
 );
 
-/* =========================================================
-   PROMPT
-========================================================= */
+/*
+=========================================================
+PROMPT
+=========================================================
+*/
 
 let CUSTOM_PROMPT = "";
 
 app.post(
   "/api/prompt",
-  (req, res) => {
+  (
+    req,
+    res
+  ) => {
     CUSTOM_PROMPT =
       safeText(
         req.body?.prompt
@@ -1360,32 +1776,43 @@ app.post(
 
     res.json({
       ok: true,
+
       prompt:
         CUSTOM_PROMPT
     });
   }
 );
 
-/* =========================================================
-   CLEAR
-========================================================= */
+/*
+=========================================================
+CLEAR
+=========================================================
+*/
 
 app.post(
   "/api/clear",
-  (req, res) => {
+  (
+    req,
+    res
+  ) => {
     res.json({
       ok: true
     });
   }
 );
 
-/* =========================================================
-   FALLBACK ROUTE
-========================================================= */
+/*
+=========================================================
+FALLBACK ROUTE
+=========================================================
+*/
 
 app.get(
   "*",
-  (req, res) => {
+  (
+    req,
+    res
+  ) => {
     if (
       req.path.startsWith(
         "/api/"
@@ -1395,6 +1822,7 @@ app.get(
         .status(404)
         .json({
           ok: false,
+
           error:
             "API endpoint not found"
         });
@@ -1410,15 +1838,17 @@ app.get(
   }
 );
 
-/* =========================================================
-   START
-========================================================= */
+/*
+=========================================================
+START
+=========================================================
+*/
 
 app.listen(
   PORT,
   () => {
     console.log(
-      `Aiva 5.0 running on port ${PORT}`
+      `Aiva 5.1 running on port ${PORT}`
     );
 
     console.log(
@@ -1426,7 +1856,12 @@ app.listen(
     );
 
     console.log(
+      `Vision model: ${VISION_MODEL}`
+    );
+
+    console.log(
       `Web search: ${WEB_SEARCH_ENABLED}`
     );
   }
 );
+```
