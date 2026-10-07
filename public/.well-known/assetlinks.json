@@ -1,8 +1,12 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "com.aiva.assistant",
-        "sha256_cert_fingerprints": ["4F:20:CE:F0:69:30:CC:80:95:C7:D6:F8:DC:4C:87:81:B3:8B:AF:D5:A9:D9:29:17:B9:31:14:DD:FC:42:F7:B4"]
-      }
-    }]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.aiva.assistant",
+      "sha256_cert_fingerprints": [
+        "4F:20:CE:F0:69:30:CC:80:95:C7:D6:F8:DC:4C:87:81:B3:8B:AF:D5:A9:D9:29:17:B9:31:14:DD:FC:42:F7:B4"
+      ]
+    }
+  }
+]
